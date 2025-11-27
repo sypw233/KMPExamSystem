@@ -1,0 +1,283 @@
+name: Build All Platforms Release
+
+# 触发条件：仅在创建tag时自动编译
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  # Android构建任务
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    # 构建Android Release APK（未签名）
+    - name: Build Android Release APK
+      run: ./gradlew :composeApp:assembleRelease
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      
+    # 签名APK
+    - name: Sign app APK
+      uses: r0adkll/sign-android-release@v1
+      id: sign_app
+      with:
+        releaseDirectory: composeApp/build/outputs/apk/release
+        signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+        keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      env:
+        # 设置build-tools版本
+        BUILD_TOOLS_VERSION: "35.0.0"
+      
+    - name: Upload Android Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-release-apk
+        path: ${{steps.sign_app.outputs.signedReleaseFile}}
+        retention-days: 30
+
+  # Windows构建任务（包含MSI安装包和可执行文件）
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      shell: bash
+      
+    # 构建Windows可执行文件
+    - name: Build Windows Executable
+      run: ./gradlew :composeApp:createDistributable
+      shell: bash
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+    # 构建Windows MSI安装包
+    - name: Build Windows MSI
+      run: ./gradlew :composeApp:packageMsi
+      shell: bash
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+    # 分别上传Windows MSI和可执行文件
+    - name: Upload Windows MSI
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-msi
+        path: |
+          composeApp/build/compose/binaries/main/msi/*.msi
+        retention-days: 30
+        
+    - name: Upload Windows Executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-executable
+        path: |
+          composeApp/build/compose/binaries/main/app/
+        retention-days: 30
+
+  # macOS构建任务
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    # 构建macOS DMG安装包
+    - name: Build macOS DMG
+      run: |
+        ./gradlew :composeApp:packageDmg
+        echo "macOS构建完成，检查生成的文件:"
+        find composeApp/build -name "*.dmg" -type f
+        ls -la composeApp/build/compose/binaries/main/dmg/ || echo "DMG目录不存在"
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload macOS Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-desktop-app
+        path: composeApp/build/compose/binaries/main/dmg/*.dmg
+        retention-days: 30
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Linux构建任务
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    # 构建Linux DEB安装包
+    - name: Build Linux DEB
+      run: |
+        ./gradlew :composeApp:packageDeb
+        echo "Linux构建完成，检查生成的文件:"
+        find composeApp/build -name "*.deb" -type f
+        ls -la composeApp/build/compose/binaries/main/deb/ || echo "DEB目录不存在"
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload Linux Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-desktop-app
+        path: composeApp/build/compose/binaries/main/deb/*.deb
+        retention-days: 30
+      env:
+        MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 创建Release（所有平台编译完成后自动发布）
+  create-release:
+    needs: [build-android, build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download Android Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: android-release-apk
+        path: ./artifacts/android/
+        
+    - name: Download Windows MSI
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-msi
+        path: ./artifacts/windows/msi/
+        
+    - name: Download Windows Executable
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-executable
+        path: ./artifacts/windows/app/
+        
+    - name: Download macOS Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-desktop-app
+        path: ./artifacts/macos/
+        
+    - name: Download Linux Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-desktop-app
+        path: ./artifacts/linux/
+        
+    # 验证下载的文件
+    - name: Verify Downloaded Files
+      run: |
+        echo "下载的Android APK文件:"
+        ls -la ./artifacts/android/
+        
+        echo "下载的Windows文件:"
+        ls -la ./artifacts/windows/
+        
+        echo "下载的macOS文件:"
+        ls -la ./artifacts/macos/
+        
+        echo "下载的Linux文件:"
+        ls -la ./artifacts/linux/
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./artifacts/android/*
+          ./artifacts/windows/msi/*
+          ./artifacts/windows/app/*
+          ./artifacts/macos/*
+          ./artifacts/linux/*
+        draft: false
+        prerelease: false
+        tag_name: ${{ github.ref_name }}
+        name: ${{ github.ref_name }}
+        body: |
+          使用Github Actions自动构建发布
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
