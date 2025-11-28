@@ -1,16 +1,16 @@
 package ovo.sypw.kmp.examsystem.presentation.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Api
-import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
-import ovo.sypw.kmp.examsystem.presentation.screens.HomeScreen
-import ovo.sypw.kmp.examsystem.presentation.screens.test.ApiTestScreen
-import ovo.sypw.kmp.examsystem.presentation.screens.test.FileTestScreen
-import ovo.sypw.kmp.examsystem.presentation.screens.test.ImageTestScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.DashboardScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.ExamsScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.CoursesScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.ProfileScreen
 
 /**
  * 应用页面枚举，同时包含路由、标题与图标
@@ -22,23 +22,23 @@ enum class AppScreen(
 ) {
     HOME(
         "home",
-        "HOME",
+        "首页",
         Icons.Default.Home
     ),
-    IMAGE_TEST(
-        "image_test",
-        "IMAGE TEST",
-        Icons.Default.Image
+    EXAMS(
+        "exams",
+        "考试",
+        Icons.Default.Assignment
     ),
-    FILE_TEST(
-        "file_test",
-        "FILE TEST",
-        Icons.Default.FileOpen
+    COURSES(
+        "courses",
+        "课程",
+        Icons.Default.Book
     ),
-    API_TEST(
-        "api_test",
-        "API TEST",
-        Icons.Default.Api
+    PROFILE(
+        "profile",
+        "我的",
+        Icons.Default.Person
     )
 }
 
@@ -65,22 +65,25 @@ fun getNavigationItems(): List<NavigationItem> {
 }
 
 @Composable
-fun NavigationScreen(route: String) {
+fun NavigationScreen(
+    route: String,
+    navigationManager: NavigationManager
+) {
     when (route) {
-        AppScreen.IMAGE_TEST.route -> {
-            ImageTestScreen()
+        AppScreen.EXAMS.route -> {
+            ExamsScreen(navigationManager = navigationManager)
         }
 
-        AppScreen.FILE_TEST.route -> {
-            FileTestScreen()
+        AppScreen.COURSES.route -> {
+            CoursesScreen()
         }
 
-        AppScreen.API_TEST.route -> {
-            ApiTestScreen()
+        AppScreen.PROFILE.route -> {
+            ProfileScreen()
         }
 
         else -> {
-            HomeScreen()
+            DashboardScreen()
         }
     }
 }

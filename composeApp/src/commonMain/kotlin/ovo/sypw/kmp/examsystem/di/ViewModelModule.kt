@@ -2,6 +2,8 @@ package ovo.sypw.kmp.examsystem.di
 
 import org.koin.dsl.module
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ApiTestViewModel
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.LoginViewModel
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterViewModel
 
 /**
  * ViewModel模块依赖注入配置
@@ -17,5 +19,18 @@ val viewModelModule = module {
         ApiTestViewModel(
             apiTestRepository = get()
         )
+    }
+
+    factory {
+        LoginViewModel(
+            authRepository = get()
+        )
+    }
+
+    factory {
+        RegisterViewModel(
+            authRepository = get()
+        )
+
     }
 }

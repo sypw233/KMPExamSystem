@@ -22,7 +22,7 @@ object HttpClientConfig {
     /**
      * API基础URL
      */
-    const val BASE_URL = ""
+    const val BASE_URL = "http://localhost:8080"
 
     /**
      * 连接超时时间（毫秒）

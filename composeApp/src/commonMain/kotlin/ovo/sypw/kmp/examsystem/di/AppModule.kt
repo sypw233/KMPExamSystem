@@ -10,4 +10,5 @@ val appModule = module {
     includes(viewModelModule)
     includes(storageModule)
     includes(apiTestModule)
+    includes(authModule)
 }
