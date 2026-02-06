@@ -22,10 +22,10 @@ sealed class NetworkResult<out T> {
         val message: String = exception.message ?: "Unknown error"
     ) : NetworkResult<Nothing>()
 
-    /**
-     * 加载中
-     */
-    data object Loading : NetworkResult<Nothing>()
+//    /**
+//     * 加载中
+//     */
+//    data object Loading : NetworkResult<Nothing>()
 
 
     /**
@@ -40,11 +40,11 @@ sealed class NetworkResult<out T> {
     val isError: Boolean
         get() = this is Error
 
-    /**
-     * 判断是否为加载状态
-     */
-    val isLoading: Boolean
-        get() = this is Loading
+//    /**
+//     * 判断是否为加载状态
+//     */
+//    val isLoading: Boolean
+//        get() = this is Loading
 
     /**
      * 获取数据，如果不是成功状态则返回null
@@ -60,18 +60,18 @@ sealed class NetworkResult<out T> {
         return if (this is Error) message else null
     }
 
-    /**
-     * 映射数据
-     * @param transform 转换函数
-     * @return 转换后的结果
-     */
-    inline fun <R> map(transform: (T) -> R): NetworkResult<R> {
-        return when (this) {
-            is Success -> Success(transform(data))
-            is Error -> this
-            is Loading -> this
-        }
-    }
+//    /**
+//     * 映射数据
+//     * @param transform 转换函数
+//     * @return 转换后的结果
+//     */
+//    inline fun <R> map(transform: (T) -> R): NetworkResult<R> {
+//        return when (this) {
+//            is Success -> Success(transform(data))
+//            is Error -> this
+//            is Loading -> this
+//        }
+//    }
 
     /**
      * 当成功时执行操作
@@ -95,14 +95,14 @@ sealed class NetworkResult<out T> {
         return this
     }
 
-    /**
-     * 当加载时执行操作
-     * @param action 执行的操作
-     */
-    inline fun onLoading(action: () -> Unit): NetworkResult<T> {
-        if (this is Loading) {
-            action()
-        }
-        return this
-    }
+//    /**
+//     * 当加载时执行操作
+//     * @param action 执行的操作
+//     */
+//    inline fun onLoading(action: () -> Unit): NetworkResult<T> {
+//        if (this is Loading) {
+//            action()
+//        }
+//        return this
+//    }
 }

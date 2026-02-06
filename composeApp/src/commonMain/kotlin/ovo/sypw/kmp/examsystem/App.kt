@@ -29,6 +29,8 @@ import ovo.sypw.kmp.examsystem.presentation.navigation.rememberNavigationManager
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamTakingScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.LoginScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.RegisterScreen
+import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
+import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
@@ -65,12 +67,21 @@ private fun MainAppContent() {
     val authRepository: AuthRepository = koinInject()
     val authState by authRepository.authState.collectAsState()
     
+    val dialogManager: DialogManager = koinInject()
+    val currentDialog by dialogManager.currentDialog.collectAsState()
+    
     var showRegisterScreen by remember { mutableStateOf(false) }
     
     // 初始化认证状态
     LaunchedEffect(Unit) {
         authRepository.checkAuthState()
     }
+    
+    // 全局弹窗
+    GlobalDialog(
+        config = currentDialog,
+        onDismiss = { dialogManager.dismiss() }
+    )
     
     when (authState) {
         is AuthState.Loading -> {

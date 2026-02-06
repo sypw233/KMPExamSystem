@@ -39,7 +39,7 @@ class AuthRepository(
                 tokenStorage.saveRefreshToken(response.data.refreshToken)
                 
                 // 获取用户信息
-                val userInfoResponse = authApi.getCurrentUser()
+                val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
                 if (userInfoResponse.code == 200 && userInfoResponse.data != null) {
                     _authState.value = AuthState.Authenticated(userInfoResponse.data)
                     Result.success(userInfoResponse.data)
@@ -74,7 +74,7 @@ class AuthRepository(
                 tokenStorage.saveRefreshToken(response.data.refreshToken)
                 
                 // 获取用户信息
-                val userInfoResponse = authApi.getCurrentUser()
+                val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
                 if (userInfoResponse.code == 200 && userInfoResponse.data != null) {
                     _authState.value = AuthState.Authenticated(userInfoResponse.data)
                     Result.success(userInfoResponse.data)
@@ -97,7 +97,10 @@ class AuthRepository(
      */
     suspend fun logout() {
         try {
-            authApi.logout()
+            val token = tokenStorage.getAccessToken()
+            if (token != null) {
+                authApi.logout(token)
+            }
         } finally {
             tokenStorage.clearTokens()
             _authState.value = AuthState.Unauthenticated
@@ -110,12 +113,17 @@ class AuthRepository(
     suspend fun checkAuthState() {
         if (tokenStorage.hasValidToken()) {
             try {
-                val response = authApi.getCurrentUser()
-                if (response.code == 200 && response.data != null) {
-                    _authState.value = AuthState.Authenticated(response.data)
+                val token = tokenStorage.getAccessToken()
+                if (token != null) {
+                    val response = authApi.getCurrentUser(token)
+                    if (response.code == 200 && response.data != null) {
+                        _authState.value = AuthState.Authenticated(response.data)
+                    } else {
+                        // Token 无效，清除
+                        tokenStorage.clearTokens()
+                        _authState.value = AuthState.Unauthenticated
+                    }
                 } else {
-                    // Token 无效，清除
-                    tokenStorage.clearTokens()
                     _authState.value = AuthState.Unauthenticated
                 }
             } catch (e: Exception) {

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterViewModel
+import ovo.sypw.kmp.examsystem.utils.DialogManager
 
 /**
  * 注册界面
@@ -30,7 +31,8 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterViewModel
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    viewModel: RegisterViewModel = koinInject()
+    viewModel: RegisterViewModel = koinInject(),
+    dialogManager: DialogManager = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val username by viewModel.username.collectAsState()
@@ -41,11 +43,35 @@ fun RegisterScreen(
 
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // 监听注册成功
+    // 监听注册成功和错误
     LaunchedEffect(uiState) {
-        if (uiState is RegisterUiState.Success) {
-            onRegisterSuccess()
-            viewModel.resetState()
+        when (val state = uiState) {
+            is RegisterUiState.Success -> {
+                dialogManager.showSuccess(
+                    title = "注册成功",
+                    message = "欢迎加入在线考试系统！",
+                    onConfirm = {
+                        onRegisterSuccess()
+                        viewModel.resetState()
+                    }
+                )
+            }
+            is RegisterUiState.Error -> {
+                // 根据错误类型显示不同的弹窗
+                if (state.message.contains("已存在") || state.message.contains("格式")) {
+                    dialogManager.showWarning(
+                        title = "注意",
+                        message = state.message
+                    )
+                } else {
+                    dialogManager.showError(
+                        title = "注册失败",
+                        message = state.message
+                    )
+                }
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
@@ -197,17 +223,6 @@ fun RegisterScreen(
             // 登录链接
             TextButton(onClick = onNavigateToLogin) {
                 Text("已有账号？立即登录")
-            }
-
-            // 错误提示
-            if (uiState is RegisterUiState.Error) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = (uiState as RegisterUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }

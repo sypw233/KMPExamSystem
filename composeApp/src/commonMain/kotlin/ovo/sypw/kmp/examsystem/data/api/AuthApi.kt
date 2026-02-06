@@ -1,16 +1,11 @@
 package ovo.sypw.kmp.examsystem.data.api
 
-import io.ktor.client.call.body
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.AuthResponse
 import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
+import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 
 /**
  * 认证 API 服务
@@ -28,13 +23,18 @@ class AuthApi : BaseApiService() {
      * @return 包含 Token 和用户信息的响应
      */
     suspend fun login(request: LoginRequest): ApiResponse<AuthResponse> {
-        return try {
-            httpClient.post("$AUTH_ENDPOINT/login") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
-        } catch (e: Exception) {
-            ApiResponse(code = 500, message = e.message ?: "登录失败", data = null)
+        val result = post(
+            endpoint = "$AUTH_ENDPOINT/login",
+            body = request
+        )
+        
+        return when (result) {
+            is NetworkResult.Success -> {
+                result.data.toApiResponse<AuthResponse>()
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
         }
     }
 
@@ -44,13 +44,18 @@ class AuthApi : BaseApiService() {
      * @return 包含 Token 和用户信息的响应
      */
     suspend fun register(request: RegisterRequest): ApiResponse<AuthResponse> {
-        return try {
-            httpClient.post("$AUTH_ENDPOINT/register") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
-            }.body()
-        } catch (e: Exception) {
-            ApiResponse(code = 500, message = e.message ?: "注册失败", data = null)
+        val result = post(
+            endpoint = "$AUTH_ENDPOINT/register",
+            body = request
+        )
+        
+        return when (result) {
+            is NetworkResult.Success -> {
+                result.data.toApiResponse<AuthResponse>()
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
         }
     }
 
@@ -60,39 +65,62 @@ class AuthApi : BaseApiService() {
      * @return 新的 Token 信息
      */
     suspend fun refreshToken(refreshToken: String): ApiResponse<AuthResponse> {
-        return try {
-            httpClient.post("$AUTH_ENDPOINT/refresh") {
-                contentType(ContentType.Application.Json)
-                setBody(mapOf("refreshToken" to refreshToken))
-            }.body()
-        } catch (e: Exception) {
-            ApiResponse(code = 500, message = e.message ?: "刷新 Token 失败", data = null)
+        val result = post(
+            endpoint = "$AUTH_ENDPOINT/refresh",
+            body = mapOf("refreshToken" to refreshToken)
+        )
+        
+        return when (result) {
+            is NetworkResult.Success -> {
+                result.data.toApiResponse<AuthResponse>()
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
         }
     }
 
     /**
      * 获取当前用户信息
+     * 需要 Token 认证
+     * @param token 访问令牌
      * @return 用户信息
      */
-    suspend fun getCurrentUser(): ApiResponse<UserInfo> {
-        return try {
-            httpClient.get("$AUTH_ENDPOINT/me").body()
-        } catch (e: Exception) {
-            ApiResponse(code = 500, message = e.message ?: "获取用户信息失败", data = null)
+    suspend fun getCurrentUser(token: String): ApiResponse<UserInfo> {
+        val result = getWithToken(
+            endpoint = "$AUTH_ENDPOINT/me",
+            token = token
+        )
+        
+        return when (result) {
+            is NetworkResult.Success -> {
+                result.data.toApiResponse<UserInfo>()
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
         }
     }
 
     /**
      * 登出
+     * 需要 Token 认证
+     * @param token 访问令牌
      * @return 登出结果
      */
-    suspend fun logout(): ApiResponse<Unit> {
-        return try {
-            httpClient.post("$AUTH_ENDPOINT/logout") {
-                contentType(ContentType.Application.Json)
-            }.body()
-        } catch (e: Exception) {
-            ApiResponse(code = 500, message = e.message ?: "登出失败", data = null)
+    suspend fun logout(token: String): ApiResponse<Unit> {
+        val result = postWithToken(
+            endpoint = "$AUTH_ENDPOINT/logout",
+            token = token
+        )
+        
+        return when (result) {
+            is NetworkResult.Success -> {
+                ApiResponse(code = 200, message = "登出成功", data = Unit)
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
         }
     }
 }

@@ -20,6 +20,13 @@ import kotlinx.serialization.json.Json
 object HttpClientConfig {
 
     /**
+     * Debug 模式开关
+     * true: 打印详细的请求和响应信息
+     * false: 只打印基本信息
+     */
+    const val DEBUG = true
+
+    /**
      * API基础URL
      */
     const val BASE_URL = "http://localhost:8080"
@@ -72,7 +79,7 @@ object HttpClientConfig {
                     // 允许结构化映射键
                     allowStructuredMapKeys = true
                     // 美化输出（仅调试时使用）
-                    prettyPrint = true
+                    prettyPrint = DEBUG
                     // 使用默认值
                     useAlternativeNames = false
                 })
@@ -80,10 +87,22 @@ object HttpClientConfig {
 
             // 安装日志插件
             install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.INFO
-                filter { request ->
-                    request.url.host.contains("api")
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        if (DEBUG) {
+                            println("HTTP: $message")
+                        }
+                    }
+                }
+                
+                // Debug 模式下打印所有信息，否则只打印基本信息
+                level = if (DEBUG) LogLevel.ALL else LogLevel.INFO
+                
+                // Debug 模式下不过滤，否则只记录包含 "api" 的请求
+                if (!DEBUG) {
+                    filter { request ->
+                        request.url.host.contains("api")
+                    }
                 }
             }
 
@@ -112,6 +131,4 @@ object HttpClientConfig {
             }
         }
     }
-
-
 }

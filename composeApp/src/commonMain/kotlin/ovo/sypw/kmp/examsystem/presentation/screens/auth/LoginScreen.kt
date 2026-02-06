@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.LoginUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.LoginViewModel
+import ovo.sypw.kmp.examsystem.utils.DialogManager
 
 /**
  * 登录界面
@@ -29,7 +30,8 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.LoginViewModel
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
-    viewModel: LoginViewModel = koinInject()
+    viewModel: LoginViewModel = koinInject(),
+    dialogManager: DialogManager = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val username by viewModel.username.collectAsState()
@@ -39,9 +41,20 @@ fun LoginScreen(
 
     // 监听登录成功
     LaunchedEffect(uiState) {
-        if (uiState is LoginUiState.Success) {
-            onLoginSuccess()
-            viewModel.resetState()
+        when (val state = uiState) {
+            is LoginUiState.Success -> {
+                onLoginSuccess()
+                viewModel.resetState()
+            }
+            is LoginUiState.Error -> {
+                // 显示错误弹窗
+                dialogManager.showError(
+                    title = "登录失败",
+                    message = state.message
+                )
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
@@ -137,17 +150,6 @@ fun LoginScreen(
             // 注册链接
             TextButton(onClick = onNavigateToRegister) {
                 Text("还没有账号？立即注册")
-            }
-
-            // 错误提示
-            if (uiState is LoginUiState.Error) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = (uiState as LoginUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }

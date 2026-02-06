@@ -37,7 +37,7 @@ class ApiTestService : BaseApiService() {
      */
     @OptIn(ExperimentalTime::class)
     fun executeApiTest(request: ApiTestRequest): Flow<NetworkResult<ApiTestResponse>> = flow {
-        emit(NetworkResult.Loading)
+//        emit(NetworkResult.Loading)
 
         try {
 

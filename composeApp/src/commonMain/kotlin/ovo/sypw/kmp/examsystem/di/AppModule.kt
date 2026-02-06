@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.di
 
 import org.koin.dsl.module
+import ovo.sypw.kmp.examsystem.utils.DialogManager
 
 /**
  * 应用主模块
@@ -11,4 +12,7 @@ val appModule = module {
     includes(storageModule)
     includes(apiTestModule)
     includes(authModule)
+    
+    // 全局弹窗管理器
+    single { DialogManager() }
 }
