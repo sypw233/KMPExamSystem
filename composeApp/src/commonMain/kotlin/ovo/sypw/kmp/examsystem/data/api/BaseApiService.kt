@@ -317,62 +317,61 @@ abstract class BaseApiService {
     ): NetworkResult<SaResult> {
         return try {
             val response = apiCall()
-
-            when (response.status) {
-                HttpStatusCode.OK -> {
-                    try {
-                        // 先获取原始响应文本用于调试
-//                        val responseText = response.bodyAsText()
-//                        Logger.d("BaseApiService", "服务器原始响应: $responseText")
-
-                        val saResult = response.body<SaResult>()
-//                        Logger.d("BaseApiService", "解析后的SaResult: $saResult")
-                        NetworkResult.Success(saResult)
-                    } catch (e: Exception) {
-                        Logger.e("BaseApiService", "响应解析失败: ${e.message}")
+            
+            // 尝试解析响应体为 SaResult
+            try {
+                val saResult = response.body<SaResult>()
+                Logger.d("BaseApiService", "响应状态码: ${response.status.value}, SaResult: code=${saResult.code}, msg=${saResult.msg}")
+                
+                // 根据业务状态码判断成功与否
+                if (saResult.code == 200) {
+                    NetworkResult.Success(saResult)
+                } else {
+                    // 业务逻辑失败，返回服务器的错误信息
+                    NetworkResult.Error(
+                        Exception("业务错误: ${saResult.code}"),
+                        saResult.msg
+                    )
+                }
+            } catch (e: Exception) {
+                Logger.e("BaseApiService", "响应解析失败: ${e.message}")
+                
+                // 如果解析失败，根据 HTTP 状态码返回通用错误
+                when (response.status) {
+                    HttpStatusCode.Unauthorized -> {
+                        NetworkResult.Error(
+                            Exception("Unauthorized"),
+                            "认证失败，请重新登录"
+                        )
+                    }
+                    HttpStatusCode.Forbidden -> {
+                        NetworkResult.Error(
+                            Exception("Forbidden"),
+                            "权限不足"
+                        )
+                    }
+                    HttpStatusCode.NotFound -> {
+                        NetworkResult.Error(
+                            Exception("Not Found"),
+                            "请求的资源不存在"
+                        )
+                    }
+                    HttpStatusCode.InternalServerError -> {
+                        NetworkResult.Error(
+                            Exception("Internal Server Error"),
+                            "服务器内部错误"
+                        )
+                    }
+                    else -> {
                         NetworkResult.Error(
                             e,
                             "响应格式解析失败: ${e.message}"
                         )
                     }
                 }
-
-                HttpStatusCode.Unauthorized -> {
-                    NetworkResult.Error(
-                        Exception("Unauthorized"),
-                        "认证失败，请重新登录"
-                    )
-                }
-
-                HttpStatusCode.Forbidden -> {
-                    NetworkResult.Error(
-                        Exception("Forbidden"),
-                        "权限不足"
-                    )
-                }
-
-                HttpStatusCode.NotFound -> {
-                    NetworkResult.Error(
-                        Exception("Not Found"),
-                        "请求的资源不存在"
-                    )
-                }
-
-                HttpStatusCode.InternalServerError -> {
-                    NetworkResult.Error(
-                        Exception("Internal Server Error"),
-                        "服务器内部错误"
-                    )
-                }
-
-                else -> {
-                    NetworkResult.Error(
-                        Exception("HTTP ${response.status.value}"),
-                        "请求失败: ${response.status.description}"
-                    )
-                }
             }
         } catch (e: Exception) {
+            Logger.e("BaseApiService", "网络请求异常: ${e.message}")
             NetworkResult.Error(
                 e,
                 e.message ?: "网络请求失败"

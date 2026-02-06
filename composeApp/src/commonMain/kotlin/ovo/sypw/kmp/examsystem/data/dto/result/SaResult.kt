@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.dto.result
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -8,7 +9,9 @@ import kotlinx.serialization.json.decodeFromJsonElement
 /**
  * SaResult响应数据类
  * 匹配后端实际返回的数据格式
- * 标准格式：{ "code": 200, "msg": "success", "data": {...} }
+ * 支持两种格式：
+ * - { "code": 200, "msg": "success", "data": {...} }
+ * - { "code": 200, "message": "success", "data": {...} }
  */
 @Serializable
 data class SaResult(
@@ -18,9 +21,10 @@ data class SaResult(
     val code: Int,
 
     /**
-     * 响应消息
+     * 响应消息 (支持 msg 或 message 字段)
      */
-    val msg: String,
+    @SerialName("message")
+    val msg: String = "",
 
     /**
      * 响应数据，可以是任意JSON结构

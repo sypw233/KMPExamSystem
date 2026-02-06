@@ -6,6 +6,7 @@ import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
+import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 认证 API 服务
@@ -30,10 +31,23 @@ class AuthApi : BaseApiService() {
         
         return when (result) {
             is NetworkResult.Success -> {
-                result.data.toApiResponse<AuthResponse>()
+                val authResponse = result.data.parseData<AuthResponse>()
+                if (authResponse != null) {
+                    ApiResponse(
+                        code = result.data.code,
+                        message = result.data.msg,
+                        data = authResponse
+                    )
+                } else {
+                    ApiResponse(code = 500, message = "数据解析失败", data = null)
+                }
             }
             is NetworkResult.Error -> {
-                ApiResponse(code = 500, message = result.message, data = null)
+                // 错误时返回错误码和错误消息
+                ApiResponse(code = 401, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
             }
         }
     }
@@ -51,10 +65,22 @@ class AuthApi : BaseApiService() {
         
         return when (result) {
             is NetworkResult.Success -> {
-                result.data.toApiResponse<AuthResponse>()
+                val authResponse = result.data.parseData<AuthResponse>()
+                if (authResponse != null) {
+                    ApiResponse(
+                        code = result.data.code,
+                        message = result.data.msg,
+                        data = authResponse
+                    )
+                } else {
+                    ApiResponse(code = 500, message = "数据解析失败", data = null)
+                }
             }
             is NetworkResult.Error -> {
                 ApiResponse(code = 500, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
             }
         }
     }
@@ -72,10 +98,22 @@ class AuthApi : BaseApiService() {
         
         return when (result) {
             is NetworkResult.Success -> {
-                result.data.toApiResponse<AuthResponse>()
+                val authResponse = result.data.parseData<AuthResponse>()
+                if (authResponse != null) {
+                    ApiResponse(
+                        code = result.data.code,
+                        message = result.data.msg,
+                        data = authResponse
+                    )
+                } else {
+                    ApiResponse(code = 500, message = "数据解析失败", data = null)
+                }
             }
             is NetworkResult.Error -> {
                 ApiResponse(code = 500, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
             }
         }
     }
@@ -94,10 +132,22 @@ class AuthApi : BaseApiService() {
         
         return when (result) {
             is NetworkResult.Success -> {
-                result.data.toApiResponse<UserInfo>()
+                val userInfo = result.data.parseData<UserInfo>()
+                if (userInfo != null) {
+                    ApiResponse(
+                        code = result.data.code,
+                        message = result.data.msg,
+                        data = userInfo
+                    )
+                } else {
+                    ApiResponse(code = 500, message = "数据解析失败", data = null)
+                }
             }
             is NetworkResult.Error -> {
                 ApiResponse(code = 500, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
             }
         }
     }
@@ -116,10 +166,13 @@ class AuthApi : BaseApiService() {
         
         return when (result) {
             is NetworkResult.Success -> {
-                ApiResponse(code = 200, message = "登出成功", data = Unit)
+                ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
             }
             is NetworkResult.Error -> {
                 ApiResponse(code = 500, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
             }
         }
     }

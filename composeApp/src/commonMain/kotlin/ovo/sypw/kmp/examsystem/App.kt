@@ -17,10 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
 import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationScreen
@@ -29,7 +29,6 @@ import ovo.sypw.kmp.examsystem.presentation.navigation.rememberNavigationManager
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamTakingScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.LoginScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.RegisterScreen
-import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
 import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
@@ -50,10 +49,8 @@ expect fun PlatformKoinApplication(content: @Composable () -> Unit)
 fun App() {
     Logger.i("APP START ON ${getPlatform().name}")
     PlatformKoinApplication {
-        KoinContext {
-            MaterialTheme {
-                MainAppContent()
-            }
+        MaterialTheme {
+            MainAppContent()
         }
     }
 }
@@ -66,58 +63,63 @@ fun App() {
 private fun MainAppContent() {
     val authRepository: AuthRepository = koinInject()
     val authState by authRepository.authState.collectAsState()
-    
+
     val dialogManager: DialogManager = koinInject()
     val currentDialog by dialogManager.currentDialog.collectAsState()
-    
+
     var showRegisterScreen by remember { mutableStateOf(false) }
-    
+
     // 初始化认证状态
     LaunchedEffect(Unit) {
         authRepository.checkAuthState()
     }
-    
-    // 全局弹窗
-    GlobalDialog(
-        config = currentDialog,
-        onDismiss = { dialogManager.dismiss() }
-    )
-    
-    when (authState) {
-        is AuthState.Loading -> {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+
+    // 使用 Box 确保 GlobalDialog 在最顶层
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (authState) {
+            is AuthState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            is AuthState.Unauthenticated, is AuthState.Error -> {
+                // 未登录，显示登录或注册界面
+                if (showRegisterScreen) {
+                    RegisterScreen(
+                        onRegisterSuccess = {
+                            showRegisterScreen = false
+                        },
+                        onNavigateToLogin = {
+                            showRegisterScreen = false
+                        }
+                    )
+                } else {
+                    LoginScreen(
+                        onLoginSuccess = {
+                            // 登录成功后会自动更新 authState
+                        },
+                        onNavigateToRegister = {
+                            showRegisterScreen = true
+                        }
+                    )
+                }
+            }
+
+            is AuthState.Authenticated -> {
+                // 已登录，显示主界面
+                AuthenticatedContent()
             }
         }
-        is AuthState.Unauthenticated, is AuthState.Error -> {
-            // 未登录，显示登录或注册界面
-            if (showRegisterScreen) {
-                RegisterScreen(
-                    onRegisterSuccess = {
-                        showRegisterScreen = false
-                    },
-                    onNavigateToLogin = {
-                        showRegisterScreen = false
-                    }
-                )
-            } else {
-                LoginScreen(
-                    onLoginSuccess = {
-                        // 登录成功后会自动更新 authState
-                    },
-                    onNavigateToRegister = {
-                        showRegisterScreen = true
-                    }
-                )
-            }
-        }
-        is AuthState.Authenticated -> {
-            // 已登录，显示主界面
-            AuthenticatedContent()
-        }
+
+        // 全局弹窗 - 放在最后确保在最顶层显示
+        GlobalDialog(
+            config = currentDialog,
+            onDismiss = { dialogManager.dismiss() }
+        )
     }
 }
 
@@ -129,12 +131,12 @@ private fun AuthenticatedContent() {
     val navigationManager = rememberNavigationManager()
     val isInExamMode by navigationManager.isInExamMode
     val currentExamId by navigationManager.currentExamId
-    
+
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {
         val layoutConfig = getResponsiveLayoutConfig(maxWidth)
-        
+
         if (isInExamMode && currentExamId != null) {
             // 考试模式：全屏显示，隐藏所有导航
             ExamTakingScreen(
@@ -152,6 +154,7 @@ private fun AuthenticatedContent() {
                     // 移动端：底部导航布局
                     MobileLayout(navigationManager, layoutConfig)
                 }
+
                 ResponsiveUtils.ScreenSize.EXPANDED -> {
                     // 桌面端：侧边导航布局
                     DesktopLayout(navigationManager, layoutConfig)

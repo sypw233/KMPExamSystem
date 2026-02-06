@@ -115,9 +115,9 @@ object HttpClientConfig {
 
             // 安装默认请求插件
             install(DefaultRequest) {
-                // 设置默认请求头
-                header("Content-Type", CONTENT_TYPE)
-                header("Accept", CONTENT_TYPE)
+                // 设置默认请求头，确保使用 UTF-8 编码
+                header("Content-Type", "application/json; charset=utf-8")
+                header("Accept", "application/json; charset=utf-8")
                 header("User-Agent", USER_AGENT)
 
                 // 设置基础URL
