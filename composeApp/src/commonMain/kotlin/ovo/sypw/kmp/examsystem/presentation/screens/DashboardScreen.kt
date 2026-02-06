@@ -1,9 +1,14 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -12,6 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 
 /**
  * 仪表盘/首页界面
@@ -21,6 +32,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DashboardScreen() {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("首页") },
@@ -31,39 +43,46 @@ fun DashboardScreen() {
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // 即将开始的考试
-            item {
-                SectionHeader("即将开始的考试")
-            }
-            
-            items(getDemoUpcomingExams()) { exam ->
-                ExamCard(
-                    title = exam.title,
-                    courseName = exam.courseName,
-                    time = exam.time,
-                    onItemClick = { }
-                )
-            }
-
-            // 系统通知
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader("系统通知")
-            }
-            
-            items(getDemoNotifications()) { notification ->
-                NotificationCard(
-                    title = notification.title,
-                    content = notification.content,
-                    time = notification.time
-                )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 800.dp) // Dashboard wider than auth
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 即将开始的考试
+                item {
+                    SectionHeader("即将开始的考试")
+                }
+                
+                items(getDemoUpcomingExams()) { exam ->
+                    ExamCard(
+                        title = exam.title,
+                        courseName = exam.courseName,
+                        time = exam.time,
+                        onItemClick = { }
+                    )
+                }
+    
+                // 系统通知
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    SectionHeader("系统通知")
+                }
+                
+                items(getDemoNotifications()) { notification ->
+                    NotificationCard(
+                        title = notification.title,
+                        content = notification.content,
+                        time = notification.time
+                    )
+                }
             }
         }
     }
@@ -75,7 +94,8 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.primary
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(vertical = 8.dp)
     )
 }
 
@@ -88,7 +108,11 @@ private fun ExamCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onItemClick
+        onClick = onItemClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -133,7 +157,11 @@ private fun NotificationCard(
     time: String
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -151,20 +179,28 @@ private fun NotificationCard(
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
                 Text(
                     text = content,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = time,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
                 )
             }
         }

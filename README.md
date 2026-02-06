@@ -265,6 +265,13 @@ actual class PlatformSpecificClass {
 - [FileKit](https://github.com/vinceglb/FileKit)
 - [Coil](https://coil-kt.github.io/coil/)
 
+## 🤖 AI 辅助开发
+已创建详细的 **AI 项目开发规范**，供后续 AI Agent 参考：
+> **[AI_PROJECT_SPEC.md](AI_PROJECT_SPEC.md)**
+>
+> 包含核心原则、架构规范、UI 设计指南、编码标准和开发工作流。
+
+---
 ---
 
 **注意**: 这是一个开发模板项目，包含了 KMP 跨平台开发的最佳实践和常用功能实现。可以基于此模板快速开始你的跨平台项目开发。

@@ -24,6 +24,19 @@ fun main() = application {
     ) {
         // 设置窗口最小尺寸
         window.minimumSize = Dimension(360, 680)
-        App()
+
+        // 调整 DPI：应对 Windows 等桌面环境下默认缩放比例导致 UI 过大的问题
+        // 使用 0.8f 的缩放因子，使界面看起来更紧凑 (更像标准桌面应用)
+        val systemDensity = androidx.compose.ui.platform.LocalDensity.current
+        val newDensity = androidx.compose.ui.unit.Density(
+            density = systemDensity.density * 0.8f,
+            fontScale = systemDensity.fontScale
+        )
+
+        androidx.compose.runtime.CompositionLocalProvider(
+            androidx.compose.ui.platform.LocalDensity provides newDensity
+        ) {
+            App()
+        }
     }
 }

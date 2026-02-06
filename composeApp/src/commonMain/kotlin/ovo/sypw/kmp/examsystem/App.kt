@@ -29,6 +29,7 @@ import ovo.sypw.kmp.examsystem.presentation.navigation.rememberNavigationManager
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamTakingScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.LoginScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.RegisterScreen
+import ovo.sypw.kmp.examsystem.presentation.theme.AppTheme
 import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
@@ -49,7 +50,7 @@ expect fun PlatformKoinApplication(content: @Composable () -> Unit)
 fun App() {
     Logger.i("APP START ON ${getPlatform().name}")
     PlatformKoinApplication {
-        MaterialTheme {
+        AppTheme {
             MainAppContent()
         }
     }

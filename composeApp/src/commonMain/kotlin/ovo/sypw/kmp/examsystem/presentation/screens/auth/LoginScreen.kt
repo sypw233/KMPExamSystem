@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -59,97 +61,130 @@ fun LoginScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("登录") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            // Logo 或 标题
-            Text(
-                text = "在线考试系统",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // 用户名输入框
-            OutlinedTextField(
-                value = username,
-                onValueChange = { viewModel.updateUsername(it) },
-                label = { Text("用户名") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 密码输入框
-            OutlinedTextField(
-                value = password,
-                onValueChange = { viewModel.updatePassword(it) },
-                label = { Text("密码") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+            // 登录卡片容器 - 限制最大宽度以适配桌面端
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .widthIn(max = 400.dp), // 桌面端适配关键：限制最大宽度
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ),
-                keyboardActions = KeyboardActions(
-                    onDone = { viewModel.login() }
-                ),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = MaterialTheme.shapes.large
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // 标题
+                    Text(
+                        text = "欢迎回来",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Text(
+                        text = "请登录您的账号",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
+                    )
+
+                    // 用户名输入框
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { viewModel.updateUsername(it) },
+                        label = { Text("用户名") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
+                        leadingIcon = {
+                            Icon(Icons.Default.Person, contentDescription = null)
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            imeAction = ImeAction.Next
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 密码输入框
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { viewModel.updatePassword(it) },
+                        label = { Text("密码") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null)
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { viewModel.login() }
+                        ),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
+                                )
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // 登录按钮
+                    Button(
+                        onClick = { viewModel.login() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        enabled = uiState !is LoginUiState.Loading,
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        if (uiState is LoginUiState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            Text(
+                                "登录",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // 注册链接
+                    TextButton(onClick = onNavigateToRegister) {
+                        Text(
+                            "还没有账号？立即注册",
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 登录按钮
-            Button(
-                onClick = { viewModel.login() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is LoginUiState.Loading
-            ) {
-                if (uiState is LoginUiState.Loading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                } else {
-                    Text("登录")
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 注册链接
-            TextButton(onClick = onNavigateToRegister) {
-                Text("还没有账号？立即注册")
             }
         }
     }
