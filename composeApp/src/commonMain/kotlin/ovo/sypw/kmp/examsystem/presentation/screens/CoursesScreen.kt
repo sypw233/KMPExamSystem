@@ -19,15 +19,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CoursesScreen() {
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("我的课程") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier

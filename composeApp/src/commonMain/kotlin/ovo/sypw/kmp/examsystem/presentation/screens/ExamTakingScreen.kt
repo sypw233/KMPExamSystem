@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
+import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 /**
  * 考试进行界面（全屏模式）
@@ -44,12 +45,8 @@ fun ExamTakingScreen(
             ExamTopBar(
                 examTitle = "Java 程序设计期末考试",  // 示例标题
                 remainingSeconds = remainingSeconds,
-                onExitClick = { showExitDialog = true }
-            )
-        },
-        bottomBar = {
-            ExamBottomBar(
-                onSubmit = { showExitDialog = true }
+                onExitClick = { showExitDialog = true },
+                onSubmitClick = { showExitDialog = true } // 复用逻辑进行提交
             )
         }
     ) { paddingValues ->
@@ -82,8 +79,8 @@ fun ExamTakingScreen(
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("确认退出考试?") },
-            text = { Text("退出后将提交当前已作答的内容，无法再次进入。确定要退出吗？") },
+            title = { Text("确认提交/退出?") },
+            text = { Text("确定要提交当前试卷并退出吗？") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -92,12 +89,12 @@ fun ExamTakingScreen(
                         showExitDialog = false
                     }
                 ) {
-                    Text("确认退出")
+                    Text("确认提交")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showExitDialog = false }) {
-                    Text("继续考试")
+                    Text("继续作答")
                 }
             }
         )
@@ -109,7 +106,8 @@ fun ExamTakingScreen(
 private fun ExamTopBar(
     examTitle: String,
     remainingSeconds: Int,
-    onExitClick: () -> Unit
+    onExitClick: () -> Unit,
+    onSubmitClick: () -> Unit
 ) {
     TopAppBar(
         title = {
@@ -126,42 +124,29 @@ private fun ExamTopBar(
                 )
             }
         },
-        actions = {
+        navigationIcon = {
             IconButton(onClick = onExitClick) {
-                Icon(Icons.Default.Close, contentDescription = "退出考试")
+                Icon(Icons.Default.Close, contentDescription = "取消考试")
+            }
+        },
+        actions = {
+            Button(
+                onClick = onSubmitClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("提交试卷")
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     )
-}
-
-@Composable
-private fun ExamBottomBar(
-    onSubmit: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.End
-        ) {
-            Button(
-                onClick = onSubmit,
-                modifier = Modifier.width(200.dp)
-            ) {
-                Icon(Icons.Default.Send, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("提交试卷")
-            }
-        }
-    }
 }
 
 @Composable

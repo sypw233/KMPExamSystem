@@ -26,15 +26,6 @@ fun ExamsScreen(
     val tabs = listOf("未开始", "进行中", "已完成")
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("我的考试") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
