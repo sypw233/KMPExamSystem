@@ -21,6 +21,7 @@ val appModule = module {
     includes(questionBankModule)
     includes(fileModule)
     includes(aiGradingModule)
+    includes(userManageModule)
     
     // 全局弹窗管理器
     single { DialogManager() }
