@@ -27,20 +27,23 @@ class ExamRepository(
     /** 获取所有已发布的考试 (status=1) */
     suspend fun loadPublishedExams(): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByStatus(token, 1)
-        if (r.code == 200 && r.data != null) { _publishedExams.value = r.data; r.data }
-        else throw Exception(r.message)
+        if (r.code == 200) {
+            val data = r.data ?: emptyList()
+            _publishedExams.value = data
+            data
+        } else throw Exception(r.message)
     }
 
     /** 获取所有考试（无状态筛选） */
     suspend fun loadAllExams(): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getAllExams(token)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     /** 按状态获取考试列表 */
     suspend fun loadExamsByStatus(status: Int): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByStatus(token, status)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     /** 获取考试详情 */
@@ -52,7 +55,7 @@ class ExamRepository(
     /** 获取考试的题目列表 */
     suspend fun getExamQuestions(examId: Long): Result<List<ExamQuestionResponse>> = runWithToken { token ->
         val r = examApi.getExamQuestions(token, examId)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     /** 创建考试 */
@@ -98,8 +101,11 @@ class ExamRepository(
     /** 加载我的考试（教师） */
     suspend fun loadMyExams(): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getMyExams(token)
-        if (r.code == 200 && r.data != null) { _myExams.value = r.data; r.data }
-        else throw Exception(r.message)
+        if (r.code == 200) {
+            val data = r.data ?: emptyList()
+            _myExams.value = data
+            data
+        } else throw Exception(r.message)
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {

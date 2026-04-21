@@ -105,4 +105,24 @@ class CourseApi : BaseApiService() {
             else -> ApiResponse(500, "未知状态", null)
         }
     }
+
+    /** 管理员/教师添加选课学生 */
+    suspend fun addStudentToCourse(token: String, courseId: Long, studentId: Long): ApiResponse<EnrollmentResponse> {
+        val result = postWithToken(endpoint = "$COURSE_ENDPOINT/$courseId/students/$studentId", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /** 管理员/教师移除选课学生 */
+    suspend fun removeStudentFromCourse(token: String, courseId: Long, studentId: Long): ApiResponse<Unit> {
+        val result = deleteWithToken(endpoint = "$COURSE_ENDPOINT/$courseId/students/$studentId", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, Unit)
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
 }

@@ -12,4 +12,5 @@ val submissionModule = module {
     single { SubmissionApi() }
     single { SubmissionRepository(get(), get()) }
     factory { ExamTakingViewModel(get(), get()) }
+    factory { ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel(get(), get(), get(), get()) }
 }

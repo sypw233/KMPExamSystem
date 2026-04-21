@@ -45,9 +45,10 @@ fun NavigationScreen(
         AppRoutes.EXAMS -> {
             when (role) {
                 UserRole.TEACHER, UserRole.ADMIN -> {
-                    TeacherExamManageScreen(onBack = {
-                        /* 顶层不需要返回，忽略 */
-                    })
+                    TeacherExamManageScreen(
+                        onBack = { /* 顶层无返回 */ },
+                        userRole = role
+                    )
                 }
                 else -> {
                     ExamsScreen(
@@ -60,7 +61,10 @@ fun NavigationScreen(
 
         // ── 题目 ──────────────────────────────────────────────────────────
         AppRoutes.QUESTIONS -> {
-            QuestionManageScreen(onBack = { /* 顶层无返回 */ })
+            QuestionManageScreen(
+                onBack = { /* 顶层无返回 */ },
+                userRole = role
+            )
         }
 
         // ── 用户（管理员） ──────────────────────────────────────────────────

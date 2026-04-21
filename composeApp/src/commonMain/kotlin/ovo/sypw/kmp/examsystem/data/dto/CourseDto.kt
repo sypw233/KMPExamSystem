@@ -36,5 +36,7 @@ data class EnrollmentResponse(
 @Serializable
 data class CourseRequest(
     val courseName: String,
-    val description: String? = null
+    val description: String? = null,
+    val teacherId: Long? = null
 )
+

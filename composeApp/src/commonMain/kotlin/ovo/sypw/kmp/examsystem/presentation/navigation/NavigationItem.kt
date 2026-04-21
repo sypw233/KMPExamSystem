@@ -74,10 +74,9 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
     )
     UserRole.ADMIN -> listOf(
         NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Dashboard),
-        NavigationItem(AppRoutes.USERS,     "用户",     Icons.Default.ManageAccounts),
-        NavigationItem(AppRoutes.COURSES,   "课程",     Icons.Default.Book),
-        NavigationItem(AppRoutes.EXAMS,     "考试",     Icons.AutoMirrored.Filled.Assignment),
-        NavigationItem(AppRoutes.QUESTIONS, "题目",     Icons.Default.Quiz),
+        NavigationItem(AppRoutes.USERS,     "用户管理",     Icons.Default.ManageAccounts),
+        NavigationItem(AppRoutes.COURSES,   "课程管理",     Icons.Default.Book),
+        NavigationItem(AppRoutes.EXAMS,     "考试管理",     Icons.AutoMirrored.Filled.Assignment),
         NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
     )
     UserRole.UNKNOWN -> listOf(

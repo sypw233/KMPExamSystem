@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -63,9 +67,19 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
     val userId = (authState as? AuthState.Authenticated)?.user?.id
 
     val uiState by viewModel.uiState.collectAsState()
+    
+    var detailSubmissionId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(userId) {
         userId?.let { viewModel.loadStudentStatistics(it) }
+    }
+
+    if (detailSubmissionId != null) {
+        ovo.sypw.kmp.examsystem.presentation.screens.student.GradeDetailScreen(
+            submissionId = detailSubmissionId!!,
+            onBack = { detailSubmissionId = null }
+        )
+        return
     }
 
     Scaffold(
@@ -108,7 +122,7 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
                     }
                 }
                 is StatisticsUiState.Success -> {
-                    GradeHistoryContent(statistics = state.statistics)
+                    GradeHistoryContent(statistics = state.statistics, onRecordClick = { detailSubmissionId = it })
                 }
             }
         }
@@ -116,7 +130,7 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun GradeHistoryContent(statistics: StudentStatisticsResponse) {
+private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordClick: (Long) -> Unit) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -144,7 +158,7 @@ private fun GradeHistoryContent(statistics: StudentStatisticsResponse) {
             }
         } else {
             items(statistics.scoreRecords, key = { it.submissionId }) { record ->
-                GradeRecordCard(record = record)
+                GradeRecordCard(record = record, onClick = { onRecordClick(record.submissionId) })
             }
         }
 
@@ -226,9 +240,9 @@ private fun StatItem(label: String, value: String) {
 }
 
 @Composable
-private fun GradeRecordCard(record: StudentScoreRecord) {
+private fun GradeRecordCard(record: StudentScoreRecord, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.medium

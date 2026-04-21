@@ -45,6 +45,16 @@ class QuestionApi : BaseApiService() {
         }
     }
 
+    /** 按课程获取题目 */
+    suspend fun getQuestionsByCourse(token: String, courseId: Long): ApiResponse<List<QuestionResponse>> {
+        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/course/$courseId", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
     /** 按类型筛选题目 */
     suspend fun getQuestionsByType(token: String, type: String): ApiResponse<List<QuestionResponse>> {
         val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/type/$type", token = token)

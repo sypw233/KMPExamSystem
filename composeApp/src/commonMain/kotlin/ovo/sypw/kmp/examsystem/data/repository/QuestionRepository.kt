@@ -19,6 +19,16 @@ class QuestionRepository(
     private val _myQuestions = MutableStateFlow<List<QuestionResponse>>(emptyList())
     val myQuestions: StateFlow<List<QuestionResponse>> = _myQuestions.asStateFlow()
 
+    private val _allQuestions = MutableStateFlow<List<QuestionResponse>>(emptyList())
+    val allQuestions: StateFlow<List<QuestionResponse>> = _allQuestions.asStateFlow()
+
+    /** 加载所有题目（管理员） */
+    suspend fun loadAllQuestions(): Result<List<QuestionResponse>> = runWithToken { token ->
+        val r = questionApi.getAllQuestions(token)
+        if (r.code == 200 && r.data != null) { _allQuestions.value = r.data; r.data }
+        else throw Exception(r.message)
+    }
+
     /** 加载我创建的题目 */
     suspend fun loadMyQuestions(): Result<List<QuestionResponse>> = runWithToken { token ->
         val r = questionApi.getMyQuestions(token)
@@ -30,6 +40,12 @@ class QuestionRepository(
     suspend fun getQuestionDetail(questionId: Long): Result<QuestionResponse> = runWithToken { token ->
         val r = questionApi.getQuestionDetail(token, questionId)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /** 按课程获取题目 */
+    suspend fun getQuestionsByCourse(courseId: Long): Result<List<QuestionResponse>> = runWithToken { token ->
+        val r = questionApi.getQuestionsByCourse(token, courseId)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     /** 创建题目 */
