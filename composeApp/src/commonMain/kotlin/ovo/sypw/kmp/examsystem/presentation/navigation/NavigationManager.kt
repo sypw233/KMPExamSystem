@@ -6,79 +6,81 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 
 /**
- * 导航管理器类
- * 负责管理当前选中的页面状态和考试模式
+ * 导航管理器
+ * 持有当前路由、考试模式状态，并感知用户角色以提供角色专属导航项
  */
 class NavigationManager {
-    private val _currentScreen = mutableStateOf(AppScreen.HOME.route)
+
+    // 当前页面路由，默认首页
+    private val _currentScreen = mutableStateOf(AppRoutes.HOME)
     val currentScreen: State<String> = _currentScreen
 
-    // 考试模式状态
+    // 当前用户角色，未知时为 UNKNOWN
+    private val _userRole = mutableStateOf(UserRole.UNKNOWN)
+    val userRole: State<UserRole> = _userRole
+
+    // 考试模式：进入全屏答题时为 true
     private val _isInExamMode = mutableStateOf(false)
     val isInExamMode: State<Boolean> = _isInExamMode
 
-    // 当前考试ID（用于单例模式）
+    // 当前答题的考试 ID
     private val _currentExamId = mutableStateOf<Long?>(null)
     val currentExamId: State<Long?> = _currentExamId
 
-    /**
-     * 导航到指定页面
-     * @param route 目标页面路由
-     */
-    fun navigateTo(route: String) {
-        // 如果在考试模式中，不允许导航
-        if (_isInExamMode.value) {
-            return
+    // ─── 角色 ─────────────────────────────────────────────────────────────
+
+    /** 设置当前用户角色（登录成功后调用） */
+    fun setRole(role: UserRole) {
+        _userRole.value = role
+        // 切换角色时，若当前路由在新角色的导航项中不存在，跳回首页
+        val validRoutes = getNavigationItemsForRole(role).map { it.route }
+        if (_currentScreen.value !in validRoutes) {
+            _currentScreen.value = AppRoutes.HOME
         }
+    }
+
+    /** 根据角色字符串设置角色 */
+    fun setRoleFromString(roleStr: String?) {
+        setRole(UserRole.from(roleStr))
+    }
+
+    /** 获取当前角色的导航项列表 */
+    fun navigationItems(): List<NavigationItem> =
+        getNavigationItemsForRole(_userRole.value)
+
+    // ─── 路由 ─────────────────────────────────────────────────────────────
+
+    /** 导航到指定路由（考试模式中不允许切换） */
+    fun navigateTo(route: String) {
+        if (_isInExamMode.value) return
         _currentScreen.value = route
     }
 
-    /**
-     * 检查当前是否为指定页面
-     * @param route 页面路由
-     * @return 是否为当前页面
-     */
-    fun isCurrentScreen(route: String): Boolean {
-        return _currentScreen.value == route
-    }
+    /** 检查当前是否在指定路由 */
+    fun isCurrentScreen(route: String): Boolean =
+        _currentScreen.value == route
 
-    /**
-     * 进入考试模式
-     * @param examId 考试ID
-     * @return 是否成功进入（如果已有考试进行中则返回false）
-     */
+    // ─── 考试模式 ─────────────────────────────────────────────────────────
+
+    /** 进入全屏考试模式 */
     fun enterExamMode(examId: Long): Boolean {
-        // 检查是否已有考试进行中（单例模式）
-        if (_isInExamMode.value) {
-            return false
-        }
-        
+        if (_isInExamMode.value) return false
         _isInExamMode.value = true
         _currentExamId.value = examId
         return true
     }
 
-    /**
-     * 退出考试模式
-     */
+    /** 退出考试模式 */
     fun exitExamMode() {
         _isInExamMode.value = false
         _currentExamId.value = null
     }
 
-    /**
-     * 检查指定考试是否为当前进行中的考试
-     */
-    fun isCurrentExam(examId: Long): Boolean {
-        return _isInExamMode.value && _currentExamId.value == examId
-    }
+    /** 检查指定考试是否为当前进行中的考试 */
+    fun isCurrentExam(examId: Long): Boolean =
+        _isInExamMode.value && _currentExamId.value == examId
 }
 
-/**
- * 创建导航管理器的Composable函数
- * @return 导航管理器实例
- */
+/** 创建并 remember NavigationManager 实例 */
 @Composable
-fun rememberNavigationManager(): NavigationManager {
-    return remember { NavigationManager() }
-}
+fun rememberNavigationManager(): NavigationManager = remember { NavigationManager() }

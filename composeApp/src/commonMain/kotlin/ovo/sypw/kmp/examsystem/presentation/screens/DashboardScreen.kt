@@ -17,25 +17,38 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 
 /**
- * 仪表盘/首页界面 - Refactored (MD3 Premium Style)
- * 包含：欢迎语、暗色通知卡片、横向滚动的考试卡片
+ * 仪表盘/首页界面
+ * 通知和考试列表均对接真实 API
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(
+    onNavigateToExams: () -> Unit = {}
+) {
     val authRepository: AuthRepository = koinInject()
+    val examViewModel: ExamViewModel = koinInject()
+    val notificationViewModel: NotificationViewModel = koinInject()
+
     val authState by authRepository.authState.collectAsState()
     val user = (authState as? AuthState.Authenticated)?.user
+
+    val upcomingExamsState by examViewModel.upcomingExams.collectAsState()
+    val notificationState by notificationViewModel.uiState.collectAsState()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -49,19 +62,19 @@ fun DashboardScreen() {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .widthIn(max = 1000.dp) // 稍微放宽一点以容纳横向列表
+                    .widthIn(max = 1000.dp)
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // 1. Greeting Section
+                // 问候区
                 item {
                     GreetingSection(
                         userName = user?.realName ?: "同学",
-                        className = if (user?.role == "teacher") "教师" else "计算机科学与技术 2班"
+                        unreadCount = unreadCount
                     )
                 }
 
-                // 2. System Notifications (Dark Cards)
+                // 系统通知区
                 item {
                     Text(
                         text = "系统通知",
@@ -69,14 +82,46 @@ fun DashboardScreen() {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        getDemoNotifications().forEach { notification ->
-                            NotificationCard(notification)
+                    when (notificationState) {
+                        is NotificationUiState.Loading -> {
+                            Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+                        is NotificationUiState.Error -> {
+                            Text(
+                                text = "通知加载失败",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        is NotificationUiState.Success -> {
+                            val notifications = (notificationState as NotificationUiState.Success).notifications
+                            if (notifications.isEmpty()) {
+                                Text(
+                                    "暂无通知",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    notifications.take(3).forEach { notification ->
+                                        NotificationCard(
+                                            notification = notification,
+                                            onMarkRead = {
+                                                if (!notification.read) {
+                                                    notificationViewModel.markAsRead(notification.id)
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                // 3. Upcoming Exams (LazyRow for Cards)
+                // 即将开始考试区
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -88,31 +133,51 @@ fun DashboardScreen() {
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        TextButton(onClick = { /* TODO: Navigate to Exams */ }) {
-                            Text("查看全部")
-                        }
+                        TextButton(onClick = onNavigateToExams) { Text("查看全部") }
                     }
-                    
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(getDemoUpcomingExams()) { exam ->
-                            ExamCardRefined(exam)
+
+                    when (upcomingExamsState) {
+                        is ExamListUiState.Loading -> {
+                            Box(modifier = Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+                        is ExamListUiState.Error -> {
+                            Text("考试加载失败", color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                        is ExamListUiState.Success -> {
+                            val exams = (upcomingExamsState as ExamListUiState.Success).exams
+                            if (exams.isEmpty()) {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("暂无即将开始的考试", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium)
+                                }
+                            } else {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(exams, key = { it.id }) { exam ->
+                                        ExamCardRefined(exam = exam, onStartExam = onNavigateToExams)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                
-                item {
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
+
+                item { Spacer(modifier = Modifier.height(24.dp)) }
             }
         }
     }
 }
 
 @Composable
-private fun GreetingSection(userName: String, className: String) {
+private fun GreetingSection(userName: String, unreadCount: Long) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,7 +185,7 @@ private fun GreetingSection(userName: String, className: String) {
     ) {
         Column {
             Text(
-                text = "早安，${userName}",
+                text = "你好，${userName}",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -132,40 +197,49 @@ private fun GreetingSection(userName: String, className: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        
-        // Avatar Placeholder
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = userName.take(1),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+
+        Box {
+            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(48.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(userName.take(1), style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            // 未读通知 Badge
+            if (unreadCount > 0) {
+                Badge(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    containerColor = MaterialTheme.colorScheme.error
+                ) {
+                    Text(if (unreadCount > 99) "99+" else unreadCount.toString(),
+                        style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun NotificationCard(notification: DemoNotification) {
+private fun NotificationCard(
+    notification: NotificationResponse,
+    onMarkRead: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            // 使用 InverseSurface 实现深色背景 (Dark Slate Grey)
-            containerColor = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface
-        )
+            containerColor = if (notification.read)
+                MaterialTheme.colorScheme.surfaceVariant
+            else
+                MaterialTheme.colorScheme.inverseSurface,
+            contentColor = if (notification.read)
+                MaterialTheme.colorScheme.onSurfaceVariant
+            else
+                MaterialTheme.colorScheme.inverseOnSurface
+        ),
+        onClick = onMarkRead
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            // Icon Background
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
@@ -175,61 +249,53 @@ private fun NotificationCard(notification: DemoNotification) {
                     Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.inverseOnSurface
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
                         text = notification.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.inverseOnSurface
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = notification.time,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.7f)
-                    )
+                    if (!notification.read) {
+                        Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("新") }
+                    }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = notification.content,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.9f)
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2
                 )
+                notification.createTime?.let { time ->
+                    Text(
+                        text = time.take(16).replace("T", " "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ExamCardRefined(exam: DemoExam) {
+private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit) {
     Card(
-        modifier = Modifier.width(320.dp), // 固定宽度，适合水平滚动
+        modifier = Modifier.width(320.dp),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            // Course Tag
-            Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = MaterialTheme.shapes.small
-            ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small) {
                 Text(
                     text = exam.courseName,
                     style = MaterialTheme.typography.labelMedium,
@@ -237,9 +303,9 @@ private fun ExamCardRefined(exam: DemoExam) {
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
                 text = exam.title,
                 style = MaterialTheme.typography.titleLarge,
@@ -247,30 +313,26 @@ private fun ExamCardRefined(exam: DemoExam) {
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            // Metadata Row
+
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconText(Icons.Default.Schedule, "90 分钟")
+                IconText(Icons.Default.Timer, "${exam.duration} 分钟")
                 Spacer(modifier = Modifier.width(16.dp))
-                IconText(Icons.Default.Assignment, "总分 100")
+                IconText(Icons.Default.Assignment, "满分 ${exam.totalScore}")
             }
-            
+
             Spacer(modifier = Modifier.height(20.dp))
-            
-            // Start Button
+
             Button(
-                onClick = { /* TODO */ },
+                onClick = onStartExam,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.inverseSurface, // Dark button styling
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
                     contentColor = MaterialTheme.colorScheme.inverseOnSurface
                 ),
                 shape = MaterialTheme.shapes.medium
-            ) {
-                Text("开始考试")
-            }
+            ) { Text("查看考试") }
         }
     }
 }
@@ -278,32 +340,9 @@ private fun ExamCardRefined(exam: DemoExam) {
 @Composable
 private fun IconText(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
-
-// 示例数据保持不变或使用新结构
-private data class DemoExam(val title: String, val courseName: String, val time: String)
-private data class DemoNotification(val title: String, val content: String, val time: String)
-
-private fun getDemoUpcomingExams(): List<DemoExam> = listOf(
-    DemoExam("Kotlin 高级编程期末考", "移动应用开发", "90 分钟"),
-    DemoExam("计算机网络基础测验", "计算机网络", "45 分钟"),
-    DemoExam("数据库系统设计", "数据库", "120 分钟")
-)
-
-private fun getDemoNotifications(): List<DemoNotification> = listOf(
-    DemoNotification("系统维护通知", "系统将于本周六凌晨进行维护，请提前保存数据。", "2小时前"),
-    DemoNotification("考试提醒", "您的《移动应用开发》考试将于明天开始，请做好准备。", "1天前")
-)

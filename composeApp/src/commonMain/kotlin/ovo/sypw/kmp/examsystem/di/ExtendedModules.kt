@@ -1,0 +1,33 @@
+package ovo.sypw.kmp.examsystem.di
+
+import org.koin.dsl.module
+import ovo.sypw.kmp.examsystem.data.api.AiGradingApi
+import ovo.sypw.kmp.examsystem.data.api.FileApi
+import ovo.sypw.kmp.examsystem.data.api.QuestionBankApi
+import ovo.sypw.kmp.examsystem.data.repository.AiGradingRepository
+import ovo.sypw.kmp.examsystem.data.repository.FileRepository
+import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
+
+/**
+ * 题库管理模块 DI
+ */
+val questionBankModule = module {
+    single { QuestionBankApi() }
+    single { QuestionBankRepository(get(), get()) }
+}
+
+/**
+ * 文件管理模块 DI
+ */
+val fileModule = module {
+    single { FileApi() }
+    single { FileRepository(get(), get()) }
+}
+
+/**
+ * AI 辅助判题模块 DI
+ */
+val aiGradingModule = module {
+    single { AiGradingApi() }
+    single { AiGradingRepository(get(), get()) }
+}

@@ -1,5 +1,9 @@
 package ovo.sypw.kmp.examsystem.presentation.navigation
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -10,12 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
+import androidx.compose.ui.unit.dp
 
 /**
- * 底部导航栏组件 (移动端)
- * @param navigationManager 导航管理器
- * @param modifier 修饰符
+ * 底部导航栏（移动端）
+ * 根据 NavigationManager.userRole 动态展示角色专属导航项
  */
 @Composable
 fun BottomNavigationBar(
@@ -23,7 +26,7 @@ fun BottomNavigationBar(
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen
-    val navigationItems = getNavigationItems()
+    val navigationItems = navigationManager.navigationItems()
 
     NavigationBar(
         modifier = modifier,
@@ -32,10 +35,7 @@ fun BottomNavigationBar(
         navigationItems.forEach { item ->
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title
-                    )
+                    Icon(imageVector = item.icon, contentDescription = item.title)
                 },
                 label = { Text(item.title) },
                 selected = currentScreen == item.route,
@@ -46,9 +46,8 @@ fun BottomNavigationBar(
 }
 
 /**
- * 侧边导航栏组件 (桌面端)
- * @param navigationManager 导航管理器
- * @param modifier 修饰符
+ * 侧边导航栏（桌面端）
+ * 根据 NavigationManager.userRole 动态展示角色专属导航项
  */
 @Composable
 fun SideNavigationRail(
@@ -56,19 +55,17 @@ fun SideNavigationRail(
     modifier: Modifier = Modifier
 ) {
     val currentScreen by navigationManager.currentScreen
-    val navigationItems = getNavigationItems()
+    val navigationItems = navigationManager.navigationItems()
 
     NavigationRail(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
+        Spacer(modifier = Modifier.height(16.dp))
         navigationItems.forEach { item ->
             NavigationRailItem(
                 icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.title
-                    )
+                    Icon(imageVector = item.icon, contentDescription = item.title)
                 },
                 label = { Text(item.title) },
                 selected = currentScreen == item.route,
@@ -77,27 +74,3 @@ fun SideNavigationRail(
         }
     }
 }
-
-/**
- * 响应式导航组件
- * 根据屏幕尺寸自动选择底部导航或侧边导航
- * @param navigationManager 导航管理器
- * @param screenSize 屏幕尺寸类型
- */
-@Composable
-fun ResponsiveNavigationBar(
-    navigationManager: NavigationManager,
-    screenSize: ResponsiveUtils.ScreenSize
-) {
-    when (screenSize) {
-        ResponsiveUtils.ScreenSize.COMPACT, ResponsiveUtils.ScreenSize.MEDIUM -> {
-            // 移动端和平板使用底部导航
-            BottomNavigationBar(navigationManager)
-        }
-        ResponsiveUtils.ScreenSize.EXPANDED -> {
-            // 桌面端使用侧边导航
-            SideNavigationRail(navigationManager)
-        }
-    }
-}
-

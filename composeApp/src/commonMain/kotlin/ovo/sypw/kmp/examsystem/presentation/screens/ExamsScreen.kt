@@ -1,95 +1,133 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 
 /**
- * 我的考试列表界面
- * 显示未开始的考试、进行中的考试和已完成的考试
+ * 考试列表界面
+ * Tab 0: 可参加的考试（已发布）
+ * Tab 1: 已结束的考试
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExamsScreen(
-    navigationManager: NavigationManager
+    navigationManager: NavigationManager,
+    onStartExam: (Long) -> Unit = {}
 ) {
+    val examViewModel: ExamViewModel = koinInject()
+    val notStartedState by examViewModel.notStartedExams.collectAsState()
+    val endedState by examViewModel.endedExams.collectAsState()
+
     var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("未开始", "进行中", "已完成")
+    val tabs = listOf("可参加", "已结束")
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("我的考试") },
+                actions = {
+                    IconButton(onClick = {
+                        if (selectedTab == 0) examViewModel.loadPublishedExams()
+                        else examViewModel.loadEndedExams()
+                    }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
-            // 标签页选择器
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
+            Column(modifier = Modifier.fillMaxSize().widthIn(max = 800.dp)) {
+                TabRow(selectedTabIndex = selectedTab) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
                 }
-            }
 
-            // 考试列表
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                when (selectedTab) {
-                    0 -> {
-                        // 未开始的考试
-                        items(getDemoNotStartedExams()) { exam ->
-                            ExamListItem(
-                                exam = exam,
-                                showStartButton = false,
-                                onStartExam = { }
-                            )
-                        }
-                    }
-                    1 -> {
-                        // 进行中的考试
-                        items(getDemoOngoingExams()) { exam ->
-                            ExamListItem(
-                                exam = exam,
-                                showStartButton = true,
-                                onStartExam = {
-                                    // 进入考试模式
-                                    if (navigationManager.enterExamMode(exam.id)) {
-                                        // 成功进入考试模式
-                                        // TODO: 导航到考试界面
-                                    } else {
-                                        // 已有考试进行中，显示提示
-                                        // TODO: 显示 Snackbar 提示
-                                    }
+                AnimatedContent(targetState = selectedTab) { tab ->
+                    when (tab) {
+                        0 -> ExamList(
+                            state = notStartedState,
+                            showScore = false,
+                            showStartButton = true,
+                            onStartExam = { examId ->
+                                if (navigationManager.enterExamMode(examId)) {
+                                    onStartExam(examId)
                                 }
-                            )
-                        }
-                    }
-                    2 -> {
-                        // 已完成的考试
-                        items(getDemoCompletedExams()) { exam ->
-                            ExamListItem(
-                                exam = exam,
-                                showStartButton = false,
-                                showScore = true,
-                                onStartExam = { }
-                            )
-                        }
+                            },
+                            onRetry = { examViewModel.loadPublishedExams() }
+                        )
+                        else -> ExamList(
+                            state = endedState,
+                            showScore = true,
+                            showStartButton = false,
+                            onStartExam = {},
+                            onRetry = { examViewModel.loadEndedExams() }
+                        )
                     }
                 }
             }
@@ -98,53 +136,154 @@ fun ExamsScreen(
 }
 
 @Composable
-private fun ExamListItem(
-    exam: DemoExamItem,
-    showStartButton: Boolean = false,
-    showScore: Boolean = false,
+private fun ExamList(
+    state: ExamListUiState,
+    showScore: Boolean,
+    showStartButton: Boolean,
+    onStartExam: (Long) -> Unit,
+    onRetry: () -> Unit
+) {
+    when (state) {
+        is ExamListUiState.Loading -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        }
+        is ExamListUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(state.message, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onRetry) { Text("重试") }
+                }
+            }
+        }
+        is ExamListUiState.Success -> {
+            if (state.exams.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        "暂无考试",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(state.exams, key = { it.id }) { exam ->
+                        ExamCard(
+                            exam = exam,
+                            showScore = showScore,
+                            showStartButton = showStartButton,
+                            onStartExam = { onStartExam(exam.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExamCard(
+    exam: ExamResponse,
+    showScore: Boolean,
+    showStartButton: Boolean,
     onStartExam: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            // 课程标签
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text(
+                    text = exam.courseName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = exam.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "课程：${exam.courseName}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Text(
-                text = "时间：${exam.startTime} - ${exam.endTime}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-            
-            Text(
-                text = "时长：${exam.duration} 分钟",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (showScore) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 考试信息行
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Timer,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${exam.duration} 分钟",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Assignment,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "满分 ${exam.totalScore}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                if (exam.questionCount > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${exam.questionCount} 题",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            }
+
+            // 开始时间
+            if (!exam.startTime.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "成绩：${exam.score ?: "--"} / ${exam.totalScore}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
+                    text = "开始: ${exam.startTime.take(16).replace("T", " ")}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -152,9 +291,12 @@ private fun ExamListItem(
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onStartExam,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("开始考试")
                 }
@@ -162,29 +304,3 @@ private fun ExamListItem(
         }
     }
 }
-
-// 示例数据
-private data class DemoExamItem(
-    val id: Long,
-    val title: String,
-    val courseName: String,
-    val startTime: String,
-    val endTime: String,
-    val duration: Int,
-    val totalScore: Int,
-    val score: Int? = null
-)
-
-private fun getDemoNotStartedExams() = listOf(
-    DemoExamItem(1, "操作系统期末考试", "操作系统", "2024-12-25 10:00", "2024-12-25 12:00", 120, 100)
-)
-
-private fun getDemoOngoingExams() = listOf(
-    DemoExamItem(2, "数据结构第三章测验", "数据结构与算法", "2024-12-15 14:00", "2024-12-15 15:30", 90, 100),
-    DemoExamItem(3, "计算机网络期中考试", "计算机网络", "2024-12-15 09:00", "2024-12-15 11:00", 120, 100)
-)
-
-private fun getDemoCompletedExams() = listOf(
-    DemoExamItem(4, "Java 程序设计期中考试", "Java 程序设计", "2024-11-20 10:00", "2024-11-20 12:00", 120, 100, 85),
-    DemoExamItem(5, "数据库系统第二章测验", "数据库系统", "2024-11-15 14:00", "2024-11-15 15:00", 60, 50, 42)
-)

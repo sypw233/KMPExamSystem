@@ -12,6 +12,15 @@ val appModule = module {
     includes(storageModule)
     includes(apiTestModule)
     includes(authModule)
+    includes(courseModule)
+    includes(examModule)
+    includes(submissionModule)
+    includes(notificationModule)
+    includes(statisticsModule)
+    includes(questionModule)
+    includes(questionBankModule)
+    includes(fileModule)
+    includes(aiGradingModule)
     
     // 全局弹窗管理器
     single { DialogManager() }

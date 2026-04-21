@@ -25,6 +25,7 @@ import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationScreen
 import ovo.sypw.kmp.examsystem.presentation.navigation.SideNavigationRail
+import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.navigation.rememberNavigationManager
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamTakingScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.LoginScreen
@@ -110,9 +111,9 @@ private fun MainAppContent() {
                 }
             }
 
-            is AuthState.Authenticated -> {
+    is AuthState.Authenticated -> {
                 // 已登录，显示主界面
-                AuthenticatedContent()
+                AuthenticatedContent(authState as AuthState.Authenticated)
             }
         }
 
@@ -128,11 +129,15 @@ private fun MainAppContent() {
  * 已认证内容
  */
 @Composable
-private fun AuthenticatedContent() {
+private fun AuthenticatedContent(authState: AuthState.Authenticated) {
     val navigationManager = rememberNavigationManager()
     val isInExamMode by navigationManager.isInExamMode
     val currentExamId by navigationManager.currentExamId
 
+    // 登录后立即同步用户角色到 NavigationManager
+    LaunchedEffect(authState.user.role) {
+        navigationManager.setRoleFromString(authState.user.role)
+    }
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {

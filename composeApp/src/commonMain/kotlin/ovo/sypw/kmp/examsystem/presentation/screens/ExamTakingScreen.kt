@@ -1,169 +1,278 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
-import ovo.sypw.kmp.examsystem.utils.StringUtils.format
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
 
 /**
- * 考试进行界面（全屏模式）
- * 完全隐藏导航栏，显示考试题目和答题区域
+ * 考试答题界面（全屏模式）
+ * 接入 ExamTakingViewModel，支持真实题目加载和答案提交
  */
 @Composable
 fun ExamTakingScreen(
     examId: Long,
-    navigationManager: NavigationManager = koinInject(),
+    navigationManager: NavigationManager,
     onExitExam: () -> Unit
 ) {
-    // 考试计时器
-    var remainingSeconds by remember { mutableStateOf(7200) } // 120 minutes = 7200 seconds
-    
-    LaunchedEffect(Unit) {
-        while (remainingSeconds > 0) {
-            delay(1000)
-            remainingSeconds--
-        }
+    val viewModel: ExamTakingViewModel = koinInject()
+    val uiState by viewModel.uiState.collectAsState()
+    val answers by viewModel.answers.collectAsState()
+
+    // 进入时开始考试
+    LaunchedEffect(examId) {
+        viewModel.enterExam(examId)
     }
 
-    // 显示退出确认对话框
-    var showExitDialog by remember { mutableStateOf(false) }
-
-    Scaffold(
-        topBar = {
-            ExamTopBar(
-                examTitle = "Java 程序设计期末考试",  // 示例标题
-                remainingSeconds = remainingSeconds,
-                onExitClick = { showExitDialog = true },
-                onSubmitClick = { showExitDialog = true } // 复用逻辑进行提交
+    when (val state = uiState) {
+        is ExamTakingUiState.Loading, ExamTakingUiState.Idle -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("正在加载考试...", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        is ExamTakingUiState.Error -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(state.message, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = {
+                        navigationManager.exitExamMode()
+                        viewModel.reset()
+                        onExitExam()
+                    }) { Text("返回") }
+                }
+            }
+        }
+        is ExamTakingUiState.Submitted -> {
+            ExamResultSummary(
+                totalScore = state.submission.totalScore,
+                objectiveScore = state.submission.objectiveScore,
+                needsGrading = (state.submission.totalScore ?: 0) == 0 && state.submission.subjectiveScore == null,
+                onExit = {
+                    navigationManager.exitExamMode()
+                    viewModel.reset()
+                    onExitExam()
+                }
             )
         }
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // 示例题目
-            itemsIndexed(getDemoQuestions()) { index, question ->
-                QuestionCard(
-                    questionNumber = index + 1,
-                    question = question
-                )
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+        is ExamTakingUiState.Ready -> {
+            ExamContent(
+                exam = state,
+                answers = answers,
+                onAnswerChange = { qId, ans -> viewModel.updateAnswer(qId, ans) },
+                onToggleMultiple = { qId, opt -> viewModel.toggleMultipleChoice(qId, opt) },
+                onSubmit = { viewModel.submitExam() },
+                onExit = {
+                    navigationManager.exitExamMode()
+                    viewModel.reset()
+                    onExitExam()
+                }
+            )
         }
-    }
-
-    // 退出确认对话框
-    if (showExitDialog) {
-        AlertDialog(
-            onDismissRequest = { showExitDialog = false },
-            title = { Text("确认提交/退出?") },
-            text = { Text("确定要提交当前试卷并退出吗？") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        navigationManager.exitExamMode()
-                        onExitExam()
-                        showExitDialog = false
-                    }
-                ) {
-                    Text("确认提交")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) {
-                    Text("继续作答")
-                }
-            }
-        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExamTopBar(
-    examTitle: String,
-    remainingSeconds: Int,
-    onExitClick: () -> Unit,
-    onSubmitClick: () -> Unit
+private fun ExamContent(
+    exam: ExamTakingUiState.Ready,
+    answers: Map<String, String>,
+    onAnswerChange: (Long, String) -> Unit,
+    onToggleMultiple: (Long, String) -> Unit,
+    onSubmit: () -> Unit,
+    onExit: () -> Unit
 ) {
-    TopAppBar(
-        title = {
-            Column {
-                Text(
-                    text = examTitle,
-                    style = MaterialTheme.typography.titleMedium
+    var remainingSeconds by remember { mutableStateOf(exam.exam.duration * 60) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // 计时器
+    LaunchedEffect(Unit) {
+        while (remainingSeconds > 0) {
+            delay(1000)
+            remainingSeconds--
+        }
+        // 时间到自动提交
+        onSubmit()
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(exam.exam.title, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = "剩余: ${formatExamTime(remainingSeconds)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (remainingSeconds < 600) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { showExitDialog = true }) {
+                        Icon(Icons.Default.Close, contentDescription = "退出考试")
+                    }
+                },
+                actions = {
+                    Button(
+                        onClick = { showExitDialog = true },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("提交试卷")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-                Text(
-                    text = "剩余时间：${formatTime(remainingSeconds)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (remainingSeconds < 600) MaterialTheme.colorScheme.error 
-                           else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        navigationIcon = {
-            IconButton(onClick = onExitClick) {
-                Icon(Icons.Default.Close, contentDescription = "取消考试")
-            }
-        },
-        actions = {
-            Button(
-                onClick = onSubmitClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 800.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                modifier = Modifier.padding(end = 8.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("提交试卷")
+                itemsIndexed(exam.questions) { index, examQuestion ->
+                    val question = examQuestion.question ?: return@itemsIndexed
+                    QuestionItem(
+                        number = index + 1,
+                        examQuestion = examQuestion,
+                        currentAnswer = answers[question.id.toString()] ?: "",
+                        onAnswerChange = { answer -> onAnswerChange(question.id, answer) },
+                        onToggleMultiple = { option -> onToggleMultiple(question.id, option) }
+                    )
+                }
+                item { Spacer(modifier = Modifier.height(16.dp)) }
             }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        }
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("确认提交试卷?") },
+            text = {
+                val answered = answers.size
+                val total = exam.questions.size
+                Text("已答 $answered / $total 题，提交后无法修改。")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showExitDialog = false
+                    onSubmit()
+                }) { Text("确认提交") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) { Text("继续作答") }
+            }
         )
-    )
+    }
 }
 
 @Composable
-private fun QuestionCard(
-    questionNumber: Int,
-    question: DemoQuestion
+private fun QuestionItem(
+    number: Int,
+    examQuestion: ExamQuestionResponse,
+    currentAnswer: String,
+    onAnswerChange: (String) -> Unit,
+    onToggleMultiple: (String) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    val question = examQuestion.question ?: return
+
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
+            // 题号、类型和分值
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "$number. [${questionTypeLabel(question.type)}]",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "${examQuestion.score} 分",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "$questionNumber. ${question.content}",
+                text = question.content,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium
             )
@@ -171,55 +280,66 @@ private fun QuestionCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             when (question.type) {
-                QuestionType.SINGLE_CHOICE, QuestionType.MULTIPLE_CHOICE -> {
-                    question.options?.forEachIndexed { index, option ->
+                "single" -> {
+                    val options = parseOptions(question.options)
+                    options.forEachIndexed { index, option ->
+                        val letter = ('A' + index).toString()
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (question.type == QuestionType.SINGLE_CHOICE) {
-                                RadioButton(
-                                    selected = false,
-                                    onClick = { }
-                                )
-                            } else {
-                                Checkbox(
-                                    checked = false,
-                                    onCheckedChange = { }
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "${('A' + index)}. $option",
-                                style = MaterialTheme.typography.bodyMedium
+                            RadioButton(
+                                selected = currentAnswer == letter,
+                                onClick = { onAnswerChange(letter) }
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("$letter. $option", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
-                QuestionType.TRUE_FALSE -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = false, onClick = { })
-                            Text("正确")
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = false, onClick = { })
-                            Text("错误")
+                "multiple" -> {
+                    val options = parseOptions(question.options)
+                    val selectedSet = if (currentAnswer.isBlank()) emptySet()
+                    else currentAnswer.split(",").toSet()
+                    options.forEachIndexed { index, option ->
+                        val letter = ('A' + index).toString()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = selectedSet.contains(letter),
+                                onCheckedChange = { onToggleMultiple(letter) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("$letter. $option", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
-                QuestionType.SHORT_ANSWER -> {
+                "true_false" -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = currentAnswer == "true", onClick = { onAnswerChange("true") })
+                            Text("正确", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = currentAnswer == "false", onClick = { onAnswerChange("false") })
+                            Text("错误", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+                else -> {
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = { },
+                        value = currentAnswer,
+                        onValueChange = onAnswerChange,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("请输入答案") },
-                        minLines = 3
+                        minLines = if (question.type == "short_answer") 4 else 2,
+                        shape = MaterialTheme.shapes.small
                     )
                 }
             }
@@ -227,46 +347,59 @@ private fun QuestionCard(
     }
 }
 
-// 辅助函数：格式化时间
-private fun formatTime(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    val secs = seconds % 60
-    return if (hours > 0) {
-        String.format("%02d:%02d:%02d", hours, minutes, secs)
-    } else {
-        String.format("%02d:%02d", minutes, secs)
+@Composable
+private fun ExamResultSummary(
+    totalScore: Int?,
+    objectiveScore: Int?,
+    needsGrading: Boolean,
+    onExit: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text("提交成功！", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
+            if (needsGrading) {
+                Text("您的答卷已提交，主观题等待教师评分。", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("客观题得分: $objectiveScore", style = MaterialTheme.typography.titleMedium)
+                Text("总分: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            }
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("返回首页") }
+        }
     }
 }
 
-// 示例数据
-private enum class QuestionType {
-    SINGLE_CHOICE, MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER
+private fun formatExamTime(seconds: Int): String {
+    val hours = seconds / 3600
+    val minutes = (seconds % 3600) / 60
+    val secs = seconds % 60
+    return if (hours > 0) "%02d:%02d:%02d".format(hours, minutes, secs)
+    else "%02d:%02d".format(minutes, secs)
 }
 
-private data class DemoQuestion(
-    val content: String,
-    val type: QuestionType,
-    val options: List<String>? = null
-)
+private fun questionTypeLabel(type: String): String = when (type) {
+    "single" -> "单选"
+    "multiple" -> "多选"
+    "true_false" -> "判断"
+    "fill_blank" -> "填空"
+    "short_answer" -> "简答"
+    else -> type
+}
 
-private fun getDemoQuestions() = listOf(
-    DemoQuestion(
-        "Java中，关于类的继承说法正确的是？",
-        QuestionType.SINGLE_CHOICE,
-        listOf("Java支持多重继承", "子类可以继承父类的私有成员", "子类可以调用父类的构造方法", "子类不能重写父类的方法")
-    ),
-    DemoQuestion(
-        "以下哪些是Java的基本数据类型？（多选）",
-        QuestionType.MULTIPLE_CHOICE,
-        listOf("int", "String", "boolean", "char")
-    ),
-    DemoQuestion(
-        "Java是一种编译型语言。",
-        QuestionType.TRUE_FALSE
-    ),
-    DemoQuestion(
-        "请简述Java中接口和抽象类的区别。",
-        QuestionType.SHORT_ANSWER
-    )
-)
+private fun parseOptions(optionsJson: String?): List<String> {
+    if (optionsJson.isNullOrBlank()) return emptyList()
+    return try {
+        optionsJson.trim('[', ']')
+            .split("\",\"")
+            .map { it.trim('"', ' ') }
+            .filter { it.isNotBlank() }
+    } catch (_: Exception) {
+        emptyList()
+    }
+}

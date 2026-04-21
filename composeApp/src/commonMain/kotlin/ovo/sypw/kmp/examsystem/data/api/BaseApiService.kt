@@ -41,7 +41,6 @@ abstract class BaseApiService {
         endpoint: String,
         parameters: Map<String, Any> = emptyMap()
     ): NetworkResult<SaResult> {
-//        Logger.d("BaseApiService", "API请求URL: ${HttpClientConfig.getApiUrl(endpoint)}")
         return safeApiCall {
             httpClient.get(HttpClientConfig.getApiUrl(endpoint)) {
                 parameters.forEach { (key, value) ->
