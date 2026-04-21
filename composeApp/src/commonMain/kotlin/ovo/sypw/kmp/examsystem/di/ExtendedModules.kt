@@ -7,6 +7,8 @@ import ovo.sypw.kmp.examsystem.data.api.QuestionBankApi
 import ovo.sypw.kmp.examsystem.data.repository.AiGradingRepository
 import ovo.sypw.kmp.examsystem.data.repository.FileRepository
 import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankViewModel
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsViewModel
 
 /**
  * 题库管理模块 DI
@@ -14,6 +16,7 @@ import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
 val questionBankModule = module {
     single { QuestionBankApi() }
     single { QuestionBankRepository(get(), get()) }
+    factory { QuestionBankViewModel(get(), get()) }
 }
 
 /**
@@ -30,4 +33,5 @@ val fileModule = module {
 val aiGradingModule = module {
     single { AiGradingApi() }
     single { AiGradingRepository(get(), get()) }
+    factory { SystemSettingsViewModel(get()) }
 }

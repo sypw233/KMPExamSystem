@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -52,11 +53,9 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
-/**
- * 考试答题界面（全屏模式）
- * 接入 ExamTakingViewModel，支持真实题目加载和答案提交
- */
 @Composable
 fun ExamTakingScreen(
     examId: Long,
@@ -67,7 +66,6 @@ fun ExamTakingScreen(
     val uiState by viewModel.uiState.collectAsState()
     val answers by viewModel.answers.collectAsState()
 
-    // 进入时开始考试
     LaunchedEffect(examId) {
         viewModel.enterExam(examId)
     }
@@ -77,8 +75,8 @@ fun ExamTakingScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("正在加载考试...", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Loading exam...")
                 }
             }
         }
@@ -86,12 +84,14 @@ fun ExamTakingScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Button(onClick = {
                         navigationManager.exitExamMode()
                         viewModel.reset()
                         onExitExam()
-                    }) { Text("返回") }
+                    }) {
+                        Text("Back")
+                    }
                 }
             }
         }
@@ -113,6 +113,7 @@ fun ExamTakingScreen(
                 answers = answers,
                 onAnswerChange = { qId, ans -> viewModel.updateAnswer(qId, ans) },
                 onToggleMultiple = { qId, opt -> viewModel.toggleMultipleChoice(qId, opt) },
+                onRecordProctoringEvent = { event, desc -> viewModel.recordProctoringEvent(event, desc) },
                 onSubmit = { viewModel.submitExam() },
                 onExit = {
                     navigationManager.exitExamMode()
@@ -131,20 +132,45 @@ private fun ExamContent(
     answers: Map<String, String>,
     onAnswerChange: (Long, String) -> Unit,
     onToggleMultiple: (Long, String) -> Unit,
+    onRecordProctoringEvent: (String, String?) -> Unit,
     onSubmit: () -> Unit,
     onExit: () -> Unit
 ) {
     var remainingSeconds by remember { mutableStateOf(exam.exam.duration * 60) }
     var showExitDialog by remember { mutableStateOf(false) }
+    var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
+    var focusViolationCount by remember { mutableStateOf(0) }
+    var showForceSubmitDialog by remember { mutableStateOf(false) }
+    val strictThreshold = if (exam.exam.maxSwitchCount > 0) exam.exam.maxSwitchCount else 3
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
 
-    // 计时器
     LaunchedEffect(Unit) {
         while (remainingSeconds > 0) {
             delay(1000)
             remainingSeconds--
         }
-        // 时间到自动提交
         onSubmit()
+    }
+
+    LaunchedEffect(windowFocused) {
+        if (!windowFocused) {
+            lastLostFocusMark = TimeSource.Monotonic.markNow()
+            return@LaunchedEffect
+        }
+        val lostMark = lastLostFocusMark ?: return@LaunchedEffect
+        val lostMs = lostMark.elapsedNow().inWholeMilliseconds
+        lastLostFocusMark = null
+        if (lostMs < 3000) return@LaunchedEffect
+
+        focusViolationCount += 1
+        onRecordProctoringEvent(
+            "WINDOW_FOCUS_LOST",
+            "lost_focus_ms=$lostMs,count=$focusViolationCount"
+        )
+
+        if (exam.exam.strictMode && focusViolationCount >= strictThreshold) {
+            showForceSubmitDialog = true
+        }
     }
 
     Scaffold(
@@ -154,48 +180,47 @@ private fun ExamContent(
                     Column {
                         Text(exam.exam.title, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            text = "剩余: ${formatExamTime(remainingSeconds)}",
+                            text = "Remaining: ${formatExamTime(remainingSeconds)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = if (remainingSeconds < 600) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (exam.exam.strictMode) {
+                            Text(
+                                text = "Proctoring: focus loss $focusViolationCount/$strictThreshold",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (focusViolationCount >= strictThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { showExitDialog = true }) {
-                        Icon(Icons.Default.Close, contentDescription = "退出考试")
+                        Icon(Icons.Default.Close, contentDescription = "Exit exam")
                     }
                 },
                 actions = {
                     Button(
                         onClick = { showExitDialog = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("提交试卷")
+                        Text("Submit")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
         }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .widthIn(max = 800.dp),
+                modifier = Modifier.fillMaxSize().widthIn(max = 800.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -217,21 +242,42 @@ private fun ExamContent(
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("确认提交试卷?") },
+            title = { Text("Submit paper?") },
             text = {
                 val answered = answers.size
                 val total = exam.questions.size
-                Text("已答 $answered / $total 题，提交后无法修改。")
+                Text("Answered $answered / $total. You cannot edit after submit.")
             },
             confirmButton = {
                 Button(onClick = {
                     showExitDialog = false
                     onSubmit()
-                }) { Text("确认提交") }
+                }) {
+                    Text("Submit")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showExitDialog = false }) { Text("继续作答") }
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("Continue")
+                }
             }
+        )
+    }
+
+    if (showForceSubmitDialog) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Proctoring warning") },
+            text = { Text("Multiple focus-loss events detected. The exam will be submitted now.") },
+            confirmButton = {
+                Button(onClick = {
+                    showForceSubmitDialog = false
+                    onSubmit()
+                }) {
+                    Text("Submit now")
+                }
+            },
+            dismissButton = {}
         )
     }
 }
@@ -247,23 +293,15 @@ private fun QuestionItem(
     val question = examQuestion.question ?: return
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // 题号、类型和分值
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
                     text = "$number. [${questionTypeLabel(question.type)}]",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "${examQuestion.score} 分",
+                    text = "${examQuestion.score} pts",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -285,9 +323,7 @@ private fun QuestionItem(
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -301,14 +337,11 @@ private fun QuestionItem(
                 }
                 "multiple" -> {
                     val options = parseOptions(question.options)
-                    val selectedSet = if (currentAnswer.isBlank()) emptySet()
-                    else currentAnswer.split(",").toSet()
+                    val selectedSet = if (currentAnswer.isBlank()) emptySet() else currentAnswer.split(",").toSet()
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
@@ -324,11 +357,11 @@ private fun QuestionItem(
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = currentAnswer == "true", onClick = { onAnswerChange("true") })
-                            Text("正确", style = MaterialTheme.typography.bodyMedium)
+                            Text("True", style = MaterialTheme.typography.bodyMedium)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = currentAnswer == "false", onClick = { onAnswerChange("false") })
-                            Text("错误", style = MaterialTheme.typography.bodyMedium)
+                            Text("False", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -337,7 +370,7 @@ private fun QuestionItem(
                         value = currentAnswer,
                         onValueChange = onAnswerChange,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("请输入答案") },
+                        label = { Text("Answer") },
                         minLines = if (question.type == "short_answer") 4 else 2,
                         shape = MaterialTheme.shapes.small
                     )
@@ -355,22 +388,17 @@ private fun ExamResultSummary(
     onExit: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Text("提交成功！", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+            Text("Submitted", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
             if (needsGrading) {
-                Text("您的答卷已提交，主观题等待教师评分。", style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Your subjective answers are waiting for grading.", style = MaterialTheme.typography.bodyMedium)
             } else {
-                Text("客观题得分: $objectiveScore", style = MaterialTheme.typography.titleMedium)
-                Text("总分: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text("Objective score: $objectiveScore", style = MaterialTheme.typography.titleMedium)
+                Text("Total: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             }
-            Spacer(modifier = Modifier.height(32.dp))
-            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("返回首页") }
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
         }
     }
 }
@@ -379,16 +407,15 @@ private fun formatExamTime(seconds: Int): String {
     val hours = seconds / 3600
     val minutes = (seconds % 3600) / 60
     val secs = seconds % 60
-    return if (hours > 0) "%02d:%02d:%02d".format(hours, minutes, secs)
-    else "%02d:%02d".format(minutes, secs)
+    return if (hours > 0) "%02d:%02d:%02d".format(hours, minutes, secs) else "%02d:%02d".format(minutes, secs)
 }
 
 private fun questionTypeLabel(type: String): String = when (type) {
-    "single" -> "单选"
-    "multiple" -> "多选"
-    "true_false" -> "判断"
-    "fill_blank" -> "填空"
-    "short_answer" -> "简答"
+    "single" -> "Single"
+    "multiple" -> "Multiple"
+    "true_false" -> "True/False"
+    "fill_blank" -> "Blank"
+    "short_answer" -> "Short answer"
     else -> type
 }
 

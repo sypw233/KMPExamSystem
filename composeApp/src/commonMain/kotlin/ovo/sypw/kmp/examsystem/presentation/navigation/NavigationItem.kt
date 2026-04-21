@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.SettingsApplications
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -24,6 +25,8 @@ object AppRoutes {
     const val PROFILE     = "profile"      // 我的（所有角色）
     const val STATISTICS  = "statistics"   // 数据概览（管理员首页 = statistics）
     const val NOTIFICATIONS = "notifications" // 通知（嵌套在 profile，这里保留路由）
+    const val QUESTION_BANKS = "question_banks"
+    const val SYSTEM_SETTINGS = "system_settings"
 }
 
 /**
@@ -69,6 +72,7 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
         NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home),
         NavigationItem(AppRoutes.COURSES,   "课程管理", Icons.Default.Book),
         NavigationItem(AppRoutes.QUESTIONS, "题目管理", Icons.Default.Quiz),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题库", Icons.Default.Analytics),
         NavigationItem(AppRoutes.EXAMS,     "考试管理", Icons.AutoMirrored.Filled.Assignment),
         NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
     )
@@ -76,7 +80,9 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
         NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Dashboard),
         NavigationItem(AppRoutes.USERS,     "用户管理",     Icons.Default.ManageAccounts),
         NavigationItem(AppRoutes.COURSES,   "课程管理",     Icons.Default.Book),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题库", Icons.Default.Analytics),
         NavigationItem(AppRoutes.EXAMS,     "考试管理",     Icons.AutoMirrored.Filled.Assignment),
+        NavigationItem(AppRoutes.SYSTEM_SETTINGS, "系统", Icons.Default.SettingsApplications),
         NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
     )
     UserRole.UNKNOWN -> listOf(

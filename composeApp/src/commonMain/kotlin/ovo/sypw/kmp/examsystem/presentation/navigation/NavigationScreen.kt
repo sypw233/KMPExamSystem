@@ -6,6 +6,9 @@ import ovo.sypw.kmp.examsystem.presentation.screens.CoursesScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.DashboardScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamsScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.ProfileScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.admin.AdminDashboardScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.admin.QuestionBankScreen
+import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.UserManageScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.teacher.QuestionManageScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.teacher.TeacherExamManageScreen
@@ -32,7 +35,11 @@ fun NavigationScreen(
 
         // ── 首页 ──────────────────────────────────────────────────────────
         AppRoutes.HOME -> {
-            DashboardScreen()
+            if (role == UserRole.ADMIN) {
+                AdminDashboardScreen()
+            } else {
+                DashboardScreen()
+            }
         }
 
         // ── 课程 ──────────────────────────────────────────────────────────
@@ -67,6 +74,10 @@ fun NavigationScreen(
             )
         }
 
+        AppRoutes.QUESTION_BANKS -> {
+            QuestionBankScreen()
+        }
+
         // ── 用户（管理员） ──────────────────────────────────────────────────
         AppRoutes.USERS -> {
             UserManageScreen()
@@ -75,6 +86,14 @@ fun NavigationScreen(
         // ── 我的 ──────────────────────────────────────────────────────────
         AppRoutes.PROFILE -> {
             ProfileScreen()
+        }
+
+        AppRoutes.SYSTEM_SETTINGS -> {
+            if (role == UserRole.ADMIN) {
+                SystemSettingsScreen()
+            } else {
+                DashboardScreen()
+            }
         }
 
         // 兜底
