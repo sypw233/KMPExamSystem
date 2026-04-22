@@ -136,7 +136,7 @@ private fun ExamContent(
     onSubmit: () -> Unit,
     onExit: () -> Unit
 ) {
-    var remainingSeconds by remember { mutableStateOf(exam.exam.duration * 60) }
+    var remainingSeconds by remember { mutableStateOf((exam.exam.duration ?: 0) * 60) }
     var showExitDialog by remember { mutableStateOf(false) }
     var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
     var focusViolationCount by remember { mutableStateOf(0) }

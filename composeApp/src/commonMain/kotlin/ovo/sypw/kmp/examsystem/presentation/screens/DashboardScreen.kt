@@ -317,7 +317,7 @@ private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconText(Icons.Default.Timer, "${exam.duration} 分钟")
+                IconText(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
                 Spacer(modifier = Modifier.width(16.dp))
                 IconText(Icons.Default.Assignment, "满分 ${exam.totalScore}")
             }

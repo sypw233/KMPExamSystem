@@ -591,7 +591,7 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
                                     Text(exam.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                    Text("Score ${exam.totalScore} · ${exam.duration} min", style = MaterialTheme.typography.bodySmall)
+                                    Text("Score ${exam.totalScore} · ${exam.duration ?: "-"} min", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }

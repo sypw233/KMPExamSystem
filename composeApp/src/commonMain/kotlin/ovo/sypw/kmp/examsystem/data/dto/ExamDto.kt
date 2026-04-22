@@ -16,7 +16,7 @@ data class ExamResponse(
     val creatorName: String,
     val startTime: String? = null,
     val endTime: String? = null,
-    val duration: Int,
+    val duration: Int? = null,
     val totalScore: Int,
     val status: Int = 0,                   // 0-草稿, 1-已发布, 2-已结束
     val statusDescription: String? = null,

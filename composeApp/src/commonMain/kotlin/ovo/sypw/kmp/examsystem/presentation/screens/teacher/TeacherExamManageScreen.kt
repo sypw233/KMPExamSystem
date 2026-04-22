@@ -371,7 +371,7 @@ private fun ManageExamCard(
                      color = MaterialTheme.colorScheme.outline)
                 Text("满分 ${exam.totalScore}", style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.outline)
-                Text("${exam.duration} 分钟", style = MaterialTheme.typography.bodySmall,
+                Text("${exam.duration ?: "-"} 分钟", style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.outline)
             }
 
