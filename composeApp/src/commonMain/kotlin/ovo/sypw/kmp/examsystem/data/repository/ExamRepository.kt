@@ -24,7 +24,7 @@ class ExamRepository(
     suspend fun loadPublishedExams(): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByStatus(token, 1)
         if (r.code == 200) {
-            val data = r.data ?: emptyList()
+            val data = r.data?.content ?: emptyList()
             _publishedExams.value = data
             data
         } else {
@@ -34,12 +34,12 @@ class ExamRepository(
 
     suspend fun loadAllExams(): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getAllExams(token)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
     }
 
     suspend fun loadExamsByStatus(status: Int): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByStatus(token, status)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
     }
 
     suspend fun getExamDetail(examId: Long): Result<ExamResponse> = runWithToken { token ->
@@ -55,7 +55,7 @@ class ExamRepository(
     suspend fun createExam(request: ExamRequest): Result<ExamResponse> = runWithToken { token ->
         val r = examApi.createExam(token, request)
         if (r.code == 200 && r.data != null) {
-            loadMyExams()
+            loadAllExams()
             r.data
         } else {
             throw Exception(r.message)
@@ -105,7 +105,12 @@ class ExamRepository(
 
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByCourse(token, courseId)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
+    }
+
+    suspend fun patchExam(examId: Long, status: Int): Result<ExamResponse> = runWithToken { token ->
+        val r = examApi.patchExam(token, examId, status)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
     /**

@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageQuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
@@ -16,9 +17,13 @@ class QuestionBankApi : BaseApiService() {
         private const val BANK_ENDPOINT = "/api/question-banks"
     }
 
-    /** 获取所有题库 */
-    suspend fun getAllBanks(token: String): ApiResponse<List<QuestionBankResponse>> {
-        val result = getWithToken(endpoint = BANK_ENDPOINT, token = token)
+    /** 获取所有题库（分页） */
+    suspend fun getAllBanks(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageQuestionBankResponse> {
+        val result = getWithToken(
+            endpoint = BANK_ENDPOINT,
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -36,9 +41,13 @@ class QuestionBankApi : BaseApiService() {
         }
     }
 
-    /** 获取我的题库 */
-    suspend fun getMyBanks(token: String): ApiResponse<List<QuestionBankResponse>> {
-        val result = getWithToken(endpoint = "$BANK_ENDPOINT/my", token = token)
+    /** 获取我的题库（分页） */
+    suspend fun getMyBanks(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageQuestionBankResponse> {
+        val result = getWithToken(
+            endpoint = "$BANK_ENDPOINT/my",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -89,9 +98,8 @@ class QuestionBankApi : BaseApiService() {
     /** 添加题目到题库 */
     suspend fun addQuestionToBank(token: String, bankId: Long, questionId: Long): ApiResponse<Unit> {
         val result = postWithToken(
-            endpoint = "$BANK_ENDPOINT/$bankId/questions",
-            token = token,
-            body = mapOf("questionId" to questionId)
+            endpoint = "$BANK_ENDPOINT/$bankId/questions/$questionId",
+            token = token
         )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, Unit)
@@ -111,10 +119,14 @@ class QuestionBankApi : BaseApiService() {
     }
 
     /** 导出题库（返回下载 URL） */
-    suspend fun exportBank(token: String, bankId: Long): ApiResponse<Unit> {
-        val result = getWithToken(endpoint = "$BANK_ENDPOINT/$bankId/export", token = token)
+    suspend fun exportBank(token: String, bankId: Long): ApiResponse<String> {
+        val result = getWithToken(
+            endpoint = "/api/question-import-export/export",
+            token = token,
+            parameters = mapOf("bankId" to bankId)
+        )
         return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, Unit)
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
             else -> ApiResponse(500, "未知状态", null)
         }

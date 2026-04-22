@@ -42,10 +42,10 @@ class UserManageApi : BaseApiService() {
 
     /**
      * 按角色查询全部用户（不分页）
-     * GET /api/admin/users/role/{role}
+     * GET /api/admin/users/by-role/{role}
      */
     suspend fun getUsersByRole(token: String, role: String): ApiResponse<List<UserResponse>> {
-        val result = getWithToken(endpoint = "$USER_ENDPOINT/role/$role", token = token)
+        val result = getWithToken(endpoint = "$USER_ENDPOINT/by-role/$role", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -107,10 +107,10 @@ class UserManageApi : BaseApiService() {
 
     /**
      * 重置用户密码
-     * POST /api/admin/users/{id}/reset-password
+     * PUT /api/admin/users/{id}/reset-password
      */
     suspend fun resetPassword(token: String, userId: Long, newPassword: String): ApiResponse<Unit> {
-        val result = postWithToken(
+        val result = putWithToken(
             endpoint = "$USER_ENDPOINT/$userId/reset-password",
             token = token,
             body = ResetPasswordRequest(newPassword)

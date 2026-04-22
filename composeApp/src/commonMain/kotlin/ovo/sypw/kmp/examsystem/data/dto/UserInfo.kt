@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class UserInfo(
     val id: Long,
     val username: String,
-    val realName: String,
+    val realName: String? = null,
     val nickname: String? = null,
     val email: String? = null,
     val role: String,  // STUDENT, TEACHER, ADMIN

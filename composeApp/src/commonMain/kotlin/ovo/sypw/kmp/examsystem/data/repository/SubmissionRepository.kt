@@ -2,7 +2,7 @@ package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.SubmissionApi
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
-import ovo.sypw.kmp.examsystem.data.dto.StartExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -16,7 +16,7 @@ class SubmissionRepository(
 ) {
 
     /** 开始考试 */
-    suspend fun startExam(examId: Long): Result<StartExamResponse> = runWithToken { token ->
+    suspend fun startExam(examId: Long): Result<SubmissionResponse> = runWithToken { token ->
         val r = submissionApi.startExam(token, examId)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
@@ -65,6 +65,19 @@ class SubmissionRepository(
      */
     suspend fun getExamSubmissions(examId: Long): Result<List<SubmissionResponse>> = runWithToken { token ->
         val r = submissionApi.getExamSubmissions(token, examId)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /**
+     * 分页查询提交记录
+     */
+    suspend fun querySubmissions(
+        examId: Long? = null,
+        userId: Long? = null,
+        page: Int = 0,
+        size: Int = 20
+    ): Result<PageSubmissionResponse> = runWithToken { token ->
+        val r = submissionApi.querySubmissions(token, examId, userId, page, size)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 

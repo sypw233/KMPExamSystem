@@ -48,8 +48,8 @@ data class ImportErrorDetail(
  */
 @Serializable
 data class FileUploadResponse(
-    val key: String,
-    val url: String,
+    val fileKey: String,
+    val fileUrl: String,
     val fileName: String? = null,
     val fileSize: Long? = null,
     val contentType: String? = null
@@ -104,11 +104,13 @@ data class AiGradingResponse(
 @Serializable
 data class QuestionStatisticsResponse(
     val questionId: Long,
-    val content: String,
-    val totalAnswers: Int = 0,
+    val questionContent: String? = null,
+    val questionType: String? = null,
+    val usageCount: Int = 0,
+    val totalAttempts: Int = 0,
     val correctCount: Int = 0,
-    val correctRate: Double = 0.0,
-    val averageScore: Double = 0.0
+    val accuracy: Double = 0.0,
+    val optionDistribution: Map<String, Int> = emptyMap()
 )
 
 /**
@@ -121,5 +123,22 @@ data class CourseStatisticsResponse(
     val totalStudents: Int = 0,
     val totalExams: Int = 0,
     val averageScore: Double = 0.0,
-    val passRate: Double = 0.0
+    val highestScore: Int = 0,
+    val lowestScore: Int = 0
+)
+
+/**
+ * 分页题库响应
+ */
+@Serializable
+data class PageQuestionBankResponse(
+    val totalPages: Int = 0,
+    val totalElements: Long = 0,
+    val size: Int = 20,
+    val content: List<QuestionBankResponse> = emptyList(),
+    val number: Int = 0,
+    val first: Boolean = true,
+    val last: Boolean = true,
+    val numberOfElements: Int = 0,
+    val empty: Boolean = true
 )

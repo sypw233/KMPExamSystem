@@ -17,6 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
@@ -50,6 +53,11 @@ expect fun PlatformKoinApplication(content: @Composable () -> Unit)
 @Composable
 fun App() {
     Logger.i("APP START ON ${getPlatform().name}")
+    setSingletonImageLoaderFactory {
+        ImageLoader.Builder(it)
+            .components { add(KtorNetworkFetcherFactory()) }
+            .build()
+    }
     PlatformKoinApplication {
         AppTheme {
             MainAppContent()

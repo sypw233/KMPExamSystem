@@ -150,15 +150,22 @@ private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordC
             )
         }
 
-        if (statistics.scoreRecords.isEmpty()) {
+        if (statistics.scores.isEmpty()) {
             item {
                 Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                     Text("暂无考试记录", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
-            items(statistics.scoreRecords, key = { it.submissionId }) { record ->
-                GradeRecordCard(record = record, onClick = { onRecordClick(record.submissionId) })
+            items(statistics.scores, key = { it.examId }) { record ->
+                val clickable = record.submissionId != null
+                GradeRecordCard(
+                    record = record,
+                    clickable = clickable,
+                    onClick = {
+                        record.submissionId?.let { onRecordClick(it) }
+                    }
+                )
             }
         }
 
@@ -185,14 +192,14 @@ private fun StatsSummaryCard(statistics: StudentStatisticsResponse) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(label = "参加考试", value = "${statistics.completedExams}")
+                StatItem(label = "参加考试", value = "${statistics.totalExams}")
                 StatItem(label = "平均分", value = "%.1f".format(statistics.averageScore))
                 StatItem(label = "最高分", value = "${statistics.highestScore}")
             }
 
             // 完成率进度条
             if (statistics.totalExams > 0) {
-                val completionRate = statistics.completedExams.toFloat() / statistics.totalExams
+                val completionRate = statistics.scores.size.toFloat() / statistics.totalExams
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -240,9 +247,11 @@ private fun StatItem(label: String, value: String) {
 }
 
 @Composable
-private fun GradeRecordCard(record: StudentScoreRecord, onClick: () -> Unit) {
+private fun GradeRecordCard(record: StudentScoreRecord, clickable: Boolean, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().then(
+            if (clickable) Modifier.clickable(onClick = onClick) else Modifier
+        ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.medium
@@ -254,31 +263,17 @@ private fun GradeRecordCard(record: StudentScoreRecord, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 状态图标
-            val isGraded = record.status == 2
-            val isSubmitted = record.status >= 1
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = when {
-                    isGraded -> MaterialTheme.colorScheme.primaryContainer
-                    isSubmitted -> MaterialTheme.colorScheme.secondaryContainer
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                },
+                color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(44.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        imageVector = when {
-                            isGraded -> Icons.Default.CheckCircle
-                            isSubmitted -> Icons.Default.Schedule
-                            else -> Icons.Default.HourglassEmpty
-                        },
+                        imageVector = Icons.Default.CheckCircle,
                         contentDescription = null,
                         modifier = Modifier.size(22.dp),
-                        tint = when {
-                            isGraded -> MaterialTheme.colorScheme.onPrimaryContainer
-                            isSubmitted -> MaterialTheme.colorScheme.onSecondaryContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -294,12 +289,6 @@ private fun GradeRecordCard(record: StudentScoreRecord, onClick: () -> Unit) {
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    record.courseName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
                 record.submitTime?.let { t ->
                     Text(
                         t.take(10),
@@ -311,28 +300,17 @@ private fun GradeRecordCard(record: StudentScoreRecord, onClick: () -> Unit) {
 
             // 成绩
             Column(horizontalAlignment = Alignment.End) {
-                if (record.totalScore != null) {
-                    Text(
-                        "${record.totalScore}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        "分",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                } else {
-                    Text(
-                        when (record.status) {
-                            1 -> "待批改"
-                            else -> "--"
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    "${record.score}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    "分",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
         }
     }

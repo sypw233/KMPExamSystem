@@ -1,6 +1,5 @@
 package ovo.sypw.kmp.examsystem.data.dto
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -35,17 +34,6 @@ data class SubmissionResponse(
 )
 
 /**
- * 开始考试响应（后端实际返回 SubmissionResponse，此处复用关键字段）
- */
-@Serializable
-data class StartExamResponse(
-    @SerialName("id")
-    val submissionId: Long,
-    val examId: Long,
-    val startTime: String? = null
-)
-
-/**
  * 记录监考事件请求
  */
 @Serializable
@@ -71,5 +59,21 @@ data class SubjectiveGradeDetail(
     val questionId: Long,
     val score: Int,
     val comment: String? = null
+)
+
+/**
+ * 分页提交记录响应
+ */
+@Serializable
+data class PageSubmissionResponse(
+    val totalPages: Int = 0,
+    val totalElements: Long = 0,
+    val size: Int = 20,
+    val content: List<SubmissionResponse> = emptyList(),
+    val number: Int = 0,
+    val first: Boolean = true,
+    val last: Boolean = true,
+    val numberOfElements: Int = 0,
+    val empty: Boolean = true
 )
 

@@ -28,14 +28,14 @@ class CourseRepository(
     val myEnrollments: StateFlow<List<EnrollmentResponse>> = _myEnrollments.asStateFlow()
 
     /**
-     * 获取所有活跃课程列表
+     * 获取所有活跃课程列表（分页）
      */
     suspend fun loadAllCourses(): Result<List<CourseResponse>> {
         return try {
             val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
             val response = courseApi.getAllActiveCourses(token)
             if (response.code == 200) {
-                val data = response.data ?: emptyList()
+                val data = response.data?.content ?: emptyList()
                 _allCourses.value = data
                 Result.success(data)
             } else {

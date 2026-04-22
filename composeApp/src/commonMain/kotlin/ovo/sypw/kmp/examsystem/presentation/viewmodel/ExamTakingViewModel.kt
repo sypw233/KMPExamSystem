@@ -59,7 +59,7 @@ class ExamTakingViewModel(
                 _uiState.value = ExamTakingUiState.Error(e.message ?: "开始考试失败")
                 return@launch
             }
-            currentSubmissionId = startResult.getOrNull()!!.submissionId
+            currentSubmissionId = startResult.getOrNull()!!.id
 
             // 加载考试详情
             val examResult = examRepository.getExamDetail(examId)

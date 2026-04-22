@@ -4,6 +4,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageCourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
@@ -16,9 +17,13 @@ class CourseApi : BaseApiService() {
         private const val COURSE_ENDPOINT = "/api/courses"
     }
 
-    /** 获取所有活跃课程 */
-    suspend fun getAllActiveCourses(token: String): ApiResponse<List<CourseResponse>> {
-        val result = getWithToken(endpoint = COURSE_ENDPOINT, token = token)
+    /** 获取所有活跃课程（分页） */
+    suspend fun getAllActiveCourses(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageCourseResponse> {
+        val result = getWithToken(
+            endpoint = COURSE_ENDPOINT,
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -58,7 +63,7 @@ class CourseApi : BaseApiService() {
 
     /** 获取我的选课记录 */
     suspend fun getMyEnrollments(token: String): ApiResponse<List<EnrollmentResponse>> {
-        val result = getWithToken(endpoint = "$COURSE_ENDPOINT/enrollments/my", token = token)
+        val result = getWithToken(endpoint = "$COURSE_ENDPOINT/my-enrollments", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

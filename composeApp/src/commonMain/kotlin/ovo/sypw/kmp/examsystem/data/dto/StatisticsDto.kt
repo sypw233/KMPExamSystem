@@ -7,15 +7,11 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class StudentScoreRecord(
-    val submissionId: Long,
     val examId: Long,
     val examTitle: String,
-    val courseName: String,
-    val totalScore: Int? = null,
-    val objectiveScore: Int? = null,
-    val subjectiveScore: Int? = null,
+    val score: Int = 0,
     val submitTime: String? = null,
-    val status: Int = 0
+    val submissionId: Long? = null
 )
 
 /**
@@ -23,13 +19,13 @@ data class StudentScoreRecord(
  */
 @Serializable
 data class StudentStatisticsResponse(
-    val userId: Long,
-    val userName: String,
+    val studentId: Long,
+    val studentName: String,
     val totalExams: Int = 0,
-    val completedExams: Int = 0,
     val averageScore: Double = 0.0,
     val highestScore: Int = 0,
-    val scoreRecords: List<StudentScoreRecord> = emptyList()
+    val lowestScore: Int = 0,
+    val scores: List<StudentScoreRecord> = emptyList()
 )
 
 /**

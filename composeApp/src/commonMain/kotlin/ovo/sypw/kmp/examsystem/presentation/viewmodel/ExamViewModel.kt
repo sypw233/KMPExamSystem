@@ -80,19 +80,15 @@ class ExamViewModel(
         loadManagerExams()
     }
 
-    /** 管理员/教师视角：加载全部考试（含草稿/已发布/已结束） */
+    /** 管理员/教师视角：加载考试列表 */
     fun loadManagerExams() {
         _allExams.value = ExamListUiState.Loading
         viewModelScope.launch {
-            val result = if (userRole == UserRole.ADMIN) {
-                examRepository.loadAllExams()
-            } else {
-                examRepository.loadMyExams()
-            }
-            result.fold(
-                onSuccess = { _allExams.value = ExamListUiState.Success(it) },
-                onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
-            )
+            examRepository.loadAllExams()
+                .fold(
+                    onSuccess = { _allExams.value = ExamListUiState.Success(it) },
+                    onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
+                )
         }
     }
 

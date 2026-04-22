@@ -166,7 +166,7 @@ fun HomeScreen(
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Text(
-                                                text = user.realName.take(1).uppercase(),
+                                                text = user.realName?.take(1)?.uppercase() ?: "?",
                                                 style = MaterialTheme.typography.headlineLarge,
                                                 color = MaterialTheme.colorScheme.onPrimary
                                             )
@@ -176,7 +176,7 @@ fun HomeScreen(
                                     Spacer(modifier = Modifier.height(16.dp))
                                     
                                     Text(
-                                        text = user.realName,
+                                        text = user.realName ?: user.username,
                                         style = MaterialTheme.typography.headlineSmall,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         fontWeight = FontWeight.Bold

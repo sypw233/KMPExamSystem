@@ -5,6 +5,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
@@ -17,9 +18,21 @@ class ExamApi : BaseApiService() {
         private const val EXAM_ENDPOINT = "/api/exams"
     }
 
-    /** 获取所有考试列表 */
-    suspend fun getAllExams(token: String): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = EXAM_ENDPOINT, token = token)
+    /** 查询考试列表（分页） */
+    suspend fun getAllExams(
+        token: String,
+        page: Int = 0,
+        size: Int = 20,
+        status: Int? = null,
+        courseId: Long? = null
+    ): ApiResponse<PageExamResponse> {
+        val params = buildMap<String, Any> {
+            put("page", page)
+            put("size", size)
+            status?.let { put("status", it) }
+            courseId?.let { put("courseId", it) }
+        }
+        val result = getWithToken(endpoint = EXAM_ENDPOINT, token = token, parameters = params)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -48,23 +61,13 @@ class ExamApi : BaseApiService() {
     }
 
     /** 按状态筛选考试 (0-草稿, 1-已发布, 2-已结束) */
-    suspend fun getExamsByStatus(token: String, status: Int): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/status/$status", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
+    suspend fun getExamsByStatus(token: String, status: Int): ApiResponse<PageExamResponse> {
+        return getAllExams(token = token, status = status)
     }
 
     /** 获取指定课程的所有考试 */
-    suspend fun getExamsByCourse(token: String, courseId: Long): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/course/$courseId", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
+    suspend fun getExamsByCourse(token: String, courseId: Long): ApiResponse<PageExamResponse> {
+        return getAllExams(token = token, courseId = courseId)
     }
 
     /** 获取考试的所有题目（按顺序） */
@@ -136,6 +139,20 @@ class ExamApi : BaseApiService() {
         val result = deleteWithToken(endpoint = "$EXAM_ENDPOINT/$examId/questions/$questionId", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, Unit)
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /** 部分更新考试（如发布草稿考试） */
+    suspend fun patchExam(token: String, examId: Long, status: Int): ApiResponse<ExamResponse> {
+        val result = patchWithToken(
+            endpoint = "$EXAM_ENDPOINT/$examId",
+            token = token,
+            parameters = mapOf("status" to status)
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
             else -> ApiResponse(500, "未知状态", null)
         }

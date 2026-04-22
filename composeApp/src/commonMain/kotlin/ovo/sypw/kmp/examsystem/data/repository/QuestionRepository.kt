@@ -23,10 +23,10 @@ class QuestionRepository(
     private val _allQuestions = MutableStateFlow<List<QuestionResponse>>(emptyList())
     val allQuestions: StateFlow<List<QuestionResponse>> = _allQuestions.asStateFlow()
 
-    /** 加载所有题目（管理员） */
+    /** 加载所有题目（管理员，分页） */
     suspend fun loadAllQuestions(): Result<List<QuestionResponse>> = runWithToken { token ->
         val r = questionApi.getAllQuestions(token)
-        if (r.code == 200 && r.data != null) { _allQuestions.value = r.data; r.data }
+        if (r.code == 200 && r.data != null) { _allQuestions.value = r.data.content; r.data.content }
         else throw Exception(r.message)
     }
 

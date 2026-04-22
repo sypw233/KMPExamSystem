@@ -12,6 +12,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
@@ -27,9 +28,23 @@ class QuestionApi : BaseApiService() {
         private const val QUESTION_ENDPOINT = "/api/questions"
     }
 
-    /** 获取所有题目 */
-    suspend fun getAllQuestions(token: String): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = QUESTION_ENDPOINT, token = token)
+    /** 查询题目列表（分页，支持筛选） */
+    suspend fun getAllQuestions(
+        token: String,
+        page: Int = 0,
+        size: Int = 20,
+        type: String? = null,
+        difficulty: String? = null,
+        category: String? = null
+    ): ApiResponse<PageQuestionResponse> {
+        val params = buildMap<String, Any> {
+            put("page", page)
+            put("size", size)
+            type?.let { put("type", it) }
+            difficulty?.let { put("difficulty", it) }
+            category?.let { put("category", it) }
+        }
+        val result = getWithToken(endpoint = QUESTION_ENDPOINT, token = token, parameters = params)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

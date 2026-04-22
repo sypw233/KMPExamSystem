@@ -2,8 +2,8 @@ package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
+import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
-import ovo.sypw.kmp.examsystem.data.dto.StartExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
@@ -19,9 +19,9 @@ class SubmissionApi : BaseApiService() {
     }
 
     /**
-     * 开始考试（创建答题记录）
+     * 开始考试（创建答题记录），后端返回 SubmissionResponse
      */
-    suspend fun startExam(token: String, examId: Long): ApiResponse<StartExamResponse> {
+    suspend fun startExam(token: String, examId: Long): ApiResponse<SubmissionResponse> {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/start",
             token = token,
@@ -29,7 +29,7 @@ class SubmissionApi : BaseApiService() {
         )
         return when (result) {
             is NetworkResult.Success -> {
-                val data = result.data.parseData<StartExamResponse>()
+                val data = result.data.parseData<SubmissionResponse>()
                 ApiResponse(code = result.data.code, message = result.data.msg, data = data)
             }
             is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
@@ -75,7 +75,7 @@ class SubmissionApi : BaseApiService() {
      * 获取学生的所有成绩记录
      */
     suspend fun getMyGrades(token: String, userId: Long): ApiResponse<List<SubmissionResponse>> {
-        val result = getWithToken(endpoint = "$SUBMISSION_ENDPOINT/grades/$userId", token = token)
+        val result = getWithToken(endpoint = "$SUBMISSION_ENDPOINT/user/$userId", token = token)
         return when (result) {
             is NetworkResult.Success -> {
                 val data = result.data.parseData<List<SubmissionResponse>>()
@@ -135,6 +135,33 @@ class SubmissionApi : BaseApiService() {
         return when (result) {
             is NetworkResult.Success -> {
                 val data = result.data.parseData<List<SubmissionResponse>>()
+                ApiResponse(code = result.data.code, message = result.data.msg, data = data)
+            }
+            is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
+            else -> ApiResponse(code = 500, message = "未知状态", data = null)
+        }
+    }
+
+    /**
+     * 分页查询提交记录
+     */
+    suspend fun querySubmissions(
+        token: String,
+        examId: Long? = null,
+        userId: Long? = null,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageSubmissionResponse> {
+        val params = buildMap<String, Any> {
+            put("page", page)
+            put("size", size)
+            examId?.let { put("examId", it) }
+            userId?.let { put("userId", it) }
+        }
+        val result = getWithToken(endpoint = SUBMISSION_ENDPOINT, token = token, parameters = params)
+        return when (result) {
+            is NetworkResult.Success -> {
+                val data = result.data.parseData<PageSubmissionResponse>()
                 ApiResponse(code = result.data.code, message = result.data.msg, data = data)
             }
             is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)

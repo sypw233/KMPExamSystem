@@ -24,8 +24,11 @@ class QuestionBankRepository(
 
     suspend fun loadMyBanks(): Result<List<QuestionBankResponse>> = runWithToken { token ->
         val r = questionBankApi.getMyBanks(token)
-        if (r.code == 200 && r.data != null) { _myBanks.value = r.data; r.data }
-        else throw Exception(r.message)
+        if (r.code == 200 && r.data != null) {
+            val list = r.data.content
+            _myBanks.value = list
+            list
+        } else throw Exception(r.message)
     }
 
     suspend fun createBank(request: QuestionBankRequest): Result<QuestionBankResponse> = runWithToken { token ->

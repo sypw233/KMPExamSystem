@@ -8,9 +8,14 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class AuthResponse(
+    val id: Long,
     val accessToken: String,
     val refreshToken: String,
     val tokenType: String = "Bearer",
     val username: String,
-    val role: String
+    val nickname: String? = null,
+    val realName: String? = null,
+    val role: String,
+    val email: String? = null,
+    val avatar: String? = null
 )

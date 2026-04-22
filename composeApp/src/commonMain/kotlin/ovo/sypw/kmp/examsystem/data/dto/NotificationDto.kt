@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class NotificationResponse(
     val id: Long,
+    val userId: Long = 0,
     val type: String,          // EXAM_PUBLISHED, EXAM_REMINDER, GRADE_RELEASED, COURSE_UPDATE, SYSTEM_ANNOUNCEMENT
     val title: String,
     val content: String,

@@ -82,7 +82,7 @@ class FileApi : BaseApiService() {
      * 获取文件 URL
      */
     suspend fun getFileUrl(token: String, fileKey: String): ApiResponse<String> {
-        val result = getWithToken(endpoint = "$FILE_ENDPOINT/$fileKey", token = token)
+        val result = getWithToken(endpoint = "$FILE_ENDPOINT/url/$fileKey", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

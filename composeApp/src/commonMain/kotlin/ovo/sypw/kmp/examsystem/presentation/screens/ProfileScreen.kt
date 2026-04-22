@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,10 +10,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DateRange
@@ -49,9 +54,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import coil3.compose.AsyncImage
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -160,73 +167,83 @@ private fun ProfileMainScreen(
     onOpenChangePassword: () -> Unit,
     onLogout: () -> Unit
 ) {
-    Box(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().widthIn(max = 680.dp).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("个人中心", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-            UserInfoCard(user = user)
+    val isStudent = user?.role?.uppercase() == "STUDENT"
 
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .widthIn(max = 680.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        UserInfoCard(user = user)
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column {
+                if (isStudent) {
                     MenuItem(
                         icon = Icons.Default.DateRange,
                         title = "考试历史",
                         subtitle = "查看我的成绩记录",
                         onClick = onNavigateToGrades
                     )
-                    MenuItem(
-                        icon = Icons.Default.Notifications,
-                        title = "通知中心",
-                        subtitle = if (unreadCount > 0) "未读 ${unreadCount}" else "查看全部通知",
-                        badge = if (unreadCount > 0) unreadCount.toString() else null,
-                        onClick = onNavigateToNotifications
-                    )
-                    MenuItem(
-                        icon = Icons.Default.Person,
-                        title = "编辑资料",
-                        subtitle = "修改姓名与邮箱",
-                        onClick = onOpenEditProfile
-                    )
-                    MenuItem(
-                        icon = Icons.Default.Lock,
-                        title = "密码管理",
-                        subtitle = "修改登录密码",
-                        onClick = onOpenChangePassword
-                    )
                 }
+                MenuItem(
+                    icon = Icons.Default.Notifications,
+                    title = "通知中心",
+                    subtitle = if (unreadCount > 0) "未读 ${unreadCount}" else "查看全部通知",
+                    badge = if (unreadCount > 0) unreadCount.toString() else null,
+                    onClick = onNavigateToNotifications
+                )
+                MenuItem(
+                    icon = Icons.Default.Person,
+                    title = "编辑资料",
+                    subtitle = "修改姓名与邮箱",
+                    onClick = onOpenEditProfile
+                )
+                MenuItem(
+                    icon = Icons.Default.Lock,
+                    title = "密码管理",
+                    subtitle = "修改登录密码",
+                    onClick = onOpenChangePassword
+                )
             }
-
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column {
-                    if (isAdmin) {
-                        MenuItem(
-                            icon = Icons.Default.Settings,
-                            title = "系统设置",
-                            subtitle = "AI 配置与系统参数",
-                            onClick = onNavigateToSystemSettings
-                        )
-                    }
-                    MenuItem(
-                        icon = Icons.Default.Info,
-                        title = if (isTeacherOrAdmin) "帮助中心" else "帮助与反馈",
-                        subtitle = "功能使用说明",
-                        onClick = { }
-                    )
-                }
-            }
-
-            OutlinedActionButton(
-                text = "退出登录",
-                onClick = onLogout,
-                color = MaterialTheme.colorScheme.error
-            )
         }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column {
+                if (isAdmin) {
+                    MenuItem(
+                        icon = Icons.Default.Settings,
+                        title = "系统设置",
+                        subtitle = "AI 配置与系统参数",
+                        onClick = onNavigateToSystemSettings
+                    )
+                }
+                MenuItem(
+                    icon = Icons.Default.Info,
+                    title = if (isTeacherOrAdmin) "帮助中心" else "帮助与反馈",
+                    subtitle = "功能使用说明",
+                    onClick = { }
+                )
+            }
+        }
+
+        OutlinedActionButton(
+            text = "退出登录",
+            onClick = onLogout,
+            color = MaterialTheme.colorScheme.error
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -236,7 +253,7 @@ private fun EditProfileDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, String?) -> Unit
 ) {
-    var realName by remember { mutableStateOf(user.realName) }
+    var realName by remember { mutableStateOf(user.realName.orEmpty()) }
     var email by remember { mutableStateOf(user.email.orEmpty()) }
 
     AlertDialog(
@@ -325,45 +342,64 @@ private fun ChangePasswordDialog(
 private fun UserInfoCard(user: UserInfo?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        shape = MaterialTheme.shapes.large
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                modifier = Modifier.size(72.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primary
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 头像
+            val avatarUrl = user?.avatar
+            Box(
+                modifier = Modifier.size(56.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = user?.realName?.take(1)?.uppercase() ?: "?",
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onPrimary
+                if (!avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = "头像",
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
                     )
+                } else {
+                    Surface(
+                        modifier = Modifier.size(56.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = user?.realName?.take(1)?.uppercase()
+                                    ?: user?.username?.take(1)?.uppercase()
+                                    ?: "?",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.width(24.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                // 真实姓名
                 Text(
-                    text = user?.realName ?: "未登录",
+                    text = user?.realName ?: user?.username ?: "未登录",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
+
                 if (user != null) {
                     Text(
                         text = "@${user.username}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
-                    user.email?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                        )
-                    }
+
                     val roleLabel = when (user.role.uppercase()) {
                         "STUDENT" -> "学生"
                         "TEACHER" -> "教师"

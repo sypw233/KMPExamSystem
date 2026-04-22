@@ -6,6 +6,7 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -185,6 +186,55 @@ abstract class BaseApiService {
     ): NetworkResult<SaResult> {
         return safeApiCall {
             httpClient.put(HttpClientConfig.getApiUrl(endpoint)) {
+                header(HttpHeaders.Authorization, "Bearer $token")
+                contentType(ContentType.Application.Json)
+                parameters.forEach { (key, value) ->
+                    parameter(key, value)
+                }
+                body?.let { setBody(it) }
+            }
+        }
+    }
+
+    /**
+     * 执行PATCH请求
+     * @param endpoint API端点
+     * @param body 请求体
+     * @param parameters 请求参数
+     * @return 网络请求结果
+     */
+    protected suspend fun patch(
+        endpoint: String,
+        body: Any? = null,
+        parameters: Map<String, Any> = emptyMap()
+    ): NetworkResult<SaResult> {
+        return safeApiCall {
+            httpClient.patch(HttpClientConfig.getApiUrl(endpoint)) {
+                contentType(ContentType.Application.Json)
+                parameters.forEach { (key, value) ->
+                    parameter(key, value)
+                }
+                body?.let { setBody(it) }
+            }
+        }
+    }
+
+    /**
+     * 执行带Token的PATCH请求
+     * @param endpoint API端点
+     * @param token 认证令牌
+     * @param body 请求体
+     * @param parameters 请求参数
+     * @return 网络请求结果
+     */
+    protected suspend fun patchWithToken(
+        endpoint: String,
+        token: String,
+        body: Any? = null,
+        parameters: Map<String, Any> = emptyMap()
+    ): NetworkResult<SaResult> {
+        return safeApiCall {
+            httpClient.patch(HttpClientConfig.getApiUrl(endpoint)) {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 contentType(ContentType.Application.Json)
                 parameters.forEach { (key, value) ->

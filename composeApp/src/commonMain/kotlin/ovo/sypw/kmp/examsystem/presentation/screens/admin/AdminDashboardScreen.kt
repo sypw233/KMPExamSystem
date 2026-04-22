@@ -104,7 +104,8 @@ fun AdminDashboardScreen() {
                         items(data.topCourseStats) { item ->
                             CourseStatBar(
                                 title = item.courseName,
-                                passRate = item.passRate,
+                                highestScore = item.highestScore,
+                                lowestScore = item.lowestScore,
                                 averageScore = item.averageScore
                             )
                         }
@@ -131,24 +132,24 @@ private fun StatCard(title: String, value: String, modifier: Modifier = Modifier
 @Composable
 private fun CourseStatBar(
     title: String,
-    passRate: Double,
+    highestScore: Int,
+    lowestScore: Int,
     averageScore: Double
 ) {
-    val safePass = passRate.coerceIn(0.0, 1.0)
-
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text("avg score: %.1f  pass rate: %.1f%%".format(averageScore, safePass * 100))
+            Text("avg: %.1f  high: %d  low: %d".format(averageScore, highestScore, lowestScore))
             Box(
                 modifier = Modifier.fillMaxWidth().height(10.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
+                val scoreRatio = (averageScore / 100.0).coerceIn(0.0, 1.0).toFloat()
                 Box(
-                    modifier = Modifier.fillMaxWidth(safePass.toFloat()).height(10.dp)
+                    modifier = Modifier.fillMaxWidth(scoreRatio).height(10.dp)
                         .background(Color(0xFF2E7D32))
                 )
             }
