@@ -80,6 +80,7 @@ data class ExamRequest(
     val endTime: String,
     val duration: Int,
     val totalScore: Int,
+    val needsGrading: Boolean = false,
     val allowedPlatforms: String = "both",
     val strictMode: Boolean = false,
     val maxSwitchCount: Int = 3,

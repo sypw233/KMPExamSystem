@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,10 +35,11 @@ data class SubmissionResponse(
 )
 
 /**
- * 开始考试响应（返回 submissionId 用于后续操作）
+ * 开始考试响应（后端实际返回 SubmissionResponse，此处复用关键字段）
  */
 @Serializable
 data class StartExamResponse(
+    @SerialName("id")
     val submissionId: Long,
     val examId: Long,
     val startTime: String? = null
