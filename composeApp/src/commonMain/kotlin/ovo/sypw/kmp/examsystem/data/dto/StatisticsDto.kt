@@ -41,10 +41,13 @@ data class ExamStatisticsResponse(
     val examTitle: String,
     val totalStudents: Int = 0,
     val submittedCount: Int = 0,
+    val completionRate: Double = 0.0,
     val averageScore: Double = 0.0,
     val highestScore: Int = 0,
     val lowestScore: Int = 0,
-    val passRate: Double = 0.0
+    val passCount: Int = 0,
+    val passRate: Double = 0.0,
+    val scoreDistribution: Map<String, Int> = emptyMap()
 )
 
 /**
@@ -52,10 +55,12 @@ data class ExamStatisticsResponse(
  */
 @Serializable
 data class SystemOverviewResponse(
-    val totalUsers: Long = 0,
-    val totalStudents: Long = 0,
-    val totalTeachers: Long = 0,
-    val totalCourses: Long = 0,
-    val totalExams: Long = 0,
-    val totalSubmissions: Long = 0
+    val totalUsers: Int = 0,
+    val studentCount: Int = 0,
+    val teacherCount: Int = 0,
+    val adminCount: Int = 0,
+    val totalCourses: Int = 0,
+    val totalExams: Int = 0,
+    val totalQuestions: Int = 0,
+    val totalSubmissions: Int = 0
 )

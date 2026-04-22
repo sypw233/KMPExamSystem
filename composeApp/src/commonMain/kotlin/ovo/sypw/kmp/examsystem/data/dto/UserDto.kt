@@ -9,9 +9,11 @@ import kotlinx.serialization.Serializable
 data class UserResponse(
     val id: Long,
     val username: String,
+    val nickname: String? = null,
     val realName: String? = null,
     val role: String,
     val email: String? = null,
+    val avatar: String? = null,
     val status: Int = 1,         // 1-启用, 0-禁用
     val createTime: String? = null
 )
@@ -75,6 +77,16 @@ data class PageUserResponse(
     val last: Boolean = true,
     val numberOfElements: Int = 0,
     val empty: Boolean = true
+)
+
+/**
+ * 修改个人信息请求（当前登录用户）
+ */
+@Serializable
+data class UserProfileRequest(
+    val nickname: String? = null,
+    val email: String? = null,
+    val avatar: String? = null
 )
 
 /**

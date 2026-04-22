@@ -30,19 +30,17 @@ data class QuestionBankRequest(
  */
 @Serializable
 data class ImportResultResponse(
+    val taskId: String = "",
+    val totalRows: Int = 0,
     val successCount: Int = 0,
-    val failCount: Int = 0,
+    val failedCount: Int = 0,
     val errors: List<ImportErrorDetail> = emptyList()
 )
 
-/**
- * 导入错误详情
- */
 @Serializable
 data class ImportErrorDetail(
     val row: Int,
-    val field: String? = null,
-    val message: String
+    val reason: String
 )
 
 /**

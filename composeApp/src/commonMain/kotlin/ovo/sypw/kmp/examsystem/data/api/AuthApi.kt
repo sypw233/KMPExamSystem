@@ -6,6 +6,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ChangePasswordRequest
 import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
+import ovo.sypw.kmp.examsystem.data.dto.UserProfileRequest
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
@@ -201,6 +202,25 @@ class AuthApi : BaseApiService() {
             else -> {
                 ApiResponse(code = 500, message = "未知状态", data = null)
             }
+        }
+    }
+
+    /**
+     * 修改个人信息（当前登录用户）
+     * @param token 访问令牌
+     * @param request 包含昵称、邮箱、头像的请求
+     * @return 修改结果
+     */
+    suspend fun updateProfile(token: String, request: UserProfileRequest): ApiResponse<Unit> {
+        val result = putWithToken(
+            endpoint = "$AUTH_ENDPOINT/profile",
+            token = token,
+            body = request
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
+            is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
+            else -> ApiResponse(code = 500, message = "未知状态", data = null)
         }
     }
 }

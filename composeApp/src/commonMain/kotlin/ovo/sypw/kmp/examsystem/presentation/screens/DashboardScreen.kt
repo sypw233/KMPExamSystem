@@ -109,7 +109,7 @@ fun DashboardScreen(
                                         NotificationCard(
                                             notification = notification,
                                             onMarkRead = {
-                                                if (!notification.read) {
+                                                if (!notification.isRead) {
                                                     notificationViewModel.markAsRead(notification.id)
                                                 }
                                             }
@@ -228,11 +228,11 @@ private fun NotificationCard(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = if (notification.read)
+            containerColor = if (notification.isRead)
                 MaterialTheme.colorScheme.surfaceVariant
             else
                 MaterialTheme.colorScheme.inverseSurface,
-            contentColor = if (notification.read)
+            contentColor = if (notification.isRead)
                 MaterialTheme.colorScheme.onSurfaceVariant
             else
                 MaterialTheme.colorScheme.inverseOnSurface
@@ -263,7 +263,7 @@ private fun NotificationCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    if (!notification.read) {
+                    if (!notification.isRead) {
                         Badge(containerColor = MaterialTheme.colorScheme.primary) { Text("新") }
                     }
                 }

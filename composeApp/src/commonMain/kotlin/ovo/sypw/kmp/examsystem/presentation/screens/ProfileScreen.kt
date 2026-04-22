@@ -57,9 +57,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
-import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
-import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
@@ -67,7 +65,6 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 @Composable
 fun ProfileScreen() {
     val authRepository: AuthRepository = koinInject()
-    val userManageRepository: UserManageRepository = koinInject()
     val notificationViewModel: NotificationViewModel = koinInject()
     val scope = rememberCoroutineScope()
 
@@ -115,16 +112,12 @@ fun ProfileScreen() {
             onDismiss = { showEditProfileDialog = false },
             onConfirm = { realName, email ->
                 scope.launch {
-                    userManageRepository.updateUser(
-                        user.id,
-                        UserUpdateRequest(
-                            realName = realName,
-                            email = email,
-                            role = user.role
-                        )
+                    authRepository.updateProfile(
+                        nickname = realName,
+                        email = email,
+                        avatar = null
                     ).onSuccess {
                         snackbar.showSnackbar("资料更新成功")
-                        authRepository.checkAuthState()
                     }.onFailure {
                         snackbar.showSnackbar("更新失败：${it.message}")
                     }

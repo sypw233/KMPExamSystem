@@ -71,7 +71,7 @@ class NotificationRepository(
             val response = notificationApi.markAsRead(token, notificationId)
             if (response.code == 200) {
                 _notifications.value = _notifications.value.map { n ->
-                    if (n.id == notificationId) n.copy(read = true) else n
+                    if (n.id == notificationId) n.copy(isRead = true) else n
                 }
                 loadUnreadCount()
                 Result.success(Unit)
@@ -91,7 +91,7 @@ class NotificationRepository(
             val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
             val response = notificationApi.markAllAsRead(token)
             if (response.code == 200) {
-                _notifications.value = _notifications.value.map { it.copy(read = true) }
+                _notifications.value = _notifications.value.map { it.copy(isRead = true) }
                 _unreadCount.value = 0
                 Result.success(Unit)
             } else {

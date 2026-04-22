@@ -45,6 +45,7 @@ data class QuestionResponse(
     val score: Int = 0,
     val creatorId: Long? = null,
     val creatorName: String? = null,
+    val bankCount: Long = 0,
     val createTime: String? = null
 )
 

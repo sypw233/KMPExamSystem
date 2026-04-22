@@ -1,9 +1,21 @@
 package ovo.sypw.kmp.examsystem.data.api
 
+import io.ktor.client.call.body
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
+import ovo.sypw.kmp.examsystem.data.dto.result.SaResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
@@ -115,17 +127,57 @@ class QuestionApi : BaseApiService() {
         }
     }
 
-    /** 导入题目（Excel/CSV） */
-    suspend fun importQuestions(token: String, bankId: Long): ApiResponse<Unit> {
-        val result = postWithToken(
-            endpoint = "$QUESTION_ENDPOINT/import",
-            token = token,
-            body = mapOf("bankId" to bankId)
-        )
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, Unit)
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
+    /**
+     * 导入题目（multipart/form-data）
+     * @param token 访问令牌
+     * @param bankId 题库ID（query参数）
+     * @param fileBytes Excel文件内容
+     * @param fileName 文件名
+     */
+    suspend fun importQuestions(token: String, bankId: Long, fileBytes: ByteArray, fileName: String): ApiResponse<ImportResultResponse> {
+        return try {
+            val response = httpClient.post(HttpClientConfig.getApiUrl("$QUESTION_ENDPOINT/import?bankId=$bankId")) {
+                header(io.ktor.http.HttpHeaders.Authorization, "Bearer $token")
+                setBody(
+                    io.ktor.client.request.forms.MultiPartFormDataContent(
+                        io.ktor.client.request.forms.formData {
+                            append("file", fileBytes, io.ktor.http.Headers.build {
+                                append(io.ktor.http.HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                                append(io.ktor.http.HttpHeaders.ContentType, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            })
+                        }
+                    )
+                )
+            }
+            if (response.status == io.ktor.http.HttpStatusCode.OK) {
+                val saResult = response.body<SaResult>()
+                ApiResponse(saResult.code, saResult.msg, saResult.parseData())
+            } else {
+                ApiResponse(response.status.value, "导入失败", null)
+            }
+        } catch (e: Exception) {
+            ApiResponse(500, e.message ?: "导入异常", null)
+        }
+    }
+
+    /**
+     * 下载题目导入模板
+     * @param token 访问令牌
+     * @return 模板文件字节数组
+     */
+    suspend fun downloadTemplate(token: String): ApiResponse<ByteArray> {
+        return try {
+            val response = httpClient.get(HttpClientConfig.getApiUrl("$QUESTION_ENDPOINT/template")) {
+                header(io.ktor.http.HttpHeaders.Authorization, "Bearer $token")
+            }
+            if (response.status == io.ktor.http.HttpStatusCode.OK) {
+                val bytes = response.body<ByteArray>()
+                ApiResponse(200, "下载成功", bytes)
+            } else {
+                ApiResponse(response.status.value, "下载失败", null)
+            }
+        } catch (e: Exception) {
+            ApiResponse(500, e.message ?: "下载异常", null)
         }
     }
 }

@@ -8,6 +8,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ChangePasswordRequest
 import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
+import ovo.sypw.kmp.examsystem.data.dto.UserProfileRequest
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 import ovo.sypw.kmp.examsystem.domain.AuthState
 
@@ -177,6 +178,24 @@ class AuthRepository(
             val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
             val response = authApi.changePassword(token, ChangePasswordRequest(oldPassword, newPassword))
             if (response.code == 200) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 修改个人信息（当前登录用户）
+     */
+    suspend fun updateProfile(nickname: String?, email: String?, avatar: String?): Result<Unit> {
+        return try {
+            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
+            val response = authApi.updateProfile(token, UserProfileRequest(nickname, email, avatar))
+            if (response.code == 200) {
+                checkAuthState()
                 Result.success(Unit)
             } else {
                 Result.failure(Exception(response.message))

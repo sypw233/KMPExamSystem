@@ -224,7 +224,7 @@ private fun NotificationListItem(
 ) {
     Surface(
         onClick = onMarkRead,
-        color = if (notification.read)
+        color = if (notification.isRead)
             MaterialTheme.colorScheme.surface
         else
             MaterialTheme.colorScheme.surfaceVariant,
@@ -263,11 +263,11 @@ private fun NotificationListItem(
                     Text(
                         notification.title,
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = if (notification.read) FontWeight.Normal else FontWeight.Bold,
+                        fontWeight = if (notification.isRead) FontWeight.Normal else FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
-                    if (!notification.read) {
+                    if (!notification.isRead) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Surface(
                             shape = CircleShape,

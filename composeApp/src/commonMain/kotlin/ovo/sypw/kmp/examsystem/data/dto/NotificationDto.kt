@@ -13,7 +13,7 @@ data class NotificationResponse(
     val content: String,
     val relatedId: Long? = null,
     val createTime: String? = null,
-    val read: Boolean = false
+    val isRead: Boolean = false
 )
 
 /**

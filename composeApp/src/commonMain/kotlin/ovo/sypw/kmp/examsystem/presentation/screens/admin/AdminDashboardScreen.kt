@@ -77,8 +77,9 @@ fun AdminDashboardScreen() {
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 StatCard("Users", data.overview.totalUsers.toString(), Modifier.weight(1f))
-                                StatCard("Students", data.overview.totalStudents.toString(), Modifier.weight(1f))
-                                StatCard("Teachers", data.overview.totalTeachers.toString(), Modifier.weight(1f))
+                                StatCard("Students", data.overview.studentCount.toString(), Modifier.weight(1f))
+                                StatCard("Teachers", data.overview.teacherCount.toString(), Modifier.weight(1f))
+                                StatCard("Admins", data.overview.adminCount.toString(), Modifier.weight(1f))
                             }
                         }
                         item {
@@ -88,6 +89,7 @@ fun AdminDashboardScreen() {
                             ) {
                                 StatCard("Courses", data.overview.totalCourses.toString(), Modifier.weight(1f))
                                 StatCard("Exams", data.overview.totalExams.toString(), Modifier.weight(1f))
+                                StatCard("Questions", data.overview.totalQuestions.toString(), Modifier.weight(1f))
                                 StatCard("Submissions", data.overview.totalSubmissions.toString(), Modifier.weight(1f))
                             }
                         }
