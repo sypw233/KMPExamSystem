@@ -10,7 +10,6 @@ import ovo.sypw.kmp.examsystem.presentation.screens.admin.AdminDashboardScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.QuestionBankScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.UserManageScreen
-import ovo.sypw.kmp.examsystem.presentation.screens.teacher.QuestionManageScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.teacher.TeacherExamManageScreen
 
 /**
@@ -67,13 +66,6 @@ fun NavigationScreen(
         }
 
         // ── 题目 ──────────────────────────────────────────────────────────
-        AppRoutes.QUESTIONS -> {
-            QuestionManageScreen(
-                onBack = { /* 顶层无返回 */ },
-                userRole = role
-            )
-        }
-
         AppRoutes.QUESTION_BANKS -> {
             QuestionBankScreen()
         }

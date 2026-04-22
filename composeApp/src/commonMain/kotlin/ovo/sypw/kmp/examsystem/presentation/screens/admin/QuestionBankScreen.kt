@@ -14,17 +14,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankUiState
@@ -69,6 +79,7 @@ fun QuestionBankScreen() {
     var editDialog by remember { mutableStateOf<QuestionBankResponse?>(null) }
     var deleteDialog by remember { mutableStateOf<QuestionBankResponse?>(null) }
     var addQuestionDialog by remember { mutableStateOf(false) }
+    var questionFormDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -87,8 +98,14 @@ fun QuestionBankScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Question Bank") },
+                title = { Text("题库管理") },
                 actions = {
+                    IconButton(onClick = { viewModel.downloadTemplate() }) {
+                        Icon(Icons.Default.Share, contentDescription = "下载模板")
+                    }
+                    IconButton(onClick = { viewModel.importQuestions() }) {
+                        Icon(Icons.Default.Done, contentDescription = "导入")
+                    }
                     IconButton(onClick = { viewModel.refreshBanks() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "refresh")
                     }
@@ -164,12 +181,19 @@ fun QuestionBankScreen() {
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(selectedBank?.name ?: "Select a question bank", style = MaterialTheme.typography.titleMedium)
+                                    Text(selectedBank?.name ?: "请选择题库", style = MaterialTheme.typography.titleMedium)
                                     if (selectedBank != null) {
-                                        TextButton(onClick = { addQuestionDialog = true }) {
-                                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Add question")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            TextButton(onClick = { questionFormDialog = true }) {
+                                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("新建题目")
+                                            }
+                                            TextButton(onClick = { addQuestionDialog = true }) {
+                                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Add question")
+                                            }
                                         }
                                     }
                                 }
@@ -257,6 +281,16 @@ fun QuestionBankScreen() {
             existingQuestionIds = bankQuestions.map { it.id }.toSet(),
             onAdd = { qid -> viewModel.addQuestionToBank(selectedBank!!.id, qid) },
             onDismiss = { addQuestionDialog = false }
+        )
+    }
+
+    if (questionFormDialog) {
+        QuestionFormDialog(
+            onConfirm = { request ->
+                viewModel.createQuestion(request)
+                questionFormDialog = false
+            },
+            onDismiss = { questionFormDialog = false }
         )
     }
 }
@@ -357,5 +391,193 @@ private fun AddQuestionDialog(
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
         dismissButton = {}
+    )
+}
+
+private val questionTypeOptions = listOf("single" to "单选", "multiple" to "多选", "true_false" to "判断", "fill_blank" to "填空", "short_answer" to "简答")
+private val difficultyOptions = listOf("easy" to "简单", "medium" to "中等", "hard" to "困难")
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuestionFormDialog(
+    onConfirm: (QuestionRequest) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var content by remember { mutableStateOf("") }
+    var typeExpanded by remember { mutableStateOf(false) }
+    var selectedType by remember { mutableStateOf("single") }
+    var difficultyExpanded by remember { mutableStateOf(false) }
+    var selectedDifficulty by remember { mutableStateOf("medium") }
+    var options by remember { mutableStateOf(mutableListOf("", "")) }
+    var answer by remember { mutableStateOf("") }
+    var score by remember { mutableStateOf("5") }
+    var category by remember { mutableStateOf("") }
+    var analysis by remember { mutableStateOf("") }
+
+    val showOptions = selectedType == "single" || selectedType == "multiple"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("新建题目") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("题目内容") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = questionTypeOptions.first { it.first == selectedType }.second,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("题目类型") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
+                        questionTypeOptions.forEach { (value, label) ->
+                            DropdownMenuItem(text = { Text(label) }, onClick = {
+                                selectedType = value
+                                typeExpanded = false
+                                if (value != "single" && value != "multiple") {
+                                    options = mutableListOf()
+                                } else if (options.isEmpty()) {
+                                    options = mutableListOf("", "")
+                                }
+                            })
+                        }
+                    }
+                }
+
+                ExposedDropdownMenuBox(
+                    expanded = difficultyExpanded,
+                    onExpandedChange = { difficultyExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = difficultyOptions.first { it.first == selectedDifficulty }.second,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("难度") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = difficultyExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(expanded = difficultyExpanded, onDismissRequest = { difficultyExpanded = false }) {
+                        difficultyOptions.forEach { (value, label) ->
+                            DropdownMenuItem(text = { Text(label) }, onClick = {
+                                selectedDifficulty = value
+                                difficultyExpanded = false
+                            })
+                        }
+                    }
+                }
+
+                if (showOptions) {
+                    Text("选项管理", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    options.forEachIndexed { index, option ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "${('A' + index)}.",
+                                modifier = Modifier.width(28.dp),
+                                fontWeight = FontWeight.Bold
+                            )
+                            OutlinedTextField(
+                                value = option,
+                                onValueChange = { newValue ->
+                                    options = options.toMutableList().also { it[index] = newValue }
+                                },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                placeholder = { Text("选项内容") }
+                            )
+                            IconButton(onClick = {
+                                options = options.toMutableList().also { it.removeAt(index) }
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "删除选项", modifier = Modifier.size(18.dp))
+                            }
+                        }
+                    }
+                    TextButton(onClick = {
+                        options = options.toMutableList().also { it.add("") }
+                    }) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("添加选项")
+                    }
+                }
+
+                OutlinedTextField(
+                    value = answer,
+                    onValueChange = { answer = it },
+                    label = { Text("答案") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text(if (selectedType == "single") "A" else if (selectedType == "multiple") "A,B" else if (selectedType == "true_false") "true" else "答案内容") }
+                )
+
+                OutlinedTextField(
+                    value = score,
+                    onValueChange = { score = it.filter { c -> c.isDigit() } },
+                    label = { Text("分值") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("分类 (可选)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = analysis,
+                    onValueChange = { analysis = it },
+                    label = { Text("解析 (可选)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val optionsJson = if (showOptions && options.any { it.isNotBlank() }) {
+                        val validOptions = options.filter { it.isNotBlank() }
+                        "[${validOptions.joinToString(",") { "\"$it\"" }}]"
+                    } else null
+
+                    onConfirm(
+                        QuestionRequest(
+                            content = content.trim(),
+                            type = selectedType,
+                            options = optionsJson,
+                            answer = answer.trim(),
+                            analysis = analysis.trim().ifBlank { null },
+                            difficulty = selectedDifficulty,
+                            category = category.trim().ifBlank { null },
+                            score = score.toIntOrNull() ?: 5
+                        )
+                    )
+                },
+                enabled = content.isNotBlank() && answer.isNotBlank()
+            ) {
+                Text("创建")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }

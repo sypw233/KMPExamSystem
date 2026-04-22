@@ -107,9 +107,9 @@ class ExamApi : BaseApiService() {
         }
     }
 
-    /** 发布考试 */
+    /** 发布考试（POST） */
     suspend fun publishExam(token: String, examId: Long): ApiResponse<ExamResponse> {
-        val result = putWithToken(endpoint = "$EXAM_ENDPOINT/$examId/publish", token = token)
+        val result = postWithToken(endpoint = "$EXAM_ENDPOINT/$examId/publish", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

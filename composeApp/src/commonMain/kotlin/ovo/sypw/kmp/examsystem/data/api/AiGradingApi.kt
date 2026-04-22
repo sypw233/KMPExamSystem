@@ -14,7 +14,7 @@ import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 class AiGradingApi : BaseApiService() {
 
     companion object {
-        private const val AI_ENDPOINT = "/api/ai"
+        private const val AI_ENDPOINT = "/api/ai-grading"
     }
 
     /** 获取 AI 配置列表 */
@@ -37,7 +37,7 @@ class AiGradingApi : BaseApiService() {
         }
     }
 
-    /** AI 辅助判题（对指定提交的主观题进行自动评分建议） */
+    /** AI 辅助判题 */
     suspend fun aiGrade(token: String, request: AiGradingRequest): ApiResponse<AiGradingResponse> {
         val result = postWithToken(endpoint = "$AI_ENDPOINT/grade", token = token, body = request)
         return when (result) {

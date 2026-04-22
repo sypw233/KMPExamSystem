@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.AuthApi
+import ovo.sypw.kmp.examsystem.data.dto.ChangePasswordRequest
 import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
@@ -163,6 +164,25 @@ class AuthRepository(
         return when (val state = _authState.value) {
             is AuthState.Authenticated -> state.user
             else -> null
+        }
+    }
+
+    /**
+     * 修改密码（用户自助修改）
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     */
+    suspend fun changePassword(oldPassword: String, newPassword: String): Result<Unit> {
+        return try {
+            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
+            val response = authApi.changePassword(token, ChangePasswordRequest(oldPassword, newPassword))
+            if (response.code == 200) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

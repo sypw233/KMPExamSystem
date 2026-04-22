@@ -45,10 +45,19 @@ data class UserUpdateRequest(
 )
 
 /**
- * 重置密码请求
+ * 重置密码请求（管理员用）
  */
 @Serializable
 data class ResetPasswordRequest(
+    val newPassword: String
+)
+
+/**
+ * 修改密码请求（用户自助修改，需验证旧密码）
+ */
+@Serializable
+data class ChangePasswordRequest(
+    val oldPassword: String,
     val newPassword: String
 )
 

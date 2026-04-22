@@ -1,4 +1,4 @@
-﻿package ovo.sypw.kmp.examsystem.presentation.screens
+package ovo.sypw.kmp.examsystem.presentation.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LibraryBooks
-import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
@@ -32,7 +31,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -56,7 +58,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,12 +70,14 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
+import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
-import ovo.sypw.kmp.examsystem.presentation.screens.teacher.QuestionManageScreen
+import ovo.sypw.kmp.examsystem.presentation.components.StudentSelector
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
@@ -105,7 +108,6 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
     val actionState by courseViewModel.actionState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
 
-    var questionNavCourse by rememberSaveable { mutableStateOf<CourseResponse?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<CourseResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<CourseResponse?>(null) }
@@ -123,16 +125,6 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
             }
             else -> Unit
         }
-    }
-
-    if (questionNavCourse != null) {
-        QuestionManageScreen(
-            onBack = { questionNavCourse = null },
-            userRole = userRole,
-            courseId = questionNavCourse!!.id,
-            courseName = questionNavCourse!!.courseName
-        )
-        return
     }
 
     Scaffold(
@@ -183,7 +175,6 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
                                     course = course,
                                     onEdit = { showEditDialog = course },
                                     onDelete = { showDeleteConfirm = course },
-                                    onManageQuestions = { questionNavCourse = course },
                                     onManageEnrollments = { showEnrollmentDialog = course }
                                 )
                             }
@@ -197,7 +188,8 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
 
     if (showCreateDialog) {
         CourseFormDialog(
-            title = "Create Course",
+            title = "创建课程",
+            isAdmin = userRole == UserRole.ADMIN,
             onConfirm = {
                 courseViewModel.createCourse(it)
                 showCreateDialog = false
@@ -208,8 +200,9 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
 
     showEditDialog?.let { course ->
         CourseFormDialog(
-            title = "Edit Course",
+            title = "编辑课程",
             initial = course,
+            isAdmin = userRole == UserRole.ADMIN,
             onConfirm = {
                 courseViewModel.updateCourse(course.id, it)
                 showEditDialog = null
@@ -246,7 +239,6 @@ private fun ManageCourseCard(
     course: CourseResponse,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onManageQuestions: () -> Unit,
     onManageEnrollments: () -> Unit
 ) {
     Card(
@@ -269,11 +261,6 @@ private fun ManageCourseCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(course.courseName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(course.teacherName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                FilledTonalButton(onClick = onManageQuestions) {
-                    Icon(Icons.Default.MenuBook, null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Questions")
                 }
             }
 
@@ -307,25 +294,65 @@ private fun ManageCourseCard(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CourseFormDialog(
     title: String,
     initial: CourseResponse? = null,
+    isAdmin: Boolean = false,
     onConfirm: (CourseRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf(initial?.courseName ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
-    var teacherIdStr by remember { mutableStateOf(initial?.teacherId?.toString() ?: "") }
+
+    // 教师选择器状态（仅管理员）
+    val userManageRepository: UserManageRepository = koinInject()
+    var teachers by remember { mutableStateOf<List<UserResponse>>(emptyList()) }
+    var selectedTeacherId by remember { mutableStateOf<Long?>(initial?.teacherId) }
+    var teacherExpanded by remember { mutableStateOf(false) }
+    var teachersLoaded by remember { mutableStateOf(false) }
+
+    if (isAdmin && !teachersLoaded) {
+        LaunchedEffect(Unit) {
+            userManageRepository.loadUsersByRole("teacher")
+                .onSuccess { teachers = it; teachersLoaded = true }
+                .onFailure { teachersLoaded = true }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Course Name *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
-                OutlinedTextField(value = teacherIdStr, onValueChange = { teacherIdStr = it }, label = { Text("Teacher ID (optional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("课程名称 *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("课程描述") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+
+                if (isAdmin) {
+                    ExposedDropdownMenuBox(expanded = teacherExpanded, onExpandedChange = { teacherExpanded = it }) {
+                        OutlinedTextField(
+                            value = teachers.find { it.id == selectedTeacherId }?.let { "${it.realName ?: it.username} (${it.id})" } ?: "不指定",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("授课教师") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(teacherExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = teacherExpanded, onDismissRequest = { teacherExpanded = false }) {
+                            DropdownMenuItem(
+                                text = { Text("不指定") },
+                                onClick = { selectedTeacherId = null; teacherExpanded = false }
+                            )
+                            teachers.forEach { teacher ->
+                                DropdownMenuItem(
+                                    text = { Text("${teacher.realName ?: teacher.username} (${teacher.id})") },
+                                    onClick = { selectedTeacherId = teacher.id; teacherExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -335,14 +362,14 @@ private fun CourseFormDialog(
                         CourseRequest(
                             courseName = name.trim(),
                             description = description.takeIf { it.isNotBlank() },
-                            teacherId = teacherIdStr.toLongOrNull()
+                            teacherId = selectedTeacherId
                         )
                     )
                 },
                 enabled = name.isNotBlank()
-            ) { Text("Save") }
+            ) { Text("保存") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }
 
@@ -356,11 +383,32 @@ private fun EnrollmentManageDialog(
     val courseRepository: CourseRepository = koinInject()
     val scope = rememberCoroutineScope()
     val students by courseViewModel.courseStudents.collectAsState()
-    var showAddStudent by remember { mutableStateOf(false) }
-    var studentIdInput by remember { mutableStateOf("") }
+    var showStudentSelector by remember { mutableStateOf(false) }
+    var selectedStudentIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
 
     LaunchedEffect(course.id) {
         courseViewModel.loadCourseStudents(course.id)
+    }
+
+    if (showStudentSelector) {
+        StudentSelector(
+            selectedStudentIds = selectedStudentIds,
+            onSelectionChange = { selectedStudentIds = it },
+            onConfirm = {
+                showStudentSelector = false
+                scope.launch {
+                    for (studentId in selectedStudentIds) {
+                        courseRepository.addStudentToCourse(course.id, studentId)
+                    }
+                    selectedStudentIds = emptySet()
+                    courseViewModel.loadCourseStudents(course.id)
+                }
+            },
+            onDismiss = {
+                showStudentSelector = false
+                selectedStudentIds = emptySet()
+            }
+        )
     }
 
     AlertDialog(
@@ -385,33 +433,13 @@ private fun EnrollmentManageDialog(
                         }
                     }
                 }
-                if (showAddStudent) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = studentIdInput,
-                            onValueChange = { studentIdInput = it },
-                            label = { Text("Student ID") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        Button(onClick = {
-                            val sid = studentIdInput.toLongOrNull() ?: return@Button
-                            scope.launch {
-                                courseRepository.addStudentToCourse(course.id, sid)
-                                studentIdInput = ""
-                                showAddStudent = false
-                                courseViewModel.loadCourseStudents(course.id)
-                            }
-                        }) { Text("Add") }
-                    }
-                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { showAddStudent = !showAddStudent }) {
+            TextButton(onClick = { showStudentSelector = true }) {
                 Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(if (showAddStudent) "Hide" else "Assign Student")
+                Text("批量添加学生")
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
@@ -430,8 +458,8 @@ private fun EnrollmentCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(enrollment.teacherName.ifBlank { "Student" }, fontWeight = FontWeight.Bold)
-                Text("enroll: ${enrollment.enrollTime ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                Text(enrollment.studentName.ifBlank { "Student" }, fontWeight = FontWeight.Bold)
+                Text("enroll: ${enrollment.enrollmentTime ?: "-"}", style = MaterialTheme.typography.bodySmall)
             }
             TextButton(
                 onClick = onRemove,

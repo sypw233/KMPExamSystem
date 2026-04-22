@@ -31,9 +31,9 @@ class AiGradingRepository(
         }
     }
 
-    suspend fun aiGrade(submissionId: Long, questionId: Long): Result<AiGradingResponse> {
+    suspend fun aiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<AiGradingResponse> {
         return runWithToken { token ->
-            val r = aiGradingApi.aiGrade(token, AiGradingRequest(submissionId, questionId))
+            val r = aiGradingApi.aiGrade(token, AiGradingRequest(questionId, studentAnswer, maxScore))
             if (r.code == 200 && r.data != null) r.data
             else throw Exception(r.message)
         }

@@ -141,7 +141,7 @@ private fun ExamContent(
     var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
     var focusViolationCount by remember { mutableStateOf(0) }
     var showForceSubmitDialog by remember { mutableStateOf(false) }
-    val strictThreshold = if (exam.exam.maxSwitchCount > 0) exam.exam.maxSwitchCount else 3
+    val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
 
     LaunchedEffect(Unit) {

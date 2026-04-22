@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.teacher
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +18,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -29,7 +32,16 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,10 +69,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import java.util.Calendar
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
@@ -77,12 +92,21 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 fun TeacherExamManageScreen(
     onBack: () -> Unit,
     userRole: UserRole = UserRole.TEACHER,
-    availableCourses: List<CourseResponse> = emptyList()   // 可用课程列表（用于新建考试选课）
+    availableCourses: List<CourseResponse> = emptyList()
 ) {
     val viewModel: ExamViewModel = koinInject()
+    val courseViewModel: CourseViewModel = koinInject()
     val allExamsState by viewModel.allExams.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
+    val courseUiState by courseViewModel.allCoursesState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val courses = availableCourses.takeIf { it.isNotEmpty() }
+        ?: (courseUiState as? CourseUiState.Success)?.courses ?: emptyList()
+
+    LaunchedEffect(Unit) {
+        if (availableCourses.isEmpty()) courseViewModel.loadAllCourses()
+    }
 
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("未开始", "进行中", "已结束")
@@ -93,12 +117,10 @@ fun TeacherExamManageScreen(
     var composeExam by remember { mutableStateOf<ExamResponse?>(null) }
     var viewSubmissionsExam by remember { mutableStateOf<ExamResponse?>(null) }
 
-    // 设置角色并加载数据
     LaunchedEffect(userRole) {
         viewModel.setRole(userRole)
     }
 
-    // actionState 响应
     LaunchedEffect(actionState) {
         when (val s = actionState) {
             is ExamActionState.Success -> {
@@ -182,12 +204,11 @@ fun TeacherExamManageScreen(
                         }
                     }
                     is ExamListUiState.Success -> {
-                        // 按 Tab 过滤
                         val filteredExams = state.exams.filter { exam ->
                             when (selectedTab) {
-                                0 -> exam.status == 0             // 草稿（未开始）
-                                1 -> exam.status == 1             // 已发布（进行中）
-                                2 -> exam.status == 2             // 已结束
+                                0 -> exam.status == 0
+                                1 -> exam.status == 1
+                                2 -> exam.status == 2
                                 else -> true
                             }
                         }
@@ -233,7 +254,7 @@ fun TeacherExamManageScreen(
     if (showCreateDialog) {
         ExamFormDialog(
             title = "新建考试",
-            courses = availableCourses,
+            courses = courses,
             onConfirm = { req ->
                 viewModel.createExam(req)
                 showCreateDialog = false
@@ -247,7 +268,7 @@ fun TeacherExamManageScreen(
         ExamFormDialog(
             title = "编辑考试",
             initial = exam,
-            courses = availableCourses,
+            courses = courses,
             onConfirm = { req ->
                 viewModel.updateExam(exam.id, req)
                 showEditDialog = null
@@ -313,7 +334,6 @@ private fun ManageExamCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 课程标签
                 Surface(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     shape = MaterialTheme.shapes.small
@@ -325,7 +345,6 @@ private fun ManageExamCard(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
-                // 状态标签
                 Surface(color = statusColor, shape = MaterialTheme.shapes.small) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -356,7 +375,6 @@ private fun ManageExamCard(
                      color = MaterialTheme.colorScheme.outline)
             }
 
-            // 操作区（仅草稿可编辑/删除/发布/组卷）
             if (canEdit) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -393,6 +411,7 @@ private fun ManageExamCard(
 
 // ─── 考试表单对话框 ────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExamFormDialog(
     title: String,
@@ -407,80 +426,270 @@ private fun ExamFormDialog(
     var totalScore by remember { mutableStateOf(initial?.totalScore?.toString() ?: "100") }
     var startTime by remember { mutableStateOf(initial?.startTime ?: "") }
     var endTime by remember { mutableStateOf(initial?.endTime ?: "") }
-    val courseId = initial?.courseId ?: courses.firstOrNull()?.id ?: 0L
+    var selectedCourseId by remember { mutableStateOf(initial?.courseId ?: courses.firstOrNull()?.id ?: 0L) }
+    var courseExpanded by remember { mutableStateOf(false) }
+
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
 
     val isValid = examTitle.isNotBlank() && duration.toIntOrNull() != null
             && totalScore.toIntOrNull() != null && startTime.isNotBlank() && endTime.isNotBlank()
+            && selectedCourseId > 0
+
+    Column {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(title) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // 课程选择器
+                    ExposedDropdownMenuBox(expanded = courseExpanded, onExpandedChange = { courseExpanded = it }) {
+                        OutlinedTextField(
+                            value = courses.find { it.id == selectedCourseId }?.courseName ?: "请选择课程",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("所属课程 *") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(courseExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor()
+                        )
+                        ExposedDropdownMenu(expanded = courseExpanded, onDismissRequest = { courseExpanded = false }) {
+                            courses.forEach { course ->
+                                DropdownMenuItem(
+                                    text = { Text(course.courseName) },
+                                    onClick = { selectedCourseId = course.id; courseExpanded = false }
+                                )
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = examTitle,
+                        onValueChange = { examTitle = it },
+                        label = { Text("考试名称 *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("描述") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = duration,
+                            onValueChange = { duration = it },
+                            label = { Text("时长(分钟) *") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = totalScore,
+                            onValueChange = { totalScore = it },
+                            label = { Text("总分 *") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // 开始时间
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("开始时间", style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = if (startTime.isBlank()) "未选择" else formatDateTimeForDisplay(startTime),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (startTime.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = { showStartTimePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, "选择开始时间")
+                        }
+                    }
+                    // 结束时间
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("结束时间", style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                text = if (endTime.isBlank()) "未选择" else formatDateTimeForDisplay(endTime),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (endTime.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant
+                                        else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = { showEndTimePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, "选择结束时间")
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onConfirm(ExamRequest(
+                            title = examTitle.trim(),
+                            description = description.takeIf { it.isNotBlank() },
+                            courseId = selectedCourseId,
+                            startTime = startTime.trim(),
+                            endTime = endTime.trim(),
+                            duration = duration.toInt(),
+                            totalScore = totalScore.toInt()
+                        ))
+                    },
+                    enabled = isValid
+                ) { Text(if (initial == null) "创建" else "保存") }
+            },
+            dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
+        )
+
+        if (showStartTimePicker) {
+            DateTimePickerDialog(
+                initialDateTime = startTime,
+                onConfirm = { startTime = it; showStartTimePicker = false },
+                onDismiss = { showStartTimePicker = false }
+            )
+        }
+        if (showEndTimePicker) {
+            DateTimePickerDialog(
+                initialDateTime = endTime,
+                onConfirm = { endTime = it; showEndTimePicker = false },
+                onDismiss = { showEndTimePicker = false }
+            )
+        }
+    }
+}
+
+// ─── 日期时间格式化工具 ─────────────────────────────────────────────────────────
+
+private fun formatDateTimeForDisplay(isoDateTime: String): String {
+    if (isoDateTime.isBlank()) return ""
+    val normalized = isoDateTime.replace('T', ' ')
+    val parts = normalized.split(" ")
+    if (parts.size < 2) return isoDateTime
+    val datePart = parts[0]
+    val timePart = parts[1].take(5)
+    return "$datePart $timePart"
+}
+
+private fun parseDateTimeComponents(isoDateTime: String): List<Int> {
+    return try {
+        val normalized = isoDateTime.replace('T', ' ')
+        val parts = normalized.split(" ")
+        val dateParts = parts[0].split("-")
+        val timeParts = parts[1].split(":")
+        listOf(
+            dateParts[0].toInt(),
+            dateParts[1].toInt(),
+            dateParts[2].toInt(),
+            timeParts[0].toInt(),
+            timeParts[1].toInt()
+        )
+    } catch (_: Exception) {
+        listOf(2024, 1, 1, 9, 0)
+    }
+}
+
+private fun formatDateTime(year: Int, month: Int, day: Int, hour: Int, minute: Int): String {
+    return "%04d-%02d-%02dT%02d:%02d:00".format(year, month, day, hour, minute)
+}
+
+// ─── 日期时间选择器对话框（Material3 官方组件）──────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateTimePickerDialog(
+    initialDateTime: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val components = remember(initialDateTime) { parseDateTimeComponents(initialDateTime) }
+
+    val initialDate = Calendar.getInstance().apply {
+        set(components[0], components[1] - 1, components[2])
+    }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDate.timeInMillis
+    )
+    val timePickerState = rememberTimePickerState(
+        initialHour = components[3],
+        initialMinute = components[4],
+        is24Hour = true
+    )
+
+    // false = 显示 TimeInput（文字输入），true = 显示 TimePicker（表盘）
+    var showClockFace by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        title = { Text("选择日期时间") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = examTitle,
-                    onValueChange = { examTitle = it },
-                    label = { Text("考试名称 *") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("描述") },
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                DatePicker(state = datePickerState)
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 时间区域：TimeInput + 切换按钮
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = duration,
-                        onValueChange = { duration = it },
-                        label = { Text("时长(分钟) *") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
-                    OutlinedTextField(
-                        value = totalScore,
-                        onValueChange = { totalScore = it },
-                        label = { Text("总分 *") },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f)
-                    )
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (showClockFace) {
+                        TimePicker(state = timePickerState)
+                    } else {
+                        TimeInput(state = timePickerState)
+                    }
                 }
-                OutlinedTextField(
-                    value = startTime,
-                    onValueChange = { startTime = it },
-                    label = { Text("开始时间 (ISO格式) *") },
-                    singleLine = true,
-                    placeholder = { Text("2024-01-01T09:00:00") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = endTime,
-                    onValueChange = { endTime = it },
-                    label = { Text("结束时间 (ISO格式) *") },
-                    singleLine = true,
-                    placeholder = { Text("2024-01-01T11:00:00") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                // 切换按钮
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { showClockFace = !showClockFace }) {
+                        Icon(
+                            if (showClockFace) Icons.Default.Edit else Icons.Default.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(if (showClockFace) "手动输入" else "表盘选择")
+                    }
+                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(ExamRequest(
-                        title = examTitle.trim(),
-                        description = description.takeIf { it.isNotBlank() },
-                        courseId = courseId,
-                        startTime = startTime.trim(),
-                        endTime = endTime.trim(),
-                        duration = duration.toInt(),
-                        totalScore = totalScore.toInt()
-                    ))
-                },
-                enabled = isValid
-            ) { Text(if (initial == null) "创建" else "保存") }
+            TextButton(onClick = {
+                val cal = Calendar.getInstance().apply {
+                    timeInMillis = datePickerState.selectedDateMillis!!
+                }
+                val result = formatDateTime(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH) + 1,
+                    cal.get(Calendar.DAY_OF_MONTH),
+                    timePickerState.hour,
+                    timePickerState.minute
+                )
+                onConfirm(result)
+            }) {
+                Text("确定")
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
     )
 }

@@ -20,7 +20,6 @@ object AppRoutes {
     const val HOME        = "home"         // 首页（所有角色）
     const val COURSES     = "courses"      // 课程（学生浏览 / 教师&管理员管理）
     const val EXAMS       = "exams"        // 考试（学生参加 / 教师&管理员管理）
-    const val QUESTIONS   = "questions"    // 题目管理（教师/管理员）
     const val USERS       = "users"        // 用户管理（仅管理员）
     const val PROFILE     = "profile"      // 我的（所有角色）
     const val STATISTICS  = "statistics"   // 数据概览（管理员首页 = statistics）
@@ -71,8 +70,7 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
     UserRole.TEACHER -> listOf(
         NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home),
         NavigationItem(AppRoutes.COURSES,   "课程管理", Icons.Default.Book),
-        NavigationItem(AppRoutes.QUESTIONS, "题目管理", Icons.Default.Quiz),
-        NavigationItem(AppRoutes.QUESTION_BANKS, "题库", Icons.Default.Analytics),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz),
         NavigationItem(AppRoutes.EXAMS,     "考试管理", Icons.AutoMirrored.Filled.Assignment),
         NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
     )
@@ -80,7 +78,7 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
         NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Dashboard),
         NavigationItem(AppRoutes.USERS,     "用户管理",     Icons.Default.ManageAccounts),
         NavigationItem(AppRoutes.COURSES,   "课程管理",     Icons.Default.Book),
-        NavigationItem(AppRoutes.QUESTION_BANKS, "题库", Icons.Default.Analytics),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz),
         NavigationItem(AppRoutes.EXAMS,     "考试管理",     Icons.AutoMirrored.Filled.Assignment),
         NavigationItem(AppRoutes.SYSTEM_SETTINGS, "系统", Icons.Default.SettingsApplications),
         NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)

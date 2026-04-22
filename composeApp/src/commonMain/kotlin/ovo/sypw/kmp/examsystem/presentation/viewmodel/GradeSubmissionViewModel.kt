@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.data.api.AiGradingApi
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingRequest
-import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.repository.SubmissionRepository
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -71,7 +70,7 @@ class GradeSubmissionViewModel(
         }
     }
 
-    fun submitGrades(submissionId: Long, grades: List<GradeRequest>) {
+    fun submitGrades(submissionId: Long, grades: Map<Long, Int>) {
         _actionState.value = GradeActionState.Loading
         viewModelScope.launch {
             submissionRepository.gradeSubmission(submissionId, grades).fold(
@@ -84,10 +83,10 @@ class GradeSubmissionViewModel(
         }
     }
 
-    suspend fun requestAiGrade(submissionId: Long, questionId: Long): Result<ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse> {
+    suspend fun requestAiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse> {
         return try {
             val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            val resp = aiGradingApi.aiGrade(token, AiGradingRequest(submissionId, questionId))
+            val resp = aiGradingApi.aiGrade(token, AiGradingRequest(questionId, studentAnswer, maxScore))
             if (resp.code == 200 && resp.data != null) {
                 Result.success(resp.data)
             } else {

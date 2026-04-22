@@ -1,7 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.SubmissionApi
-import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
 import ovo.sypw.kmp.examsystem.data.dto.StartExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
@@ -41,10 +40,10 @@ class SubmissionRepository(
     }
 
     /** 记录监考事件 */
-    suspend fun recordProctoringEvent(submissionId: Long, eventType: String, description: String? = null) {
+    suspend fun recordProctoringEvent(examId: Long, eventType: String, detail: String? = null) {
         try {
             val token = tokenStorage.getAccessToken() ?: return
-            submissionApi.recordProctoringEvent(token, ProctoringEventRequest(submissionId, eventType, description))
+            submissionApi.recordProctoringEvent(token, ProctoringEventRequest(examId, eventType, detail))
         } catch (_: Exception) {
             // 监考事件记录失败不阻断主流程
         }
@@ -53,9 +52,9 @@ class SubmissionRepository(
     /**
      * 主观题手动评分（教师）
      * @param submissionId 提交记录 ID
-     * @param grades 评分列表，每项对应一道主观题
+     * @param grades 评分 Map（questionId -> score）
      */
-    suspend fun gradeSubmission(submissionId: Long, grades: List<GradeRequest>): Result<SubmissionResponse> =
+    suspend fun gradeSubmission(submissionId: Long, grades: Map<Long, Int>): Result<SubmissionResponse> =
         runWithToken { token ->
             val r = submissionApi.gradeSubmission(token, submissionId, grades)
             if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)

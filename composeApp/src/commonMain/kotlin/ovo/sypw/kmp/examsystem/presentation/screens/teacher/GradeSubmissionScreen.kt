@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
-import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 
@@ -145,11 +144,11 @@ fun GradeSubmissionScreen(
                     }
                     Button(
                         onClick = {
-                            val grades = scoreMap.mapNotNull { (qId, strScore) ->
+                            val scoreMapData = scoreMap.mapNotNull { (qId, strScore) ->
                                 val score = strScore.toIntOrNull() ?: return@mapNotNull null
-                                GradeRequest(questionId = qId, score = score, comment = commentMap[qId])
-                            }
-                            viewModel.submitGrades(submissionId, grades)
+                                qId to score
+                            }.toMap()
+                            viewModel.submitGrades(submissionId, scoreMapData)
                         },
                         enabled = actionState !is GradeActionState.Loading
                     ) {
@@ -174,10 +173,11 @@ fun GradeSubmissionScreen(
                             onCommentChange = { commentMap[eq.questionId] = it },
                             onRequestAiGrade = { callback ->
                                 scope.launch {
-                                    val res = viewModel.requestAiGrade(submissionId, eq.questionId)
+                                    val studentAnswer = userAnswers[eq.questionId.toString()] ?: ""
+                                    val res = viewModel.requestAiGrade(eq.questionId, studentAnswer, eq.score)
                                     res.onSuccess { aiRes ->
                                         scoreMap[eq.questionId] = aiRes.suggestedScore.toString()
-                                        commentMap[eq.questionId] = aiRes.feedback ?: "AI 认为该答案合理"
+                                        commentMap[eq.questionId] = aiRes.explanation ?: "AI 认为该答案合理"
                                     }.onFailure {
                                         snackbarHostState.showSnackbar(it.message ?: "AI 判分失败")
                                     }

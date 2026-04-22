@@ -44,22 +44,13 @@ class SystemSettingsViewModel(
         }
     }
 
-    fun saveConfig(
-        provider: String,
-        apiKey: String,
-        model: String,
-        baseUrl: String?,
-        promptTemplate: String?
-    ) {
+    fun saveConfig(configKey: String, configValue: String) {
         _actionState.value = SystemSettingsActionState.Loading
         viewModelScope.launch {
             aiGradingRepository.updateAiConfig(
                 AiConfigRequest(
-                    provider = provider.trim(),
-                    apiKey = apiKey.trim(),
-                    model = model.trim(),
-                    baseUrl = baseUrl?.trim()?.takeIf { it.isNotBlank() },
-                    promptTemplate = promptTemplate?.trim()?.takeIf { it.isNotBlank() }
+                    configKey = configKey.trim(),
+                    configValue = configValue.trim()
                 )
             ).onSuccess {
                 _actionState.value = SystemSettingsActionState.Success("AI config updated")

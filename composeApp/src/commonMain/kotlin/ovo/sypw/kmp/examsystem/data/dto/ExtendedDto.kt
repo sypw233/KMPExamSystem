@@ -62,11 +62,8 @@ data class FileUploadResponse(
  */
 @Serializable
 data class AiConfigRequest(
-    val provider: String,
-    val apiKey: String,
-    val model: String,
-    val baseUrl: String? = null,
-    val promptTemplate: String? = null
+    val configKey: String,
+    val configValue: String
 )
 
 /**
@@ -75,10 +72,9 @@ data class AiConfigRequest(
 @Serializable
 data class AiConfigResponse(
     val id: Long? = null,
-    val provider: String,
-    val model: String,
-    val baseUrl: String? = null,
-    val enabled: Boolean = false
+    val configKey: String,
+    val configValue: String,
+    val description: String? = null
 )
 
 /**
@@ -86,8 +82,9 @@ data class AiConfigResponse(
  */
 @Serializable
 data class AiGradingRequest(
-    val submissionId: Long,
-    val questionId: Long
+    val questionId: Long,
+    val studentAnswer: String,
+    val maxScore: Int
 )
 
 /**
@@ -96,9 +93,11 @@ data class AiGradingRequest(
 @Serializable
 data class AiGradingResponse(
     val questionId: Long,
+    val maxScore: Int,
     val suggestedScore: Int,
-    val feedback: String? = null,
-    val confidence: Double? = null
+    val explanation: String? = null,
+    val strengths: List<String> = emptyList(),
+    val improvements: List<String> = emptyList()
 )
 
 /**

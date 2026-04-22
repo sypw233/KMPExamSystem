@@ -48,9 +48,9 @@ data class StartExamResponse(
  */
 @Serializable
 data class ProctoringEventRequest(
-    val submissionId: Long,
-    val eventType: String,                 // SWITCH_TAB, EXIT_FULLSCREEN, etc
-    val description: String? = null
+    val examId: Long,
+    val eventType: String,                 // tab_switch, exit_fullscreen, blur
+    val detail: String? = null
 )
 
 /**
@@ -58,9 +58,7 @@ data class ProctoringEventRequest(
  */
 @Serializable
 data class GradeRequest(
-    val questionId: Long,
-    val score: Int,
-    val comment: String? = null
+    val questionScores: Map<Long, Int>     // questionId -> score
 )
 
 /**

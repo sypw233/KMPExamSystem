@@ -105,17 +105,17 @@ class SubmissionApi : BaseApiService() {
     /**
      * 主观题手动评分（教师）
      * @param submissionId 提交记录 ID
-     * @param grades 各主观题评分列表
+     * @param grades 评分 Map（questionId -> score）
      */
     suspend fun gradeSubmission(
         token: String,
         submissionId: Long,
-        grades: List<GradeRequest>
+        grades: Map<Long, Int>
     ): ApiResponse<SubmissionResponse> {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/$submissionId/grade",
             token = token,
-            body = mapOf("grades" to grades)
+            body = mapOf("questionScores" to grades)
         )
         return when (result) {
             is NetworkResult.Success -> {

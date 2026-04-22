@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
 import ovo.sypw.kmp.examsystem.data.repository.QuestionRepository
@@ -153,6 +154,30 @@ class QuestionBankViewModel(
                 }
                 .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Remove failed") }
         }
+    }
+
+    fun createQuestion(request: QuestionRequest) {
+        _actionState.value = QuestionBankActionState.Loading
+        viewModelScope.launch {
+            questionRepository.createQuestion(request)
+                .onSuccess { response ->
+                    _actionState.value = QuestionBankActionState.Success("题目创建成功")
+                    loadAllQuestions()
+                    _selectedBank.value?.let { bank ->
+                        loadBankQuestions(bank.id)
+                        refreshBanks()
+                    }
+                }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "创建失败") }
+        }
+    }
+
+    fun downloadTemplate() {
+        _actionState.value = QuestionBankActionState.Success("模板下载功能开发中")
+    }
+
+    fun importQuestions() {
+        _actionState.value = QuestionBankActionState.Success("题目导入功能开发中")
     }
 
     fun resetActionState() {

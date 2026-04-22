@@ -24,7 +24,7 @@ data class ExamResponse(
     val questionCount: Long = 0,
     val allowedPlatforms: String? = null,  // desktop, mobile, both
     val strictMode: Boolean = false,
-    val maxSwitchCount: Int = 0,
+    val maxSwitchCount: Int? = null,
     val fullscreenRequired: Boolean = false,
     val createTime: String? = null
 )
@@ -100,7 +100,7 @@ data class QuestionRequest(
 @Serializable
 data class ExamQuestionRequest(
     val questionId: Long,
-    val orderNum: Int,
+    val sequence: Int,
     val score: Int
 )
 

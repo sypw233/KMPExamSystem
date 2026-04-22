@@ -73,11 +73,11 @@ class ExamComposeViewModel(
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             val currentState = _uiState.value as? ExamComposeUiState.Success ?: return@launch
-            val nextOrder = (currentState.examQuestions.maxOfOrNull { it.orderNum } ?: 0) + 1
+            val nextSequence = (currentState.examQuestions.maxOfOrNull { it.orderNum } ?: 0) + 1
             
             examRepository.addQuestionToExam(
                 examId = examId,
-                request = ExamQuestionRequest(questionId = questionId, orderNum = nextOrder, score = score)
+                request = ExamQuestionRequest(questionId = questionId, sequence = nextSequence, score = score)
             ).onSuccess {
                 _actionState.value = ExamActionState.Success("已添加")
                 refreshData() // Reload visually

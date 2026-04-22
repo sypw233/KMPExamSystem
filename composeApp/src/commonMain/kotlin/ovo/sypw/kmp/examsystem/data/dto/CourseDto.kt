@@ -23,10 +23,11 @@ data class CourseResponse(
 @Serializable
 data class EnrollmentResponse(
     val id: Long,
+    val studentId: Long,
+    val studentName: String,
     val courseId: Long,
     val courseName: String,
-    val teacherName: String,
-    val enrollTime: String? = null,
+    val enrollmentTime: String? = null,
     val status: Int = 1
 )
 

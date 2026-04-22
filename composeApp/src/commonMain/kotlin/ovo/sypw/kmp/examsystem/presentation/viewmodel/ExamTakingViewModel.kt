@@ -128,10 +128,10 @@ class ExamTakingViewModel(
     /**
      * 记录监考事件（切屏等）
      */
-    fun recordProctoringEvent(eventType: String, description: String? = null) {
-        if (currentSubmissionId <= 0) return
+    fun recordProctoringEvent(eventType: String, detail: String? = null) {
+        if (currentExamId <= 0) return
         viewModelScope.launch {
-            submissionRepository.recordProctoringEvent(currentSubmissionId, eventType, description)
+            submissionRepository.recordProctoringEvent(currentExamId, eventType, detail)
         }
     }
 

@@ -143,7 +143,7 @@ fun ProfileScreen() {
                     return@ChangePasswordDialog
                 }
                 scope.launch {
-                    userManageRepository.resetPassword(user.id, newPwd)
+                    authRepository.changePassword(oldPwd, newPwd)
                         .onSuccess { snackbar.showSnackbar("密码更新成功") }
                         .onFailure { snackbar.showSnackbar("更新失败：${it.message}") }
                 }

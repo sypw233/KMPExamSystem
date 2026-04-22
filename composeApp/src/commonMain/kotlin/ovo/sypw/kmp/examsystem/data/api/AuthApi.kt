@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.AuthResponse
+import ovo.sypw.kmp.examsystem.data.dto.ChangePasswordRequest
 import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
@@ -87,13 +88,13 @@ class AuthApi : BaseApiService() {
 
     /**
      * 刷新 Token
-     * @param refreshToken 刷新令牌
+     * @param refreshToken 刷新令牌（通过 Authorization header 传递）
      * @return 新的 Token 信息
      */
     suspend fun refreshToken(refreshToken: String): ApiResponse<AuthResponse> {
-        val result = post(
+        val result = postWithToken(
             endpoint = "$AUTH_ENDPOINT/refresh",
-            body = mapOf("refreshToken" to refreshToken)
+            token = refreshToken
         )
         
         return when (result) {
@@ -164,6 +165,32 @@ class AuthApi : BaseApiService() {
             token = token
         )
         
+        return when (result) {
+            is NetworkResult.Success -> {
+                ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
+            }
+            is NetworkResult.Error -> {
+                ApiResponse(code = 500, message = result.message, data = null)
+            }
+            else -> {
+                ApiResponse(code = 500, message = "未知状态", data = null)
+            }
+        }
+    }
+
+    /**
+     * 修改密码（用户自助修改，需验证旧密码）
+     * @param token 访问令牌
+     * @param request 包含旧密码和新密码的请求
+     * @return 修改结果
+     */
+    suspend fun changePassword(token: String, request: ChangePasswordRequest): ApiResponse<Unit> {
+        val result = postWithToken(
+            endpoint = "$AUTH_ENDPOINT/change-password",
+            token = token,
+            body = request
+        )
+
         return when (result) {
             is NetworkResult.Success -> {
                 ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
