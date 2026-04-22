@@ -25,7 +25,7 @@ class SubmissionApi : BaseApiService() {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/start",
             token = token,
-            body = mapOf("examId" to examId)
+            parameters = mapOf("examId" to examId)
         )
         return when (result) {
             is NetworkResult.Success -> {
@@ -115,7 +115,7 @@ class SubmissionApi : BaseApiService() {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/$submissionId/grade",
             token = token,
-            body = mapOf("questionScores" to grades)
+            body = GradeRequest(questionScores = grades)
         )
         return when (result) {
             is NetworkResult.Success -> {

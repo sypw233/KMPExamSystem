@@ -50,12 +50,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
@@ -63,6 +65,7 @@ import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankViewModel
+import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +78,9 @@ fun QuestionBankScreen() {
     val allQuestions by viewModel.allQuestions.collectAsState()
 
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val fileUtils = rememberFileUtils()
+
     var createDialog by remember { mutableStateOf(false) }
     var editDialog by remember { mutableStateOf<QuestionBankResponse?>(null) }
     var deleteDialog by remember { mutableStateOf<QuestionBankResponse?>(null) }
@@ -100,10 +106,38 @@ fun QuestionBankScreen() {
             TopAppBar(
                 title = { Text("题库管理") },
                 actions = {
-                    IconButton(onClick = { viewModel.downloadTemplate() }) {
+                    IconButton(onClick = {
+                        viewModel.downloadTemplate(
+                            onSuccess = { bytes ->
+                                scope.launch {
+                                    fileUtils.saveFile(bytes, "question_template.xlsx", "xlsx")
+                                }
+                            },
+                            onError = { scope.launch { snackbar.showSnackbar(it) } }
+                        )
+                    }) {
                         Icon(Icons.Default.Share, contentDescription = "下载模板")
                     }
-                    IconButton(onClick = { viewModel.importQuestions() }) {
+                    IconButton(onClick = {
+                        val bankId = selectedBank?.id
+                        if (bankId == null) {
+                            scope.launch { snackbar.showSnackbar("请先选择一个题库") }
+                            return@IconButton
+                        }
+                        scope.launch {
+                            val file = fileUtils.selectFile()
+                            if (file != null) {
+                                val bytes = fileUtils.readBytes(file)
+                                viewModel.importQuestions(
+                                    bankId = bankId,
+                                    fileBytes = bytes,
+                                    fileName = file.name,
+                                    onSuccess = { },
+                                    onError = { scope.launch { snackbar.showSnackbar(it) } }
+                                )
+                            }
+                        }
+                    }) {
                         Icon(Icons.Default.Done, contentDescription = "导入")
                     }
                     IconButton(onClick = { viewModel.refreshBanks() }) {

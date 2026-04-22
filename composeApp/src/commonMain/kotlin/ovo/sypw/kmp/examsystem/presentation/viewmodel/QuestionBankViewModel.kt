@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
@@ -172,12 +173,50 @@ class QuestionBankViewModel(
         }
     }
 
-    fun downloadTemplate() {
-        _actionState.value = QuestionBankActionState.Success("模板下载功能开发中")
+    fun downloadTemplate(
+        onSuccess: (ByteArray) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        _actionState.value = QuestionBankActionState.Loading
+        viewModelScope.launch {
+            questionRepository.downloadTemplate()
+                .onSuccess {
+                    _actionState.value = QuestionBankActionState.Success("模板下载成功")
+                    onSuccess(it)
+                }
+                .onFailure {
+                    _actionState.value = QuestionBankActionState.Error(it.message ?: "模板下载失败")
+                    onError(it.message ?: "模板下载失败")
+                }
+        }
     }
 
-    fun importQuestions() {
-        _actionState.value = QuestionBankActionState.Success("题目导入功能开发中")
+    fun importQuestions(
+        bankId: Long,
+        fileBytes: ByteArray,
+        fileName: String,
+        onSuccess: (ImportResultResponse) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        _actionState.value = QuestionBankActionState.Loading
+        viewModelScope.launch {
+            questionRepository.importQuestions(bankId, fileBytes, fileName)
+                .onSuccess { result ->
+                    val msg = buildString {
+                        append("导入完成: 成功 ${result.successCount} 条")
+                        if (result.failedCount > 0) append(", 失败 ${result.failedCount} 条")
+                    }
+                    _actionState.value = QuestionBankActionState.Success(msg)
+                    loadAllQuestions()
+                    loadBankQuestions(bankId)
+                    refreshBanks()
+                    onSuccess(result)
+                }
+                .onFailure {
+                    _actionState.value = QuestionBankActionState.Error(it.message ?: "导入失败")
+                    onError(it.message ?: "导入失败")
+                }
+        }
     }
 
     fun resetActionState() {

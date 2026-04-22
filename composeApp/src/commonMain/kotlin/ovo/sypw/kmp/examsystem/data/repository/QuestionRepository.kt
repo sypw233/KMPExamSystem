@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.QuestionApi
+import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -91,6 +92,18 @@ class QuestionRepository(
     suspend fun getQuestionsByCategory(category: String): Result<List<QuestionResponse>> = runWithToken { token ->
         val r = questionApi.getQuestionsByCategory(token, category)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /** 下载题目导入模板 */
+    suspend fun downloadTemplate(): Result<ByteArray> = runWithToken { token ->
+        val r = questionApi.downloadTemplate(token)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message ?: "下载失败")
+    }
+
+    /** 导入题目（Excel） */
+    suspend fun importQuestions(bankId: Long, fileBytes: ByteArray, fileName: String): Result<ImportResultResponse> = runWithToken { token ->
+        val r = questionApi.importQuestions(token, bankId, fileBytes, fileName)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message ?: "导入失败")
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
