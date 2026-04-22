@@ -57,8 +57,14 @@ data class ExamQuestionResponse(
     val id: Long,
     val examId: Long,
     val questionId: Long,
-    val orderNum: Int,
-    val score: Int,
+    val score: Int = 0,
+    // 后端扁平字段（原始响应）
+    val questionContent: String? = null,
+    val questionType: String? = null,
+    val questionDifficulty: String? = null,
+    val sequence: Int = 0,
+    // 前端嵌套兼容字段（Repository 层自动填充）
+    val orderNum: Int = 0,
     val question: QuestionResponse? = null
 )
 

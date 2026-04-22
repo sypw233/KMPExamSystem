@@ -8,6 +8,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 class ExamRepository(
@@ -48,7 +49,7 @@ class ExamRepository(
 
     suspend fun getExamQuestions(examId: Long): Result<List<ExamQuestionResponse>> = runWithToken { token ->
         val r = examApi.getExamQuestions(token, examId)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        if (r.code == 200) (r.data ?: emptyList()).map { normalizeExamQuestion(it) } else throw Exception(r.message)
     }
 
     suspend fun createExam(request: ExamRequest): Result<ExamResponse> = runWithToken { token ->
@@ -83,7 +84,7 @@ class ExamRepository(
 
     suspend fun addQuestionToExam(examId: Long, request: ExamQuestionRequest): Result<ExamQuestionResponse> = runWithToken { token ->
         val r = examApi.addQuestionToExam(token, examId, request)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        if (r.code == 200 && r.data != null) normalizeExamQuestion(r.data) else throw Exception(r.message)
     }
 
     suspend fun removeQuestionFromExam(examId: Long, questionId: Long): Result<Unit> = runWithToken { token ->
@@ -105,6 +106,23 @@ class ExamRepository(
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByCourse(token, courseId)
         if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /**
+     * 将后端扁平字段转换为前端嵌套结构，保证 UI 兼容性
+     */
+    private fun normalizeExamQuestion(eq: ExamQuestionResponse): ExamQuestionResponse {
+        if (eq.question != null) return eq
+        return eq.copy(
+            orderNum = eq.sequence,
+            question = QuestionResponse(
+                id = eq.questionId,
+                content = eq.questionContent ?: "",
+                type = eq.questionType ?: "",
+                difficulty = eq.questionDifficulty,
+                score = eq.score
+            )
+        )
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
