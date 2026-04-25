@@ -38,9 +38,9 @@ class ExamTakingViewModel(
     private val _uiState = MutableStateFlow<ExamTakingUiState>(ExamTakingUiState.Idle)
     val uiState: StateFlow<ExamTakingUiState> = _uiState.asStateFlow()
 
-    // 答案 Map: questionId(String) -> answer(String)
-    private val _answers = MutableStateFlow<Map<String, String>>(emptyMap())
-    val answers: StateFlow<Map<String, String>> = _answers.asStateFlow()
+    // 答案 Map: questionId -> answer(String)
+    private val _answers = MutableStateFlow<Map<Long, String>>(emptyMap())
+    val answers: StateFlow<Map<Long, String>> = _answers.asStateFlow()
 
     private var currentExamId: Long = -1
     private var currentSubmissionId: Long = -1
@@ -89,7 +89,7 @@ class ExamTakingViewModel(
      */
     fun updateAnswer(questionId: Long, answer: String) {
         _answers.value = _answers.value.toMutableMap().apply {
-            put(questionId.toString(), answer)
+            put(questionId, answer)
         }
     }
 
@@ -99,7 +99,7 @@ class ExamTakingViewModel(
      * @param option 选项字母如"A"
      */
     fun toggleMultipleChoice(questionId: Long, option: String) {
-        val currentAnswer = _answers.value[questionId.toString()] ?: ""
+        val currentAnswer = _answers.value[questionId] ?: ""
         val selectedOptions = if (currentAnswer.isBlank()) mutableSetOf()
         else currentAnswer.split(",").toMutableSet()
 

@@ -146,7 +146,7 @@ fun GradeSubmissionScreen(
                         onClick = {
                             val scoreMapData = scoreMap.mapNotNull { (qId, strScore) ->
                                 val score = strScore.toIntOrNull() ?: return@mapNotNull null
-                                qId.toString() to score
+                                qId to score
                             }.toMap()
                             viewModel.submitGrades(submissionId, scoreMapData)
                         },

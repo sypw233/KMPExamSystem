@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SubmissionRequest(
     val examId: Long,
-    val answers: Map<String, String>   // questionId -> answer 字符串
+    val answers: Map<Long, String>     // questionId -> answer 字符串
 )
 
 /**
@@ -48,7 +48,7 @@ data class ProctoringEventRequest(
  */
 @Serializable
 data class GradeRequest(
-    val questionScores: Map<String, Int>   // questionId -> score, key为字符串以匹配后端JSON
+    val questionScores: Map<Long, Int>     // questionId -> score
 )
 
 /**

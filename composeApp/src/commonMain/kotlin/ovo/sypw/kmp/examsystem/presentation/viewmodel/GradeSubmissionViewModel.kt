@@ -68,7 +68,7 @@ class GradeSubmissionViewModel(
         }
     }
 
-    fun submitGrades(submissionId: Long, grades: Map<String, Int>) {
+    fun submitGrades(submissionId: Long, grades: Map<Long, Int>) {
         _actionState.value = GradeActionState.Loading
         viewModelScope.launch {
             submissionRepository.gradeSubmission(submissionId, grades).fold(

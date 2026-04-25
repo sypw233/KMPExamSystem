@@ -22,7 +22,7 @@ class SubmissionRepository(
     }
 
     /** 提交考试答案 */
-    suspend fun submitExam(examId: Long, answers: Map<String, String>): Result<SubmissionResponse> = runWithToken { token ->
+    suspend fun submitExam(examId: Long, answers: Map<Long, String>): Result<SubmissionResponse> = runWithToken { token ->
         val r = submissionApi.submitExam(token, SubmissionRequest(examId, answers))
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
@@ -54,7 +54,7 @@ class SubmissionRepository(
      * @param submissionId 提交记录 ID
      * @param grades 评分 Map（questionId -> score）
      */
-    suspend fun gradeSubmission(submissionId: Long, grades: Map<String, Int>): Result<SubmissionResponse> =
+    suspend fun gradeSubmission(submissionId: Long, grades: Map<Long, Int>): Result<SubmissionResponse> =
         runWithToken { token ->
             val r = submissionApi.gradeSubmission(token, submissionId, grades)
             if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)

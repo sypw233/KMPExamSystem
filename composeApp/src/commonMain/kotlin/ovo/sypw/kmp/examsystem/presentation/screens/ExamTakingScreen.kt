@@ -131,7 +131,7 @@ fun ExamTakingScreen(
 @Composable
 private fun ExamContent(
     exam: ExamTakingUiState.Ready,
-    answers: Map<String, String>,
+    answers: Map<Long, String>,
     onAnswerChange: (Long, String) -> Unit,
     onToggleMultiple: (Long, String) -> Unit,
     onRecordProctoringEvent: (String, String?) -> Unit,
@@ -236,7 +236,7 @@ private fun ExamContent(
                     QuestionItem(
                         number = index + 1,
                         examQuestion = examQuestion,
-                        currentAnswer = answers[question.id.toString()] ?: "",
+                        currentAnswer = answers[question.id] ?: "",
                         onAnswerChange = { answer -> onAnswerChange(question.id, answer) },
                         onToggleMultiple = { option -> onToggleMultiple(question.id, option) }
                     )

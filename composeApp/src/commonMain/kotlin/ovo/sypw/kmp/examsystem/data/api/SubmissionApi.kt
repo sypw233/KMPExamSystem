@@ -111,7 +111,7 @@ class SubmissionApi : BaseApiService() {
     suspend fun gradeSubmission(
         token: String,
         submissionId: Long,
-        grades: Map<String, Int>
+        grades: Map<Long, Int>
     ): ApiResponse<SubmissionResponse> {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/$submissionId/grade",
