@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
@@ -32,6 +35,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +51,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -92,6 +97,11 @@ fun UserManageScreen() {
     var showDeleteConfirm by remember { mutableStateOf<UserResponse?>(null) }
     var showResetPwdDialog by remember { mutableStateOf<UserResponse?>(null) }
 
+    // 批量删除模式
+    var isBatchMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var showBatchDeleteConfirm by remember { mutableStateOf(false) }
+
     // 监听 actionState 变化显示 Snackbar
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -109,24 +119,68 @@ fun UserManageScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("用户管理") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                actions = {
-                    IconButton(onClick = { viewModel.loadUsers(queryParams) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+            if (isBatchMode) {
+                TopAppBar(
+                    title = { Text("已选择 ${selectedIds.size} 位用户") },
+                    navigationIcon = {
+                        IconButton(onClick = { isBatchMode = false; selectedIds = emptySet() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "退出批量")
+                        }
+                    },
+                    actions = {
+                        TextButton(
+                            onClick = {
+                                val allIds = (listState as? UserListState.Success)?.page?.content?.map { it.id }?.toSet() ?: emptySet()
+                                selectedIds = if (selectedIds == allIds) emptySet() else allIds
+                            }
+                        ) { Text("全选") }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                )
+            } else {
+                TopAppBar(
+                    title = { Text("用户管理") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    actions = {
+                        TextButton(onClick = { isBatchMode = true }) { Text("批量") }
+                        IconButton(onClick = { viewModel.loadUsers(queryParams) }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showCreateDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("新建用户") }
-            )
+            if (!isBatchMode) {
+                ExtendedFloatingActionButton(
+                    onClick = { showCreateDialog = true },
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("新建用户") }
+                )
+            }
+        },
+        bottomBar = {
+            if (isBatchMode && selectedIds.isNotEmpty()) {
+                Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 3.dp) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("已选 ${selectedIds.size} 位用户", style = MaterialTheme.typography.titleMedium)
+                        Button(
+                            onClick = { showBatchDeleteConfirm = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("批量删除")
+                        }
+                    }
+                }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
@@ -178,8 +232,14 @@ fun UserManageScreen() {
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 items(page.content, key = { it.id }) { user ->
+                                    val isSelected = user.id in selectedIds
                                     UserCard(
                                         user = user,
+                                        isBatchMode = isBatchMode,
+                                        isSelected = isSelected,
+                                        onToggleSelect = {
+                                            selectedIds = if (isSelected) selectedIds - user.id else selectedIds + user.id
+                                        },
                                         onEdit = { showEditDialog = user },
                                         onDelete = { showDeleteConfirm = user },
                                         onResetPassword = { showResetPwdDialog = user },
@@ -263,6 +323,27 @@ fun UserManageScreen() {
             onDismiss = { showResetPwdDialog = null }
         )
     }
+
+    // 批量删除确认
+    if (showBatchDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showBatchDeleteConfirm = false },
+            title = { Text("批量删除用户") },
+            text = { Text("确定要删除选中的 ${selectedIds.size} 位用户吗？此操作不可撤销。") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.batchDeleteUsers(selectedIds.toList())
+                        showBatchDeleteConfirm = false
+                        isBatchMode = false
+                        selectedIds = emptySet()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("删除") }
+            },
+            dismissButton = { TextButton(onClick = { showBatchDeleteConfirm = false }) { Text("取消") } }
+        )
+    }
 }
 
 // ── 筛选栏 ────────────────────────────────────────────────────────────────────
@@ -310,6 +391,9 @@ private fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams)
 @Composable
 private fun UserCard(
     user: UserResponse,
+    isBatchMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onResetPassword: () -> Unit,
@@ -319,8 +403,11 @@ private fun UserCard(
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isEnabled) MaterialTheme.colorScheme.surface
-                             else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = when {
+                isSelected -> MaterialTheme.colorScheme.secondaryContainer
+                isEnabled -> MaterialTheme.colorScheme.surface
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -328,6 +415,10 @@ private fun UserCard(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (isBatchMode) {
+                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                Spacer(modifier = Modifier.width(8.dp))
+            }
             // 用户信息
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -357,24 +448,26 @@ private fun UserCard(
             }
 
             // 操作按钮
-            Row {
-                IconButton(onClick = onToggleStatus) {
-                    Icon(
-                        if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
-                        contentDescription = if (isEnabled) "禁用" else "启用",
-                        tint = if (isEnabled) MaterialTheme.colorScheme.error
-                               else MaterialTheme.colorScheme.primary
-                    )
-                }
-                IconButton(onClick = onResetPassword) {
-                    Icon(Icons.Default.LockReset, contentDescription = "重置密码")
-                }
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Person, contentDescription = "编辑")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除",
-                         tint = MaterialTheme.colorScheme.error)
+            if (!isBatchMode) {
+                Row {
+                    IconButton(onClick = onToggleStatus) {
+                        Icon(
+                            if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
+                            contentDescription = if (isEnabled) "禁用" else "启用",
+                            tint = if (isEnabled) MaterialTheme.colorScheme.error
+                                   else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onResetPassword) {
+                        Icon(Icons.Default.LockReset, contentDescription = "重置密码")
+                    }
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Default.Person, contentDescription = "编辑")
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "删除",
+                             tint = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }
@@ -443,7 +536,10 @@ private fun CreateUserDialog(
         onDismissRequest = onDismiss,
         title = { Text("新建用户") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
@@ -532,7 +628,10 @@ private fun EditUserDialog(
         onDismissRequest = onDismiss,
         title = { Text("编辑用户：${user.username}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = realName,
                     onValueChange = { realName = it },
@@ -599,7 +698,10 @@ private fun ResetPasswordDialog(
         onDismissRequest = onDismiss,
         title = { Text("重置密码：$username") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },

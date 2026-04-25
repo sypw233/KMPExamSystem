@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -44,7 +48,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SystemSettingsScreen() {
+fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
     val viewModel: SystemSettingsViewModel = koinInject()
     val uiState by viewModel.uiState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
@@ -65,7 +69,21 @@ fun SystemSettingsScreen() {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("AI 配置管理") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("AI 配置管理") },
+                navigationIcon = {
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "返回"
+                            )
+                        }
+                    }
+                }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Box(
@@ -74,17 +92,25 @@ fun SystemSettingsScreen() {
         ) {
             when (val state = uiState) {
                 is SystemSettingsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
-                is SystemSettingsUiState.Error -> Text(
-                    text = state.message,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(24.dp)
-                )
+                is SystemSettingsUiState.Error -> Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Button(onClick = { viewModel.refresh() }) {
+                        Text("重试")
+                    }
+                }
                 is SystemSettingsUiState.Success -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().widthIn(max = 760.dp).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(state.configs) { config ->
+                        items(state.configs, key = { it.configKey }) { config ->
                             ConfigItem(
                                 config = config,
                                 onSave = { key, value -> viewModel.saveConfig(key, value) }

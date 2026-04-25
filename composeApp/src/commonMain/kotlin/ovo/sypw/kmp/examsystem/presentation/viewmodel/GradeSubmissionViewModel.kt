@@ -5,11 +5,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import ovo.sypw.kmp.examsystem.data.api.AiGradingApi
-import ovo.sypw.kmp.examsystem.data.dto.AiGradingRequest
+import ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
+import ovo.sypw.kmp.examsystem.data.repository.AiGradingRepository
 import ovo.sypw.kmp.examsystem.data.repository.SubmissionRepository
-import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 sealed interface SubmissionsUiState {
     data object Loading : SubmissionsUiState
@@ -27,8 +26,7 @@ sealed interface GradeActionState {
 class GradeSubmissionViewModel(
     private val submissionRepository: SubmissionRepository,
     private val examRepository: ovo.sypw.kmp.examsystem.data.repository.ExamRepository,
-    private val aiGradingApi: AiGradingApi,
-    private val tokenStorage: TokenStorage
+    private val aiGradingRepository: AiGradingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SubmissionsUiState>(SubmissionsUiState.Loading)
@@ -70,7 +68,7 @@ class GradeSubmissionViewModel(
         }
     }
 
-    fun submitGrades(submissionId: Long, grades: Map<Long, Int>) {
+    fun submitGrades(submissionId: Long, grades: Map<String, Int>) {
         _actionState.value = GradeActionState.Loading
         viewModelScope.launch {
             submissionRepository.gradeSubmission(submissionId, grades).fold(
@@ -83,18 +81,8 @@ class GradeSubmissionViewModel(
         }
     }
 
-    suspend fun requestAiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            val resp = aiGradingApi.aiGrade(token, AiGradingRequest(questionId, studentAnswer, maxScore))
-            if (resp.code == 200 && resp.data != null) {
-                Result.success(resp.data)
-            } else {
-                Result.failure(Exception(resp.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun requestAiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<AiGradingResponse> {
+        return aiGradingRepository.aiGrade(questionId, studentAnswer, maxScore)
     }
 
     fun resetActionState() {

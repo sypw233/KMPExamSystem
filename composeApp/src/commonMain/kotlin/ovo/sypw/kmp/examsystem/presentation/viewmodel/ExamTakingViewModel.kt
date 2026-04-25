@@ -45,6 +45,9 @@ class ExamTakingViewModel(
     private var currentExamId: Long = -1
     private var currentSubmissionId: Long = -1
 
+    private val _isSubmitting = MutableStateFlow(false)
+    val isSubmitting: StateFlow<Boolean> = _isSubmitting.asStateFlow()
+
     /**
      * 进入考试：开始考试 + 加载题目
      */
@@ -55,19 +58,20 @@ class ExamTakingViewModel(
 
             // 开始考试（创建答题记录）
             val startResult = submissionRepository.startExam(examId)
-            startResult.onFailure { e ->
-                _uiState.value = ExamTakingUiState.Error(e.message ?: "开始考试失败")
+            val submission = startResult.getOrNull()
+            if (submission == null) {
+                _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
                 return@launch
             }
-            currentSubmissionId = startResult.getOrNull()!!.id
+            currentSubmissionId = submission.id
 
             // 加载考试详情
             val examResult = examRepository.getExamDetail(examId)
-            examResult.onFailure { e ->
-                _uiState.value = ExamTakingUiState.Error(e.message ?: "加载考试信息失败")
+            val exam = examResult.getOrNull()
+            if (exam == null) {
+                _uiState.value = ExamTakingUiState.Error(examResult.exceptionOrNull()?.message ?: "加载考试信息失败")
                 return@launch
             }
-            val exam = examResult.getOrNull()!!
 
             // 加载题目列表
             val questionsResult = examRepository.getExamQuestions(examId)
@@ -112,9 +116,10 @@ class ExamTakingViewModel(
      * 提交考试答案
      */
     fun submitExam() {
+        if (_isSubmitting.value) return
         viewModelScope.launch {
             val currentState = _uiState.value as? ExamTakingUiState.Ready ?: return@launch
-            _uiState.value = ExamTakingUiState.Loading
+            _isSubmitting.value = true
 
             val result = submissionRepository.submitExam(currentExamId, _answers.value)
             result.onSuccess { submission ->
@@ -122,6 +127,7 @@ class ExamTakingViewModel(
             }.onFailure { e ->
                 _uiState.value = ExamTakingUiState.Error(e.message ?: "提交失败")
             }
+            _isSubmitting.value = false
         }
     }
 

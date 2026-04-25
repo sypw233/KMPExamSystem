@@ -55,7 +55,7 @@ class QuestionBankViewModel(
             _uiState.value = QuestionBankUiState.Loading
             questionBankRepository.loadMyBanks()
                 .onSuccess { _uiState.value = QuestionBankUiState.Success(it) }
-                .onFailure { _uiState.value = QuestionBankUiState.Error(it.message ?: "Failed to load question banks") }
+                .onFailure { _uiState.value = QuestionBankUiState.Error(it.message ?: "加载题库失败") }
         }
     }
 
@@ -65,10 +65,10 @@ class QuestionBankViewModel(
         viewModelScope.launch {
             questionBankRepository.createBank(QuestionBankRequest(name.trim(), description?.takeIf { it.isNotBlank() }))
                 .onSuccess {
-                    _actionState.value = QuestionBankActionState.Success("Question bank created")
+                    _actionState.value = QuestionBankActionState.Success("题库创建成功")
                     refreshBanks()
                 }
-                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Create failed") }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "创建失败") }
         }
     }
 
@@ -78,10 +78,10 @@ class QuestionBankViewModel(
         viewModelScope.launch {
             questionBankRepository.updateBank(bankId, QuestionBankRequest(name.trim(), description?.takeIf { it.isNotBlank() }))
                 .onSuccess {
-                    _actionState.value = QuestionBankActionState.Success("Question bank updated")
+                    _actionState.value = QuestionBankActionState.Success("题库更新成功")
                     refreshBanks()
                 }
-                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Update failed") }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "更新失败") }
         }
     }
 
@@ -94,10 +94,10 @@ class QuestionBankViewModel(
                         _selectedBank.value = null
                         _bankQuestions.value = emptyList()
                     }
-                    _actionState.value = QuestionBankActionState.Success("Question bank deleted")
+                    _actionState.value = QuestionBankActionState.Success("题库删除成功")
                     refreshBanks()
                 }
-                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Delete failed") }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "删除失败") }
         }
     }
 
@@ -116,7 +116,7 @@ class QuestionBankViewModel(
                 .onSuccess { _bankQuestions.value = it }
                 .onFailure {
                     _bankQuestions.value = emptyList()
-                    _actionState.value = QuestionBankActionState.Error(it.message ?: "Failed to load bank questions")
+                    _actionState.value = QuestionBankActionState.Error(it.message ?: "加载题库题目失败")
                 }
         }
     }
@@ -136,11 +136,11 @@ class QuestionBankViewModel(
         viewModelScope.launch {
             questionBankRepository.addQuestionToBank(bankId, questionId)
                 .onSuccess {
-                    _actionState.value = QuestionBankActionState.Success("Question added")
+                    _actionState.value = QuestionBankActionState.Success("题目添加成功")
                     loadBankQuestions(bankId)
                     refreshBanks()
                 }
-                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Add failed") }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "添加失败") }
         }
     }
 
@@ -149,11 +149,11 @@ class QuestionBankViewModel(
         viewModelScope.launch {
             questionBankRepository.removeQuestionFromBank(bankId, questionId)
                 .onSuccess {
-                    _actionState.value = QuestionBankActionState.Success("Question removed")
+                    _actionState.value = QuestionBankActionState.Success("题目移除成功")
                     loadBankQuestions(bankId)
                     refreshBanks()
                 }
-                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "Remove failed") }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "移除失败") }
         }
     }
 
@@ -170,6 +170,22 @@ class QuestionBankViewModel(
                     }
                 }
                 .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "创建失败") }
+        }
+    }
+
+    fun updateQuestion(questionId: Long, request: QuestionRequest) {
+        _actionState.value = QuestionBankActionState.Loading
+        viewModelScope.launch {
+            questionRepository.updateQuestion(questionId, request)
+                .onSuccess {
+                    _actionState.value = QuestionBankActionState.Success("题目更新成功")
+                    loadAllQuestions()
+                    _selectedBank.value?.let { bank ->
+                        loadBankQuestions(bank.id)
+                        refreshBanks()
+                    }
+                }
+                .onFailure { _actionState.value = QuestionBankActionState.Error(it.message ?: "更新失败") }
         }
     }
 

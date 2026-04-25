@@ -1,6 +1,8 @@
 package ovo.sypw.kmp.examsystem.presentation.viewmodel
 
 import com.hoc081098.kmp.viewmodel.ViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,14 +40,15 @@ class AdminDashboardViewModel(
 
             val overviewResult = statisticsRepository.getSystemOverview()
             val overview = overviewResult.getOrElse {
-                _uiState.value = AdminDashboardUiState.Error(it.message ?: "Failed to load overview")
+                _uiState.value = AdminDashboardUiState.Error(it.message ?: "加载概览数据失败")
                 return@launch
             }
 
-            val topCourseStats = mutableListOf<CourseStatisticsResponse>()
-            val courseIds = courseRepository.loadAllCourses().getOrDefault(emptyList()).take(4).map { it.id }
-            courseIds.forEach { courseId ->
-                statisticsRepository.getCourseStatistics(courseId).getOrNull()?.let { topCourseStats.add(it) }
+            val topCourseStats = coroutineScope {
+                val courseIds = courseRepository.loadAllCourses().getOrDefault(emptyList()).take(4).map { it.id }
+                courseIds.map { courseId ->
+                    async { statisticsRepository.getCourseStatistics(courseId).getOrNull() }
+                }.mapNotNull { it.await() }
             }
 
             _uiState.value = AdminDashboardUiState.Success(

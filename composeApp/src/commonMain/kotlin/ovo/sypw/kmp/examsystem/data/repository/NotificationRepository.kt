@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.NotificationApi
+import ovo.sypw.kmp.examsystem.data.dto.CreateNotificationRequest
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
@@ -113,6 +114,23 @@ class NotificationRepository(
                 _notifications.value = _notifications.value.filter { it.id != notificationId }
                 loadUnreadCount()
                 Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * 发送自定义通知（管理员）
+     */
+    suspend fun sendNotification(request: CreateNotificationRequest): Result<String> {
+        return try {
+            val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
+            val response = notificationApi.sendNotification(token, request)
+            if (response.code == 200 && response.data != null) {
+                Result.success(response.data)
             } else {
                 Result.failure(Exception(response.message))
             }

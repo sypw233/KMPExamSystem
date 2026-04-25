@@ -60,3 +60,17 @@ data class SystemOverviewResponse(
     val totalQuestions: Int = 0,
     val totalSubmissions: Int = 0
 )
+
+/**
+ * 导出考试成绩请求
+ */
+@Serializable
+data class ExamScoreExportRequest(
+    val includeStudentId: Boolean = true,
+    val includeStudentName: Boolean = true,
+    val includeScore: Boolean = true,
+    val includeSubmitTime: Boolean = true,
+    val includeStatus: Boolean = true,
+    val includeSwitchCount: Boolean = true,
+    val includeProctoringAbnormal: Boolean = false
+)

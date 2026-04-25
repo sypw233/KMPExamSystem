@@ -89,11 +89,17 @@ fun DashboardScreen(
                             }
                         }
                         is NotificationUiState.Error -> {
-                            Text(
-                                text = "通知加载失败",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "通知加载失败",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                TextButton(onClick = { notificationViewModel.loadNotifications() }) {
+                                    Text("重试", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                         }
                         is NotificationUiState.Success -> {
                             val notifications = (notificationState as NotificationUiState.Success).notifications
@@ -143,8 +149,14 @@ fun DashboardScreen(
                             }
                         }
                         is ExamListUiState.Error -> {
-                            Text("考试加载失败", color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("考试加载失败", color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                TextButton(onClick = { examViewModel.loadPublishedExams() }) {
+                                    Text("重试", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
                         }
                         is ExamListUiState.Success -> {
                             val exams = (upcomingExamsState as ExamListUiState.Success).exams

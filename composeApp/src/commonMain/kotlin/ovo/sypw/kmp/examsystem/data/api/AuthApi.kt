@@ -155,31 +155,6 @@ class AuthApi : BaseApiService() {
     }
 
     /**
-     * 登出
-     * 需要 Token 认证
-     * @param token 访问令牌
-     * @return 登出结果
-     */
-    suspend fun logout(token: String): ApiResponse<Unit> {
-        val result = postWithToken(
-            endpoint = "$AUTH_ENDPOINT/logout",
-            token = token
-        )
-        
-        return when (result) {
-            is NetworkResult.Success -> {
-                ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
-            }
-            is NetworkResult.Error -> {
-                ApiResponse(code = 500, message = result.message, data = null)
-            }
-            else -> {
-                ApiResponse(code = 500, message = "未知状态", data = null)
-            }
-        }
-    }
-
-    /**
      * 修改密码（用户自助修改，需验证旧密码）
      * @param token 访问令牌
      * @param request 包含旧密码和新密码的请求

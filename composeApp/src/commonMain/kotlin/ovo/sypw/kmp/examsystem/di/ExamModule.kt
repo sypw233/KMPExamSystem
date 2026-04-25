@@ -12,5 +12,5 @@ val examModule = module {
     single { ExamApi() }
     single { ExamRepository(get(), get()) }
     factory { ExamViewModel(get()) }
-    factory { ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel(get(), get()) }
+    factory { ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel(get(), get(), get()) }
 }

@@ -17,10 +17,10 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    private val _username = MutableStateFlow("admin")
+    private val _username = MutableStateFlow("")
     val username: StateFlow<String> = _username.asStateFlow()
 
-    private val _password = MutableStateFlow("123456")
+    private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password.asStateFlow()
 
     /**

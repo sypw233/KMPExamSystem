@@ -2,6 +2,9 @@ package ovo.sypw.kmp.examsystem.presentation.screens.teacher
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,8 +20,10 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
@@ -31,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,10 +73,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
-import java.util.Calendar
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
+import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
@@ -115,7 +127,13 @@ fun TeacherExamManageScreen(
     var showEditDialog by remember { mutableStateOf<ExamResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<ExamResponse?>(null) }
     var composeExam by remember { mutableStateOf<ExamResponse?>(null) }
+    var randomComposeExam by remember { mutableStateOf<ExamResponse?>(null) }
     var viewSubmissionsExam by remember { mutableStateOf<ExamResponse?>(null) }
+
+    // 批量删除模式状态
+    var isBatchMode by remember { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(userRole) {
         viewModel.setRole(userRole)
@@ -135,18 +153,28 @@ fun TeacherExamManageScreen(
         }
     }
 
-    if (composeExam != null) {
+    composeExam?.let { exam ->
         ExamComposeScreen(
-            examId = composeExam!!.id,
-            courseId = composeExam!!.courseId,
+            examId = exam.id,
+            courseId = exam.courseId,
             onBack = { composeExam = null }
         )
         return
     }
 
-    if (viewSubmissionsExam != null) {
+    randomComposeExam?.let { exam ->
+        ExamComposeScreen(
+            examId = exam.id,
+            courseId = exam.courseId,
+            autoOpenRandomCompose = true,
+            onBack = { randomComposeExam = null }
+        )
+        return
+    }
+
+    viewSubmissionsExam?.let { exam ->
         ExamSubmissionsScreen(
-            examId = viewSubmissionsExam!!.id,
+            examId = exam.id,
             onBack = { viewSubmissionsExam = null }
         )
         return
@@ -154,18 +182,44 @@ fun TeacherExamManageScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(if (userRole == UserRole.ADMIN) "考试管理（全部）" else "考试管理") },
-                actions = {
-                    IconButton(onClick = { viewModel.loadManagerExams() }) {
-                        Icon(Icons.Default.Refresh, "刷新")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            if (isBatchMode) {
+                TopAppBar(
+                    title = { Text("已选择 ${selectedIds.size} 项") },
+                    navigationIcon = {
+                        IconButton(onClick = { isBatchMode = false; selectedIds = emptySet() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "退出批量")
+                        }
+                    },
+                    actions = {
+                        TextButton(
+                            onClick = {
+                                val currentIds = (allExamsState as? ExamListUiState.Success)?.exams
+                                    ?.filter { it.status == 0 }
+                                    ?.map { it.id }
+                                    ?.toSet() ?: emptySet()
+                                selectedIds = if (selectedIds == currentIds) emptySet() else currentIds
+                            }
+                        ) { Text("全选") }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(if (userRole == UserRole.ADMIN) "考试管理（全部）" else "考试管理") },
+                    actions = {
+                        if (selectedTab == 0) {
+                            TextButton(onClick = { isBatchMode = true }) { Text("批量") }
+                        }
+                        IconButton(onClick = { viewModel.loadManagerExams() }) {
+                            Icon(Icons.Default.Refresh, "刷新")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                )
+            }
         },
         floatingActionButton = {
-            if (selectedTab == 0) {
+            if (selectedTab == 0 && !isBatchMode) {
                 ExtendedFloatingActionButton(
                     onClick = { showCreateDialog = true },
                     icon = { Icon(Icons.Default.Add, null) },
@@ -174,6 +228,30 @@ fun TeacherExamManageScreen(
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            if (isBatchMode && selectedIds.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 3.dp
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("已选 ${selectedIds.size} 项", style = MaterialTheme.typography.titleMedium)
+                        Button(
+                            onClick = { showBatchDeleteConfirm = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("批量删除")
+                        }
+                    }
+                }
+            }
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -231,13 +309,20 @@ fun TeacherExamManageScreen(
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(filteredExams, key = { it.id }) { exam ->
+                                    val isSelected = exam.id in selectedIds
                                     ManageExamCard(
                                         exam = exam,
-                                        canEdit = exam.status == 0,
+                                        canEdit = exam.status == 0 && !isBatchMode,
+                                        isBatchMode = isBatchMode && exam.status == 0,
+                                        isSelected = isSelected,
+                                        onToggleSelect = {
+                                            selectedIds = if (isSelected) selectedIds - exam.id else selectedIds + exam.id
+                                        },
                                         onEdit = { showEditDialog = exam },
                                         onDelete = { showDeleteConfirm = exam },
                                         onPublish = { viewModel.publishExam(exam.id) },
                                         onCompose = { composeExam = exam },
+                                        onRandomCompose = { randomComposeExam = exam },
                                         onViewSubmissions = { viewSubmissionsExam = exam }
                                     )
                                 }
@@ -292,6 +377,27 @@ fun TeacherExamManageScreen(
             dismissButton = { TextButton(onClick = { showDeleteConfirm = null }) { Text("取消") } }
         )
     }
+
+    // 批量删除确认
+    if (showBatchDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showBatchDeleteConfirm = false },
+            title = { Text("批量删除考试") },
+            text = { Text("确定要删除选中的 ${selectedIds.size} 项草稿考试吗？此操作不可撤销。") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.batchDeleteExams(selectedIds.toList())
+                        showBatchDeleteConfirm = false
+                        isBatchMode = false
+                        selectedIds = emptySet()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) { Text("删除") }
+            },
+            dismissButton = { TextButton(onClick = { showBatchDeleteConfirm = false }) { Text("取消") } }
+        )
+    }
 }
 
 // ─── 考试卡片 ─────────────────────────────────────────────────────────────────
@@ -300,10 +406,14 @@ fun TeacherExamManageScreen(
 private fun ManageExamCard(
     exam: ExamResponse,
     canEdit: Boolean,
+    isBatchMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onPublish: () -> Unit,
     onCompose: (() -> Unit)? = null,
+    onRandomCompose: (() -> Unit)? = null,
     onViewSubmissions: (() -> Unit)? = null
 ) {
     val statusColor = when (exam.status) {
@@ -324,11 +434,25 @@ private fun ManageExamCard(
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth().clickable(
+            enabled = isBatchMode,
+            onClick = onToggleSelect
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                             else MaterialTheme.colorScheme.surface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            if (isBatchMode) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(exam.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,6 +499,8 @@ private fun ManageExamCard(
                      color = MaterialTheme.colorScheme.outline)
             }
 
+            } // close else
+
             if (canEdit) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -392,6 +518,9 @@ private fun ManageExamCard(
                         Text("删除")
                     }
                     Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = { onRandomCompose?.invoke() }) {
+                        Text("智能组卷", style = MaterialTheme.typography.labelSmall)
+                    }
                     androidx.compose.material3.OutlinedButton(onClick = { onCompose?.invoke() }) {
                         Text("组卷")
                     }
@@ -441,7 +570,10 @@ private fun ExamFormDialog(
             onDismissRequest = onDismiss,
             title = { Text(title) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
                     // 课程选择器
                     ExposedDropdownMenuBox(expanded = courseExpanded, onExpandedChange = { courseExpanded = it }) {
                         OutlinedTextField(
@@ -481,14 +613,16 @@ private fun ExamFormDialog(
                             onValueChange = { duration = it },
                             label = { Text("时长(分钟) *") },
                             singleLine = true,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                         OutlinedTextField(
                             value = totalScore,
                             onValueChange = { totalScore = it },
                             label = { Text("总分 *") },
                             singleLine = true,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                         )
                     }
                     // 开始时间
@@ -605,7 +739,7 @@ private fun formatDateTime(year: Int, month: Int, day: Int, hour: Int, minute: I
 
 // ─── 日期时间选择器对话框（Material3 官方组件）──────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, kotlin.time.ExperimentalTime::class)
 @Composable
 private fun DateTimePickerDialog(
     initialDateTime: String,
@@ -614,11 +748,11 @@ private fun DateTimePickerDialog(
 ) {
     val components = remember(initialDateTime) { parseDateTimeComponents(initialDateTime) }
 
-    val initialDate = Calendar.getInstance().apply {
-        set(components[0], components[1] - 1, components[2])
-    }
+    val initialDateMillis = LocalDate(
+        components[0], components[1], components[2]
+    ).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.timeInMillis
+        initialSelectedDateMillis = initialDateMillis
     )
     val timePickerState = rememberTimePickerState(
         initialHour = components[3],
@@ -672,19 +806,23 @@ private fun DateTimePickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                val cal = Calendar.getInstance().apply {
-                    timeInMillis = datePickerState.selectedDateMillis!!
-                }
-                val result = formatDateTime(
-                    cal.get(Calendar.YEAR),
-                    cal.get(Calendar.MONTH) + 1,
-                    cal.get(Calendar.DAY_OF_MONTH),
-                    timePickerState.hour,
-                    timePickerState.minute
-                )
-                onConfirm(result)
-            }) {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        val selectedDate = Instant.fromEpochMilliseconds(millis)
+                            .toLocalDateTime(TimeZone.UTC).date
+                        val result = formatDateTime(
+                            selectedDate.year,
+                            selectedDate.monthNumber,
+                            selectedDate.dayOfMonth,
+                            timePickerState.hour,
+                            timePickerState.minute
+                        )
+                        onConfirm(result)
+                    }
+                },
+                enabled = datePickerState.selectedDateMillis != null
+            ) {
                 Text("确定")
             }
         },

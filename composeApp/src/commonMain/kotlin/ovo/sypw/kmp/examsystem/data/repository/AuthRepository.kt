@@ -95,18 +95,11 @@ class AuthRepository(
     }
 
     /**
-     * 登出
+     * 登出（JWT 无状态认证，纯前端清除 Token）
      */
     suspend fun logout() {
-        try {
-            val token = tokenStorage.getAccessToken()
-            if (token != null) {
-                authApi.logout(token)
-            }
-        } finally {
-            tokenStorage.clearTokens()
-            _authState.value = AuthState.Unauthenticated
-        }
+        tokenStorage.clearTokens()
+        _authState.value = AuthState.Unauthenticated
     }
 
     /**

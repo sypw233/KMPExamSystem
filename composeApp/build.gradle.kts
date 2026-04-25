@@ -72,6 +72,8 @@ kotlin {
             // FileKit - 跨平台文件操作库
             implementation(libs.filekit.dialogs)
             implementation(libs.filekit.dialogs.compose)
+            // kotlinx-datetime - 跨平台日期时间处理
+            implementation(libs.kotlinx.datetime)
 
         }
         commonTest.dependencies {

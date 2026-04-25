@@ -139,7 +139,9 @@ class CourseViewModel(
         viewModelScope.launch {
             courseRepository.getCourseStudents(courseId)
                 .onSuccess { _courseStudents.value = it }
-                .onFailure { /* 忽略加载失败 */ }
+                .onFailure { e ->
+                    _actionState.value = CourseActionState.Error("加载学生列表失败: ${e.message}")
+                }
         }
     }
 

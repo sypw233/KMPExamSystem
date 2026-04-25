@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.QuestionApi
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
@@ -43,12 +45,6 @@ class QuestionRepository(
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
-    /** 按课程获取题目 */
-    suspend fun getQuestionsByCourse(courseId: Long): Result<List<QuestionResponse>> = runWithToken { token ->
-        val r = questionApi.getQuestionsByCourse(token, courseId)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
-    }
-
     /** 创建题目 */
     suspend fun createQuestion(request: QuestionRequest): Result<QuestionResponse> = runWithToken { token ->
         val r = questionApi.createQuestion(token, request)
@@ -76,24 +72,6 @@ class QuestionRepository(
         } else throw Exception(r.message)
     }
 
-    /** 按类型筛选题目 */
-    suspend fun getQuestionsByType(type: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        val r = questionApi.getQuestionsByType(token, type)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
-    }
-
-    /** 按难度筛选题目 */
-    suspend fun getQuestionsByDifficulty(difficulty: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        val r = questionApi.getQuestionsByDifficulty(token, difficulty)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
-    }
-
-    /** 按分类筛选题目 */
-    suspend fun getQuestionsByCategory(category: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        val r = questionApi.getQuestionsByCategory(token, category)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
-    }
-
     /** 下载题目导入模板 */
     suspend fun downloadTemplate(): Result<ByteArray> = runWithToken { token ->
         val r = questionApi.downloadTemplate(token)
@@ -104,6 +82,30 @@ class QuestionRepository(
     suspend fun importQuestions(bankId: Long, fileBytes: ByteArray, fileName: String): Result<ImportResultResponse> = runWithToken { token ->
         val r = questionApi.importQuestions(token, bankId, fileBytes, fileName)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message ?: "导入失败")
+    }
+
+    /** 批量删除题目 */
+    suspend fun batchDeleteQuestions(ids: List<Long>): Result<BatchDeleteResult> = runWithToken { token ->
+        val r = questionApi.batchDeleteQuestions(token, BatchDeleteRequest(ids))
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /** 按类型筛选题目 */
+    suspend fun getQuestionsByType(type: String): Result<List<QuestionResponse>> = runWithToken { token ->
+        val r = questionApi.getQuestionsByType(token, type)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /** 按难度筛选题目 */
+    suspend fun getQuestionsByDifficulty(difficulty: String): Result<List<QuestionResponse>> = runWithToken { token ->
+        val r = questionApi.getQuestionsByDifficulty(token, difficulty)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /** 按分类筛选题目 */
+    suspend fun getQuestionsByCategory(category: String): Result<List<QuestionResponse>> = runWithToken { token ->
+        val r = questionApi.getQuestionsByCategory(token, category)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {

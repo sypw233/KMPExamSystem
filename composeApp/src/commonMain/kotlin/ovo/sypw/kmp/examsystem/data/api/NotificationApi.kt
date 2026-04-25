@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.CreateNotificationRequest
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageNotificationResponse
 import ovo.sypw.kmp.examsystem.data.dto.UnreadCountResponse
@@ -81,6 +82,25 @@ class NotificationApi : BaseApiService() {
         val result = deleteWithToken(endpoint = "$NOTIFICATION_ENDPOINT/$notificationId", token = token)
         return when (result) {
             is NetworkResult.Success -> ApiResponse(code = result.data.code, message = result.data.msg, data = Unit)
+            is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
+            else -> ApiResponse(code = 500, message = "未知状态", data = null)
+        }
+    }
+
+    /**
+     * 发送自定义通知（管理员）
+     * @param token 访问令牌
+     * @param request 发送通知请求
+     * @return 操作结果消息
+     */
+    suspend fun sendNotification(token: String, request: CreateNotificationRequest): ApiResponse<String> {
+        val result = postWithToken(
+            endpoint = NOTIFICATION_ENDPOINT,
+            token = token,
+            body = request
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(code = result.data.code, message = result.data.msg, data = result.data.parseData())
             is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
             else -> ApiResponse(code = 500, message = "未知状态", data = null)
         }

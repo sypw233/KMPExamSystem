@@ -128,6 +128,41 @@ data class CourseStatisticsResponse(
 )
 
 /**
+ * AI 单题评分详情
+ */
+@Serializable
+data class AiGradingDetail(
+    val questionId: Long,
+    val questionContent: String,
+    val suggestedScore: Int,
+    val maxScore: Int,
+    val explanation: String,
+    val strengths: List<String> = emptyList(),
+    val improvements: List<String> = emptyList()
+)
+
+/**
+ * AI 批量评分请求
+ */
+@Serializable
+data class AiBatchGradingRequest(
+    val submissionId: Long,
+    val concurrency: Int? = null
+)
+
+/**
+ * AI 批量评分响应
+ */
+@Serializable
+data class AiBatchGradingResponse(
+    val submissionId: Long,
+    val gradedCount: Int = 0,
+    val totalSuggestedScore: Int = 0,
+    val objectiveScore: Int? = null,
+    val details: List<AiGradingDetail> = emptyList()
+)
+
+/**
  * 分页题库响应
  */
 @Serializable

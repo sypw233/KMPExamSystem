@@ -124,7 +124,7 @@ fun HomeScreen(
                             ) {
                                 Image(
                                     painter = painterResource(Res.drawable.compose_multiplatform),
-                                    contentDescription = "Compose Logo",
+                                    contentDescription = "应用 Logo",
                                     modifier = Modifier.size(64.dp)
                                 )
                                 Column {

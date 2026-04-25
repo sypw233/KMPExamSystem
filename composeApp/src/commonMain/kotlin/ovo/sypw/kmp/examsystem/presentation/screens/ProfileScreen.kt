@@ -61,19 +61,24 @@ import androidx.compose.ui.text.font.FontWeight
 import coil3.compose.AsyncImage
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.data.repository.FileRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
+import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
 @Composable
 fun ProfileScreen() {
     val authRepository: AuthRepository = koinInject()
+    val fileRepository: FileRepository = koinInject()
     val notificationViewModel: NotificationViewModel = koinInject()
     val scope = rememberCoroutineScope()
+    val fileUtils = rememberFileUtils()
 
     val authState by authRepository.authState.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
@@ -85,6 +90,7 @@ fun ProfileScreen() {
     val snackbar = remember { SnackbarHostState() }
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
+    var showHelpDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         notificationViewModel.loadUnreadCount()
@@ -93,7 +99,7 @@ fun ProfileScreen() {
     when (currentSubScreen) {
         "grades" -> GradeHistoryScreen(onBack = { currentSubScreen = null })
         "notifications" -> NotificationScreen(onBack = { currentSubScreen = null })
-        "system_settings" -> SystemSettingsScreen()
+        "system_settings" -> SystemSettingsScreen(onBack = { currentSubScreen = null })
         else -> {
             Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
                 ProfileMainScreen(
@@ -105,9 +111,10 @@ fun ProfileScreen() {
                     onNavigateToGrades = { currentSubScreen = "grades" },
                     onNavigateToNotifications = { currentSubScreen = "notifications" },
                     onNavigateToSystemSettings = { currentSubScreen = "system_settings" },
-                    onOpenEditProfile = { showEditProfileDialog = true },
                     onOpenChangePassword = { showChangePasswordDialog = true },
-                    onLogout = { scope.launch { authRepository.logout() } }
+                    onLogout = { scope.launch { authRepository.logout() } },
+                    onOpenEditProfile = { showEditProfileDialog = true },
+                    onOpenHelp = { showHelpDialog = true }
                 )
             }
         }
@@ -117,19 +124,36 @@ fun ProfileScreen() {
         EditProfileDialog(
             user = user,
             onDismiss = { showEditProfileDialog = false },
-            onConfirm = { realName, email ->
+            onConfirm = { realName, email, avatarUrl ->
                 scope.launch {
                     authRepository.updateProfile(
                         nickname = realName,
                         email = email,
-                        avatar = null
+                        avatar = avatarUrl
                     ).onSuccess {
                         snackbar.showSnackbar("资料更新成功")
+                        showEditProfileDialog = false
                     }.onFailure {
                         snackbar.showSnackbar("更新失败：${it.message}")
                     }
                 }
-                showEditProfileDialog = false
+            },
+            onUploadAvatar = { onSuccess, onError ->
+                scope.launch {
+                    try {
+                        val file = fileUtils.selectImage()
+                        if (file != null) {
+                            val bytes = fileUtils.readBytes(file)
+                            fileRepository.uploadImage(bytes, file.name)
+                                .onSuccess { response ->
+                                    onSuccess(response.fileUrl)
+                                }
+                                .onFailure { onError(it.message ?: "上传失败") }
+                        }
+                    } catch (e: Exception) {
+                        onError(e.message ?: "上传异常")
+                    }
+                }
             }
         )
     }
@@ -142,14 +166,24 @@ fun ProfileScreen() {
                     scope.launch { snackbar.showSnackbar("请输入旧密码") }
                     return@ChangePasswordDialog
                 }
+                if (newPwd.length < 6) {
+                    scope.launch { snackbar.showSnackbar("新密码长度不能少于6位") }
+                    return@ChangePasswordDialog
+                }
                 scope.launch {
                     authRepository.changePassword(oldPwd, newPwd)
-                        .onSuccess { snackbar.showSnackbar("密码更新成功") }
+                        .onSuccess {
+                            snackbar.showSnackbar("密码更新成功")
+                            showChangePasswordDialog = false
+                        }
                         .onFailure { snackbar.showSnackbar("更新失败：${it.message}") }
                 }
-                showChangePasswordDialog = false
             }
         )
+    }
+
+    if (showHelpDialog) {
+        HelpDialog(onDismiss = { showHelpDialog = false })
     }
 }
 
@@ -163,9 +197,10 @@ private fun ProfileMainScreen(
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToSystemSettings: () -> Unit,
-    onOpenEditProfile: () -> Unit,
     onOpenChangePassword: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenEditProfile: () -> Unit,
+    onOpenHelp: () -> Unit
 ) {
     val isStudent = user?.role?.uppercase() == "STUDENT"
 
@@ -178,7 +213,7 @@ private fun ProfileMainScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        UserInfoCard(user = user)
+        UserInfoCard(user = user, onClick = onOpenEditProfile)
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -199,12 +234,6 @@ private fun ProfileMainScreen(
                     subtitle = if (unreadCount > 0) "未读 ${unreadCount}" else "查看全部通知",
                     badge = if (unreadCount > 0) unreadCount.toString() else null,
                     onClick = onNavigateToNotifications
-                )
-                MenuItem(
-                    icon = Icons.Default.Person,
-                    title = "编辑资料",
-                    subtitle = "修改姓名与邮箱",
-                    onClick = onOpenEditProfile
                 )
                 MenuItem(
                     icon = Icons.Default.Lock,
@@ -232,7 +261,7 @@ private fun ProfileMainScreen(
                     icon = Icons.Default.Info,
                     title = if (isTeacherOrAdmin) "帮助中心" else "帮助与反馈",
                     subtitle = "功能使用说明",
-                    onClick = { }
+                    onClick = onOpenHelp
                 )
             }
         }
@@ -251,16 +280,73 @@ private fun ProfileMainScreen(
 private fun EditProfileDialog(
     user: UserInfo,
     onDismiss: () -> Unit,
-    onConfirm: (String, String?) -> Unit
+    onConfirm: (String, String?, String?) -> Unit,
+    onUploadAvatar: (onSuccess: (String) -> Unit, onError: (String) -> Unit) -> Unit
 ) {
     var realName by remember { mutableStateOf(user.realName.orEmpty()) }
     var email by remember { mutableStateOf(user.email.orEmpty()) }
+    var avatarUrl by remember { mutableStateOf(user.avatar) }
+    var isUploading by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("编辑个人资料") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 头像
+                Box(
+                    modifier = Modifier.size(80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.size(80.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = realName.take(1).uppercase()
+                                        .ifBlank { user.username.take(1).uppercase() },
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        isUploading = true
+                        onUploadAvatar(
+                            { url ->
+                                avatarUrl = url
+                                isUploading = false
+                            },
+                            { error ->
+                                isUploading = false
+                            }
+                        )
+                    },
+                    enabled = !isUploading
+                ) {
+                    Text(if (isUploading) "上传中..." else "更换头像")
+                }
+
                 OutlinedTextField(
                     value = realName,
                     onValueChange = { realName = it },
@@ -278,7 +364,10 @@ private fun EditProfileDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(realName.trim(), email.trim().ifBlank { null }) }, enabled = realName.isNotBlank()) {
+            Button(
+                onClick = { onConfirm(realName.trim(), email.trim().ifBlank { null }, avatarUrl) },
+                enabled = realName.isNotBlank() && !isUploading
+            ) {
                 Text("保存")
             }
         },
@@ -339,11 +428,40 @@ private fun ChangePasswordDialog(
 }
 
 @Composable
-private fun UserInfoCard(user: UserInfo?) {
+private fun HelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("帮助中心") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                HelpItem("考试管理", "教师可以创建、发布和管理考试，设置考试时间和题目。")
+                HelpItem("成绩查看", "学生可以在考试结束后查看自己的成绩和答题详情。")
+                HelpItem("通知中心", "系统会推送考试安排、成绩发布等重要通知。")
+                HelpItem("题库管理", "教师可以维护题库，支持分类、难度和类型筛选。")
+                HelpItem("个人资料", "在编辑资料中可以修改昵称、邮箱和头像。")
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) { Text("知道了") }
+        }
+    )
+}
+
+@Composable
+private fun HelpItem(title: String, desc: String) {
+    Column {
+        Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = MaterialTheme.shapes.large
+        shape = MaterialTheme.shapes.large,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -423,6 +541,13 @@ private fun UserInfoCard(user: UserInfo?) {
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = "编辑资料",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+            )
         }
     }
 }

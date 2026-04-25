@@ -129,6 +129,52 @@ data class PageExamResponse(
 )
 
 /**
+ * 学生考试试卷题目响应（不含答案和解析）
+ */
+@Serializable
+data class ExamPaperQuestionResponse(
+    val examId: Long,
+    val questionId: Long,
+    val questionContent: String,
+    val questionType: String,
+    val questionDifficulty: String,
+    val options: String? = null,
+    val score: Int = 0,
+    val sequence: Int = 0
+)
+
+/**
+ * 智能随机组卷选项
+ */
+@Serializable
+data class ComposeOptions(
+    val shuffleQuestions: Boolean = true,
+    val lenientMode: Boolean = false
+)
+
+/**
+ * 单条组卷规则（按题型）
+ */
+@Serializable
+data class SectionRule(
+    val type: String,                        // single, multiple, true_false, fill_blank, short_answer
+    val count: Int,
+    val scorePerQuestion: Int,
+    val difficultyDistribution: Map<String, Int>? = null   // key: easy/medium/hard, value: 数量
+)
+
+/**
+ * 智能随机组卷请求
+ */
+@Serializable
+data class ComposeRandomExamRequest(
+    val bankId: Long,
+    val expectedTotalScore: Int? = null,
+    val sections: List<SectionRule>,
+    val options: ComposeOptions? = null
+)
+
+/**
  * 分页题目响应
  */
 @Serializable

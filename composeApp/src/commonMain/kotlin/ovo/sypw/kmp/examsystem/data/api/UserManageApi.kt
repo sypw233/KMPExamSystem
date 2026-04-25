@@ -1,6 +1,8 @@
 package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.PageUserResponse
 import ovo.sypw.kmp.examsystem.data.dto.ResetPasswordRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
@@ -41,11 +43,15 @@ class UserManageApi : BaseApiService() {
     }
 
     /**
-     * 按角色查询全部用户（不分页）
-     * GET /api/admin/users/by-role/{role}
+     * 按角色查询全部用户（后端 /by-role/{role} 未实现，复用分页查询取全量）
+     * GET /api/admin/users?role={role}&page=0&size=999
      */
-    suspend fun getUsersByRole(token: String, role: String): ApiResponse<List<UserResponse>> {
-        val result = getWithToken(endpoint = "$USER_ENDPOINT/by-role/$role", token = token)
+    suspend fun getUsersByRole(token: String, role: String): ApiResponse<PageUserResponse> {
+        val result = getWithToken(
+            endpoint = USER_ENDPOINT,
+            token = token,
+            parameters = mapOf("role" to role, "page" to 0, "size" to 999)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -141,6 +147,26 @@ class UserManageApi : BaseApiService() {
      */
     suspend fun disableUser(token: String, userId: Long): ApiResponse<UserResponse> {
         val result = putWithToken(endpoint = "$USER_ENDPOINT/$userId/disable", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /**
+     * 批量删除用户
+     * POST /api/admin/users/batch-delete
+     * @param token 访问令牌
+     * @param request 批量删除请求（ID列表）
+     * @return 批量删除结果
+     */
+    suspend fun batchDeleteUsers(token: String, request: BatchDeleteRequest): ApiResponse<BatchDeleteResult> {
+        val result = postWithToken(
+            endpoint = "$USER_ENDPOINT/batch-delete",
+            token = token,
+            body = request
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

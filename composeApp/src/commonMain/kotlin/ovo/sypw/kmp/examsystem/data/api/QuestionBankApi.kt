@@ -41,10 +41,14 @@ class QuestionBankApi : BaseApiService() {
         }
     }
 
-    /** 获取我的题库（分页） */
+    /**
+     * 获取我的题库（分页）
+     * 后端已合并到 /api/question-banks，通过角色自动区分权限：
+     * 管理员返回全部题库，教师仅返回自己创建的题库。
+     */
     suspend fun getMyBanks(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageQuestionBankResponse> {
         val result = getWithToken(
-            endpoint = "$BANK_ENDPOINT/my",
+            endpoint = BANK_ENDPOINT,
             token = token,
             parameters = mapOf("page" to page, "size" to size)
         )

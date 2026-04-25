@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.UserManageApi
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.PageUserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
@@ -31,11 +33,14 @@ class UserManageRepository(
         else throw Exception(r.message)
     }
 
-    /** 按角色查全量用户 */
+    /** 按角色查全量用户（复用分页接口取全量） */
     suspend fun loadUsersByRole(role: String): Result<List<UserResponse>> = runWithToken { token ->
         val r = userManageApi.getUsersByRole(token, role)
-        if (r.code == 200 && r.data != null) { _usersByRole.value = r.data; r.data }
-        else throw Exception(r.message)
+        if (r.code == 200 && r.data != null) {
+            val list = r.data.content
+            _usersByRole.value = list
+            list
+        } else throw Exception(r.message)
     }
 
     /** 查单个用户详情 */
@@ -88,6 +93,12 @@ class UserManageRepository(
         val r = userManageApi.disableUser(token, userId)
         if (r.code == 200 && r.data != null) { updateLocalUser(r.data); r.data }
         else throw Exception(r.message)
+    }
+
+    /** 批量删除用户 */
+    suspend fun batchDeleteUsers(ids: List<Long>): Result<BatchDeleteResult> = runWithToken { token ->
+        val r = userManageApi.batchDeleteUsers(token, BatchDeleteRequest(ids))
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
     private fun updateLocalUser(updated: UserResponse) {

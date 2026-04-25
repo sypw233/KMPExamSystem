@@ -14,17 +14,17 @@ import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 
 // ── UI 状态 ────────────────────────────────────────────────────────────────
 
-sealed class UserListState {
-    object Loading : UserListState()
-    data class Success(val page: PageUserResponse) : UserListState()
-    data class Error(val message: String) : UserListState()
+sealed interface UserListState {
+    data object Loading : UserListState
+    data class Success(val page: PageUserResponse) : UserListState
+    data class Error(val message: String) : UserListState
 }
 
-sealed class UserActionState {
-    object Idle : UserActionState()
-    object Loading : UserActionState()
-    data class Success(val message: String) : UserActionState()
-    data class Error(val message: String) : UserActionState()
+sealed interface UserActionState {
+    data object Idle : UserActionState
+    data object Loading : UserActionState
+    data class Success(val message: String) : UserActionState
+    data class Error(val message: String) : UserActionState
 }
 
 /**
@@ -149,6 +149,23 @@ class UserManageViewModel(
                     loadUsers()
                 },
                 onFailure = { _actionState.value = UserActionState.Error(it.message ?: "操作失败") }
+            )
+        }
+    }
+
+    /** 批量删除用户 */
+    fun batchDeleteUsers(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        _actionState.value = UserActionState.Loading
+        viewModelScope.launch {
+            userManageRepository.batchDeleteUsers(ids).fold(
+                onSuccess = { result ->
+                    val msg = "已删除 ${result.successCount} 位用户" +
+                            if (result.failedCount > 0) "，${result.failedCount} 位失败" else ""
+                    _actionState.value = UserActionState.Success(msg)
+                    loadUsers()
+                },
+                onFailure = { _actionState.value = UserActionState.Error(it.message ?: "批量删除失败") }
             )
         }
     }

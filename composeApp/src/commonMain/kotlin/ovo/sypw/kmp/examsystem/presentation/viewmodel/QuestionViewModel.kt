@@ -46,10 +46,6 @@ class QuestionViewModel(
     // 完整题目列表（未按类型筛选前）
     private var cachedQuestions: List<QuestionResponse> = emptyList()
 
-    init {
-        loadMyQuestions()
-    }
-
     /** 设置用户角色，管理员加载全量，其他加载我的 */
     fun setRole(role: UserRole) {
         userRole = role

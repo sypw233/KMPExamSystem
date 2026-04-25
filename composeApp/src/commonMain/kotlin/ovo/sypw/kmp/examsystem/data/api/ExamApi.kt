@@ -1,6 +1,10 @@
 package ovo.sypw.kmp.examsystem.data.api
 
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
+import ovo.sypw.kmp.examsystem.data.dto.ComposeRandomExamRequest
+import ovo.sypw.kmp.examsystem.data.dto.ExamPaperQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
@@ -60,6 +64,26 @@ class ExamApi : BaseApiService() {
         }
     }
 
+    /** 学生：获取可参加的考试 */
+    suspend fun getMyAvailableExams(token: String): ApiResponse<List<ExamResponse>> {
+        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/my-available", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /** 学生：获取已完成的考试 */
+    suspend fun getMyCompletedExams(token: String): ApiResponse<List<ExamResponse>> {
+        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/my-completed", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
     /** 按状态筛选考试 (0-草稿, 1-已发布, 2-已结束) */
     suspend fun getExamsByStatus(token: String, status: Int): ApiResponse<PageExamResponse> {
         return getAllExams(token = token, status = status)
@@ -67,7 +91,12 @@ class ExamApi : BaseApiService() {
 
     /** 获取指定课程的所有考试 */
     suspend fun getExamsByCourse(token: String, courseId: Long): ApiResponse<PageExamResponse> {
-        return getAllExams(token = token, courseId = courseId)
+        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/course/$courseId", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
     }
 
     /** 获取考试的所有题目（按顺序） */
@@ -110,9 +139,12 @@ class ExamApi : BaseApiService() {
         }
     }
 
-    /** 发布考试（POST） */
+    /** 发布考试（POST /api/exams/{id}/publish） */
     suspend fun publishExam(token: String, examId: Long): ApiResponse<ExamResponse> {
-        val result = postWithToken(endpoint = "$EXAM_ENDPOINT/$examId/publish", token = token)
+        val result = postWithToken(
+            endpoint = "$EXAM_ENDPOINT/$examId/publish",
+            token = token
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -150,6 +182,67 @@ class ExamApi : BaseApiService() {
             endpoint = "$EXAM_ENDPOINT/$examId",
             token = token,
             parameters = mapOf("status" to status)
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /**
+     * 批量删除考试
+     * @param token 访问令牌
+     * @param request 批量删除请求（ID列表）
+     * @return 批量删除结果
+     */
+    suspend fun batchDeleteExams(token: String, request: BatchDeleteRequest): ApiResponse<BatchDeleteResult> {
+        val result = postWithToken(
+            endpoint = "$EXAM_ENDPOINT/batch-delete",
+            token = token,
+            body = request
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /**
+     * 获取考试试卷（学生）
+     * 学生获取考试题目列表（不含答案和解析）
+     * @param token 访问令牌
+     * @param examId 考试ID
+     * @return 试卷题目列表
+     */
+    suspend fun getExamPaper(token: String, examId: Long): ApiResponse<List<ExamPaperQuestionResponse>> {
+        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/$examId/paper", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /**
+     * 智能随机组卷
+     * 根据组卷规则从指定题库中随机抽取题目生成试卷
+     * 会清空考试原有题目，重新生成；仅草稿状态的考试可以组卷
+     * @param token 访问令牌
+     * @param examId 考试ID
+     * @param request 组卷请求
+     * @return 更新后的考试详情
+     */
+    suspend fun composeRandomExam(
+        token: String,
+        examId: Long,
+        request: ComposeRandomExamRequest
+    ): ApiResponse<ExamResponse> {
+        val result = postWithToken(
+            endpoint = "$EXAM_ENDPOINT/$examId/compose-random",
+            token = token,
+            body = request
         )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())

@@ -80,15 +80,18 @@ class ExamViewModel(
         loadManagerExams()
     }
 
-    /** 管理员/教师视角：加载考试列表 */
+    /** 管理员/教师视角：加载考试列表（管理员看全部，教师看我的） */
     fun loadManagerExams() {
         _allExams.value = ExamListUiState.Loading
         viewModelScope.launch {
-            examRepository.loadAllExams()
-                .fold(
-                    onSuccess = { _allExams.value = ExamListUiState.Success(it) },
-                    onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
-                )
+            val result = if (userRole == UserRole.ADMIN)
+                examRepository.loadAllExams()
+            else
+                examRepository.loadMyExams()
+            result.fold(
+                onSuccess = { _allExams.value = ExamListUiState.Success(it) },
+                onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
+            )
         }
     }
 
@@ -170,6 +173,23 @@ class ExamViewModel(
                     loadManagerExams()
                 },
                 onFailure = { _actionState.value = ExamActionState.Error(it.message ?: "删除失败") }
+            )
+        }
+    }
+
+    /** 批量删除考试 */
+    fun batchDeleteExams(ids: List<Long>) {
+        if (ids.isEmpty()) return
+        _actionState.value = ExamActionState.Loading
+        viewModelScope.launch {
+            examRepository.batchDeleteExams(ids).fold(
+                onSuccess = { result ->
+                    val msg = "已删除 ${result.successCount} 项考试" +
+                            if (result.failedCount > 0) "，${result.failedCount} 项失败" else ""
+                    _actionState.value = ExamActionState.Success(msg)
+                    loadManagerExams()
+                },
+                onFailure = { _actionState.value = ExamActionState.Error(it.message ?: "批量删除失败") }
             )
         }
     }

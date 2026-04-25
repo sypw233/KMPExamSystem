@@ -3,6 +3,8 @@ package ovo.sypw.kmp.examsystem.presentation.screens
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -130,11 +132,11 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (userRole == UserRole.ADMIN) "All Courses" else "My Teaching Courses") },
+                title = { Text(if (userRole == UserRole.ADMIN) "全部课程" else "我的授课") },
                 actions = {
                     IconButton(onClick = {
                         if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                    }) { Icon(Icons.Default.Refresh, contentDescription = "refresh") }
+                    }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
@@ -143,7 +145,7 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
             ExtendedFloatingActionButton(
                 onClick = { showCreateDialog = true },
                 icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("New Course") }
+                text = { Text("新建课程") }
             )
         },
         snackbarHost = { SnackbarHost(snackbar) }
@@ -158,12 +160,12 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(onClick = {
                             if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                        }) { Text("Retry") }
+                        }) { Text("重试") }
                     }
                 }
                 is CourseUiState.Success -> {
                     if (s.courses.isEmpty()) {
-                        Text("No course yet", modifier = Modifier.padding(top = 32.dp))
+                        Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize().widthIn(max = 900.dp),
@@ -214,8 +216,8 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
     showDeleteConfirm?.let { course ->
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = null },
-            title = { Text("Delete Course") },
-            text = { Text("Delete course ${course.courseName}?") },
+            title = { Text("删除课程") },
+            text = { Text("确定删除课程「${course.courseName}」吗？") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -223,9 +225,9 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
                         showDeleteConfirm = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("Delete") }
+                ) { Text("删除") }
             },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showDeleteConfirm = null }) { Text("取消") } }
         )
     }
 
@@ -270,16 +272,16 @@ private fun ManageCourseCard(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onManageEnrollments) {
                     Icon(Icons.Default.People, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Enrollments")
+                    Text("选课管理")
                 }
                 TextButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Edit")
+                    Text("编辑")
                 }
                 TextButton(
                     onClick = onDelete,
@@ -287,7 +289,7 @@ private fun ManageCourseCard(
                 ) {
                     Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Delete")
+                    Text("删除")
                 }
             }
         }
@@ -325,7 +327,10 @@ private fun CourseFormDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("课程名称 *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
                 OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("课程描述") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
 
@@ -397,9 +402,7 @@ private fun EnrollmentManageDialog(
             onConfirm = {
                 showStudentSelector = false
                 scope.launch {
-                    for (studentId in selectedStudentIds) {
-                        courseRepository.addStudentToCourse(course.id, studentId)
-                    }
+                    courseRepository.batchAddStudentsToCourse(course.id, selectedStudentIds.toList())
                     selectedStudentIds = emptySet()
                     courseViewModel.loadCourseStudents(course.id)
                 }
@@ -413,11 +416,11 @@ private fun EnrollmentManageDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Enrollments: ${course.courseName}") },
+        title = { Text("选课管理: ${course.courseName}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (students.isEmpty()) {
-                    Text("No students yet")
+                    Text("暂无学生")
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxWidth().height(240.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         items(students, key = { it.id }) { student ->
@@ -442,7 +445,7 @@ private fun EnrollmentManageDialog(
                 Text("批量添加学生")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("关闭") } }
     )
 }
 
@@ -458,14 +461,14 @@ private fun EnrollmentCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text(enrollment.studentName.ifBlank { "Student" }, fontWeight = FontWeight.Bold)
-                Text("enroll: ${enrollment.enrollmentTime ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                Text(enrollment.studentName.ifBlank { "学生" }, fontWeight = FontWeight.Bold)
+                Text("选课时间: ${enrollment.enrollmentTime ?: "-"}", style = MaterialTheme.typography.bodySmall)
             }
             TextButton(
                 onClick = onRemove,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Remove")
+                Text("移除")
             }
         }
     }
@@ -493,7 +496,7 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     LaunchedEffect(enrollState) {
         when (val state = enrollState) {
             is EnrollState.Success -> {
-                snackbarHostState.showSnackbar("Enrolled: ${state.enrollment.courseName}")
+                snackbarHostState.showSnackbar("选课成功: ${state.enrollment.courseName}")
                 courseViewModel.resetEnrollState()
             }
             is EnrollState.Error -> {
@@ -507,11 +510,11 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Courses") },
+                title = { Text("课程中心") },
                 actions = {
                     IconButton(onClick = {
                         if (selectedTab == 0) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                    }) { Icon(Icons.Default.Refresh, contentDescription = "refresh") }
+                    }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
@@ -520,7 +523,7 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             PrimaryTabRow(selectedTabIndex = selectedTab) {
-                listOf("All", "Enrolled").forEachIndexed { index, title ->
+                listOf("全部", "已选").forEachIndexed { index, title ->
                     Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(title) })
                 }
             }
@@ -549,8 +552,8 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     withdrawingCourse?.let { course ->
         AlertDialog(
             onDismissRequest = { withdrawingCourse = null },
-            title = { Text("Withdraw course") },
-            text = { Text("Withdraw from ${course.courseName}?") },
+            title = { Text("退课确认") },
+            text = { Text("确定退选课程「${course.courseName}」吗？") },
             confirmButton = {
                 Button(onClick = {
                     val currentUserId = (authState as? AuthState.Authenticated)?.user?.id
@@ -558,47 +561,47 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                         scope.launch {
                             courseRepository.removeStudentFromCourse(course.id, currentUserId)
                                 .onSuccess {
-                                    snackbarHostState.showSnackbar("Withdrawn from ${course.courseName}")
+                                    snackbarHostState.showSnackbar("已退课: ${course.courseName}")
                                     courseViewModel.loadMyCourses()
                                     courseViewModel.loadAllCourses()
                                 }
-                                .onFailure { snackbarHostState.showSnackbar("Withdraw failed: ${it.message}") }
+                                .onFailure { snackbarHostState.showSnackbar("退课失败: ${it.message}") }
                         }
                     } else {
-                        scope.launch { snackbarHostState.showSnackbar("Not logged in") }
+                        scope.launch { snackbarHostState.showSnackbar("未登录") }
                     }
                     withdrawingCourse = null
-                }) { Text("Confirm") }
+                }) { Text("确认") }
             },
-            dismissButton = { TextButton(onClick = { withdrawingCourse = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { withdrawingCourse = null }) { Text("取消") } }
         )
     }
 
     examDetailCourse?.let { course ->
         AlertDialog(
             onDismissRequest = { examDetailCourse = null },
-            title = { Text("Course exams - ${course.courseName}") },
+            title = { Text("课程考试 - ${course.courseName}") },
             text = {
                 if (loadingCourseExams) {
                     Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 } else if (courseExams.isEmpty()) {
-                    Text("No exam linked to this course")
+                    Text("该课程暂无考试")
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxWidth().height(300.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(courseExams, key = { it.id }) { exam ->
                             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                                 Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
                                     Text(exam.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                                    Text("Score ${exam.totalScore} · ${exam.duration ?: "-"} min", style = MaterialTheme.typography.bodySmall)
+                                    Text("满分 ${exam.totalScore} · ${exam.duration ?: "-"} 分钟", style = MaterialTheme.typography.bodySmall)
                                 }
                             }
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { examDetailCourse = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { examDetailCourse = null }) { Text("关闭") } },
             dismissButton = {}
         )
     }
@@ -625,14 +628,14 @@ private fun StudentCourseList(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(state.message, color = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = onRetry) { Text("Retry") }
+                    Button(onClick = onRetry) { Text("重试") }
                 }
             }
         }
         is CourseUiState.Success -> {
             if (state.courses.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No course")
+                    Text("暂无课程")
                 }
             } else {
                 LazyColumn(
@@ -694,15 +697,15 @@ private fun StudentCourseCard(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(Icons.Default.People, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.outline)
-                    Text("${course.enrollmentCount} enrolled", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    Text("${course.enrollmentCount} 人已选", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                 }
                 if (showEnrollButton) {
                     FilledTonalButton(onClick = onEnroll, enabled = !isEnrolling, modifier = Modifier.height(32.dp)) {
-                        Text(if (isEnrolling) "Processing..." else "Enroll")
+                        Text(if (isEnrolling) "处理中..." else "选课")
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = onViewCourseExams) { Text("Exams") }
+                        TextButton(onClick = onViewCourseExams) { Text("考试") }
                         FilledTonalButton(
                             onClick = onWithdraw,
                             colors = ButtonDefaults.filledTonalButtonColors(
@@ -710,7 +713,7 @@ private fun StudentCourseCard(
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
                             ),
                             modifier = Modifier.height(32.dp)
-                        ) { Text("Withdraw") }
+                        ) { Text("退课") }
                     }
                 }
             }

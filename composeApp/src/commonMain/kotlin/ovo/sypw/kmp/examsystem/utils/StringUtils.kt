@@ -14,6 +14,14 @@ import kotlin.time.ExperimentalTime
 object StringUtils {
 
     /**
+     * 字符串实例格式化扩展函数，支持 "...".format(...) 调用方式
+     *
+     * @param args 可变参数列表
+     * @return 格式化后的字符串
+     */
+    fun String.format(vararg args: Any?): String = String.format(this, *args)
+
+    /**
      * 字符串格式化扩展函数，类似于Kotlin原生的String.format
      * 支持多种格式化占位符和可变参数
      *

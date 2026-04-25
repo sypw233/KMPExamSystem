@@ -111,6 +111,12 @@ class CourseRepository(
         } else throw Exception(r.message)
     }
 
+    /** 获取课程下的考试列表 */
+    suspend fun getCourseExams(courseId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>> = runWithToken { token ->
+        val r = courseApi.getCourseExams(token, courseId)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
     /** 获取选课学生 */
     suspend fun getCourseStudents(courseId: Long): Result<List<EnrollmentResponse>> = runWithToken { token ->
         val r = courseApi.getCourseStudents(token, courseId)
@@ -121,6 +127,12 @@ class CourseRepository(
     suspend fun addStudentToCourse(courseId: Long, studentId: Long): Result<EnrollmentResponse> = runWithToken { token ->
         val r = courseApi.addStudentToCourse(token, courseId, studentId)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /** 批量添加学生到课程 */
+    suspend fun batchAddStudentsToCourse(courseId: Long, studentIds: List<Long>): Result<List<EnrollmentResponse>> = runWithToken { token ->
+        val r = courseApi.batchAddStudentsToCourse(token, courseId, studentIds)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
 
     /** 移除选课学生 */

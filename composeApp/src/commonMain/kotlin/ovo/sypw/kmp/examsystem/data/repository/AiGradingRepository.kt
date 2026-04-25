@@ -1,6 +1,8 @@
 package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.AiGradingApi
+import ovo.sypw.kmp.examsystem.data.dto.AiBatchGradingRequest
+import ovo.sypw.kmp.examsystem.data.dto.AiBatchGradingResponse
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigRequest
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigResponse
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingRequest
@@ -34,6 +36,14 @@ class AiGradingRepository(
     suspend fun aiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<AiGradingResponse> {
         return runWithToken { token ->
             val r = aiGradingApi.aiGrade(token, AiGradingRequest(questionId, studentAnswer, maxScore))
+            if (r.code == 200 && r.data != null) r.data
+            else throw Exception(r.message)
+        }
+    }
+
+    suspend fun batchGrade(submissionId: Long, concurrency: Int? = null): Result<AiBatchGradingResponse> {
+        return runWithToken { token ->
+            val r = aiGradingApi.batchGrade(token, AiBatchGradingRequest(submissionId, concurrency))
             if (r.code == 200 && r.data != null) r.data
             else throw Exception(r.message)
         }

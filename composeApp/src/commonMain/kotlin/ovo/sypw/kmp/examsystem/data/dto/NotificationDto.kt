@@ -26,6 +26,19 @@ data class UnreadCountResponse(
 )
 
 /**
+ * 发送自定义通知请求
+ */
+@Serializable
+data class CreateNotificationRequest(
+    val title: String,
+    val content: String? = null,
+    val type: String,
+    val relatedId: Long? = null,
+    val userIds: List<Long>? = null,
+    val courseId: Long? = null
+)
+
+/**
  * 分页通知响应
  */
 @Serializable

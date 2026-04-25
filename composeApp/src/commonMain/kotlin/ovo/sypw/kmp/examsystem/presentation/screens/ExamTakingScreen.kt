@@ -53,6 +53,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
+import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -76,7 +77,7 @@ fun ExamTakingScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Loading exam...")
+                    Text("正在加载考试...")
                 }
             }
         }
@@ -90,7 +91,7 @@ fun ExamTakingScreen(
                         viewModel.reset()
                         onExitExam()
                     }) {
-                        Text("Back")
+                        Text("返回")
                     }
                 }
             }
@@ -136,7 +137,8 @@ private fun ExamContent(
     onSubmit: () -> Unit,
     onExit: () -> Unit
 ) {
-    var remainingSeconds by remember { mutableStateOf((exam.exam.duration ?: 0) * 60) }
+    val hasDuration = (exam.exam.duration ?: 0) > 0
+    var remainingSeconds by remember { mutableStateOf(if (hasDuration) (exam.exam.duration ?: 0) * 60 else -1) }
     var showExitDialog by remember { mutableStateOf(false) }
     var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
     var focusViolationCount by remember { mutableStateOf(0) }
@@ -145,11 +147,13 @@ private fun ExamContent(
     val windowFocused = LocalWindowInfo.current.isWindowFocused
 
     LaunchedEffect(Unit) {
-        while (remainingSeconds > 0) {
-            delay(1000)
-            remainingSeconds--
+        if (hasDuration) {
+            while (remainingSeconds > 0) {
+                delay(1000)
+                remainingSeconds--
+            }
+            onSubmit()
         }
-        onSubmit()
     }
 
     LaunchedEffect(windowFocused) {
@@ -179,15 +183,17 @@ private fun ExamContent(
                 title = {
                     Column {
                         Text(exam.exam.title, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            text = "Remaining: ${formatExamTime(remainingSeconds)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (remainingSeconds < 600) MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (hasDuration) {
+                            Text(
+                                text = "剩余时间: ${formatExamTime(remainingSeconds)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (remainingSeconds < 600) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                         if (exam.exam.strictMode) {
                             Text(
-                                text = "Proctoring: focus loss $focusViolationCount/$strictThreshold",
+                                text = "监考: 切屏 $focusViolationCount/$strictThreshold 次",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (focusViolationCount >= strictThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -196,7 +202,7 @@ private fun ExamContent(
                 },
                 navigationIcon = {
                     IconButton(onClick = { showExitDialog = true }) {
-                        Icon(Icons.Default.Close, contentDescription = "Exit exam")
+                        Icon(Icons.Default.Close, contentDescription = "退出考试")
                     }
                 },
                 actions = {
@@ -208,7 +214,7 @@ private fun ExamContent(
                     ) {
                         Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Submit")
+                        Text("交卷")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -242,23 +248,23 @@ private fun ExamContent(
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("Submit paper?") },
+            title = { Text("确认交卷?") },
             text = {
                 val answered = answers.size
                 val total = exam.questions.size
-                Text("Answered $answered / $total. You cannot edit after submit.")
+                Text("已答 $answered / $total 题。交卷后不可再修改。")
             },
             confirmButton = {
                 Button(onClick = {
                     showExitDialog = false
                     onSubmit()
                 }) {
-                    Text("Submit")
+                    Text("交卷")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showExitDialog = false }) {
-                    Text("Continue")
+                    Text("继续答题")
                 }
             }
         )
@@ -267,14 +273,14 @@ private fun ExamContent(
     if (showForceSubmitDialog) {
         AlertDialog(
             onDismissRequest = { },
-            title = { Text("Proctoring warning") },
-            text = { Text("Multiple focus-loss events detected. The exam will be submitted now.") },
+            title = { Text("监考警告") },
+            text = { Text("检测到多次切屏/失去焦点行为，系统将自动提交试卷。") },
             confirmButton = {
                 Button(onClick = {
                     showForceSubmitDialog = false
                     onSubmit()
                 }) {
-                    Text("Submit now")
+                    Text("立即交卷")
                 }
             },
             dismissButton = {}
@@ -301,7 +307,7 @@ private fun QuestionItem(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "${examQuestion.score} pts",
+                    text = "${examQuestion.score} 分",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline
                 )
@@ -357,11 +363,11 @@ private fun QuestionItem(
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = currentAnswer == "true", onClick = { onAnswerChange("true") })
-                            Text("True", style = MaterialTheme.typography.bodyMedium)
+                            Text("正确", style = MaterialTheme.typography.bodyMedium)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = currentAnswer == "false", onClick = { onAnswerChange("false") })
-                            Text("False", style = MaterialTheme.typography.bodyMedium)
+                            Text("错误", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -370,7 +376,7 @@ private fun QuestionItem(
                         value = currentAnswer,
                         onValueChange = onAnswerChange,
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Answer") },
+                        label = { Text("答案") },
                         minLines = if (question.type == "short_answer") 4 else 2,
                         shape = MaterialTheme.shapes.small
                     )
@@ -389,16 +395,16 @@ private fun ExamResultSummary(
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-            Text("Submitted", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("交卷成功", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
             if (needsGrading) {
-                Text("Your subjective answers are waiting for grading.", style = MaterialTheme.typography.bodyMedium)
+                Text("主观题正在等待教师评分。", style = MaterialTheme.typography.bodyMedium)
             } else {
-                Text("Objective score: $objectiveScore", style = MaterialTheme.typography.titleMedium)
-                Text("Total: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                Text("客观题得分: $objectiveScore", style = MaterialTheme.typography.titleMedium)
+                Text("总分: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             }
             Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("Back to home") }
+            Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("返回首页") }
         }
     }
 }
@@ -411,11 +417,11 @@ private fun formatExamTime(seconds: Int): String {
 }
 
 private fun questionTypeLabel(type: String): String = when (type) {
-    "single" -> "Single"
-    "multiple" -> "Multiple"
-    "true_false" -> "True/False"
-    "fill_blank" -> "Blank"
-    "short_answer" -> "Short answer"
+    "single" -> "单选"
+    "multiple" -> "多选"
+    "true_false" -> "判断"
+    "fill_blank" -> "填空"
+    "short_answer" -> "简答"
     else -> type
 }
 

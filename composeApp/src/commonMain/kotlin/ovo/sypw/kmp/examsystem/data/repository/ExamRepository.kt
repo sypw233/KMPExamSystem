@@ -4,6 +4,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.ExamApi
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
+import ovo.sypw.kmp.examsystem.data.dto.ComposeRandomExamRequest
+import ovo.sypw.kmp.examsystem.data.dto.ExamPaperQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
@@ -110,6 +114,33 @@ class ExamRepository(
 
     suspend fun patchExam(examId: Long, status: Int): Result<ExamResponse> = runWithToken { token ->
         val r = examApi.patchExam(token, examId, status)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /**
+     * 批量删除考试
+     */
+    suspend fun batchDeleteExams(ids: List<Long>): Result<BatchDeleteResult> = runWithToken { token ->
+        val r = examApi.batchDeleteExams(token, BatchDeleteRequest(ids))
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
+    /**
+     * 获取考试试卷（学生，不含答案和解析）
+     */
+    suspend fun getExamPaper(examId: Long): Result<List<ExamPaperQuestionResponse>> = runWithToken { token ->
+        val r = examApi.getExamPaper(token, examId)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /**
+     * 智能随机组卷
+     * @param examId 考试ID
+     * @param request 组卷请求
+     * @return 更新后的考试详情
+     */
+    suspend fun composeRandomExam(examId: Long, request: ComposeRandomExamRequest): Result<ExamResponse> = runWithToken { token ->
+        val r = examApi.composeRandomExam(token, examId, request)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 

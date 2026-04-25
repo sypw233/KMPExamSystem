@@ -2,7 +2,9 @@ package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.StatisticsApi
 import ovo.sypw.kmp.examsystem.data.dto.CourseStatisticsResponse
+import ovo.sypw.kmp.examsystem.data.dto.ExamScoreExportRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamStatisticsResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionStatisticsResponse
 import ovo.sypw.kmp.examsystem.data.dto.StudentStatisticsResponse
 import ovo.sypw.kmp.examsystem.data.dto.SystemOverviewResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -41,6 +43,22 @@ class StatisticsRepository(
     suspend fun getCourseStatistics(courseId: Long): Result<CourseStatisticsResponse> {
         return runWithToken { token ->
             val response = statisticsApi.getCourseStatistics(token, courseId)
+            if (response.code == 200 && response.data != null) response.data
+            else throw Exception(response.message)
+        }
+    }
+
+    suspend fun getQuestionStatistics(questionId: Long): Result<QuestionStatisticsResponse> {
+        return runWithToken { token ->
+            val response = statisticsApi.getQuestionStatistics(token, questionId)
+            if (response.code == 200 && response.data != null) response.data
+            else throw Exception(response.message)
+        }
+    }
+
+    suspend fun exportExamStatistics(examId: Long, request: ExamScoreExportRequest = ExamScoreExportRequest()): Result<ByteArray> {
+        return runWithToken { token ->
+            val response = statisticsApi.exportExamStatistics(token, examId, request)
             if (response.code == 200 && response.data != null) response.data
             else throw Exception(response.message)
         }

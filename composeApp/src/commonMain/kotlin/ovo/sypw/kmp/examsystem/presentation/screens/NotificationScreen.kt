@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Announcement
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Delete
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,6 +37,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
@@ -47,6 +50,9 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -54,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
+import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 
@@ -65,8 +73,13 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 @Composable
 fun NotificationScreen(onBack: () -> Unit) {
     val viewModel: NotificationViewModel = koinInject()
+    val authRepository: AuthRepository = koinInject()
     val uiState by viewModel.uiState.collectAsState()
     val unreadCount by viewModel.unreadCount.collectAsState()
+    val authState by authRepository.authState.collectAsState()
+    val isAdmin = (authState as? AuthState.Authenticated)?.user?.role?.uppercase() == "ADMIN"
+
+    var showSendDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -91,6 +104,11 @@ fun NotificationScreen(onBack: () -> Unit) {
                     }
                 },
                 actions = {
+                    if (isAdmin) {
+                        IconButton(onClick = { showSendDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "发送通知")
+                        }
+                    }
                     if (unreadCount > 0) {
                         IconButton(onClick = { viewModel.markAllAsRead() }) {
                             Icon(Icons.Default.DoneAll, contentDescription = "全部已读")
@@ -161,12 +179,35 @@ fun NotificationScreen(onBack: () -> Unit) {
                                     onDelete = { viewModel.deleteNotification(notification.id) }
                                 )
                             }
-                            item { Spacer(modifier = Modifier.height(16.dp)) }
+                            item {
+                                val hasMore by viewModel.hasMore.collectAsState()
+                                if (hasMore) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        TextButton(onClick = { viewModel.loadMore() }) {
+                                            Text("加载更多")
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    if (showSendDialog) {
+        SendNotificationDialog(
+            onConfirm = { title, content ->
+                viewModel.sendNotification(title, content)
+                showSendDialog = false
+            },
+            onDismiss = { showSendDialog = false }
+        )
     }
 }
 
@@ -296,6 +337,46 @@ private fun NotificationListItem(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SendNotificationDialog(
+    onConfirm: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+    val isValid = title.isNotBlank() && content.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("发送系统通知") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("通知标题 *") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("通知内容 *") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(title.trim(), content.trim()) }, enabled = isValid) {
+                Text("发送")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
+    )
 }
 
 @Composable

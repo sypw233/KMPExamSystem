@@ -138,15 +138,15 @@ fun GradeSubmissionScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
-                        Text("考试: ${submission!!.examTitle}", fontWeight = FontWeight.Bold)
+                        Text("考试: ${submission?.examTitle ?: ""}", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("客观题得分: ${submission!!.objectiveScore ?: 0}", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text("客观题得分: ${submission?.objectiveScore ?: 0}", color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     Button(
                         onClick = {
                             val scoreMapData = scoreMap.mapNotNull { (qId, strScore) ->
                                 val score = strScore.toIntOrNull() ?: return@mapNotNull null
-                                qId to score
+                                qId.toString() to score
                             }.toMap()
                             viewModel.submitGrades(submissionId, scoreMapData)
                         },

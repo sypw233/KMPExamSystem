@@ -35,11 +35,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,6 +53,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
+import kotlinx.serialization.json.Json
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -378,7 +381,7 @@ private fun QuestionFormDialog(
     var content by remember { mutableStateOf(initial?.content ?: "") }
     var type by remember { mutableStateOf(initial?.type ?: "single") }
     var answer by remember { mutableStateOf(initial?.answer ?: "") }
-    var options by remember { mutableStateOf(initial?.options ?: "") }
+    var optionList by remember { mutableStateOf(parseOptionList(initial?.options)) }
     var analysis by remember { mutableStateOf(initial?.analysis ?: "") }
     var difficulty by remember { mutableStateOf(initial?.difficulty ?: "medium") }
     var category by remember { mutableStateOf(initial?.category ?: "") }
@@ -390,7 +393,9 @@ private fun QuestionFormDialog(
                              "fill_blank" to "填空", "short_answer" to "简答")
     val diffOptions = listOf("easy" to "简单", "medium" to "中等", "hard" to "困难")
 
+    val needsOptions = type == "single" || type == "multiple"
     val isValid = content.isNotBlank() && answer.isNotBlank() && score.toIntOrNull() != null
+                  && (!needsOptions || optionList.count { it.isNotBlank() } >= 2)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -440,23 +445,109 @@ private fun QuestionFormDialog(
                         }
                     }
                 }
-                item {
-                    OutlinedTextField(
-                        value = options,
-                        onValueChange = { options = it },
-                        label = { Text("选项(JSON格式，单多选题)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("""["A. 选项一","B. 选项二"]""") }
-                    )
-                }
-                item {
-                    OutlinedTextField(
-                        value = answer,
-                        onValueChange = { answer = it },
-                        label = { Text("答案 *") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                if (needsOptions) {
+                    items(optionList.size) { index ->
+                        val letter = ('A' + index).toString()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text("$letter.", style = MaterialTheme.typography.bodyMedium)
+                            OutlinedTextField(
+                                value = optionList[index],
+                                onValueChange = { newValue ->
+                                    optionList = optionList.toMutableList().apply { set(index, newValue) }
+                                },
+                                label = { Text("选项 $letter") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (optionList.size > 2) {
+                                IconButton(onClick = {
+                                    optionList = optionList.toMutableList().apply { removeAt(index) }
+                                    // 若删除的选项刚好是已选答案，需清除
+                                    if (type == "single" && answer == letter) answer = ""
+                                    if (type == "multiple") {
+                                        val sel = answer.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableSet()
+                                        sel.remove(letter)
+                                        answer = sel.sorted().joinToString(",")
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "删除选项", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        TextButton(onClick = { optionList = optionList + "" }) {
+                            Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("添加选项")
+                        }
+                    }
+                    // ── 可视化答案选择 ──
+                    item {
+                        Text("正确答案", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        when (type) {
+                            "single" -> {
+                                optionList.forEachIndexed { idx, opt ->
+                                    if (opt.isNotBlank()) {
+                                        val letter = ('A' + idx).toString()
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            RadioButton(selected = answer == letter, onClick = { answer = letter })
+                                            Text("$letter. $opt", style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                }
+                            }
+                            "multiple" -> {
+                                val selectedSet = answer.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableSet()
+                                optionList.forEachIndexed { idx, opt ->
+                                    if (opt.isNotBlank()) {
+                                        val letter = ('A' + idx).toString()
+                                        val checked = letter in selectedSet
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Checkbox(
+                                                checked = checked,
+                                                onCheckedChange = { isChecked ->
+                                                    if (isChecked) selectedSet.add(letter) else selectedSet.remove(letter)
+                                                    answer = selectedSet.sorted().joinToString(",")
+                                                }
+                                            )
+                                            Text("$letter. $opt", style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (type == "true_false") {
+                    item {
+                        Text("正确答案", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilterChip(
+                                selected = answer == "true",
+                                onClick = { answer = "true" },
+                                label = { Text("正确") }
+                            )
+                            FilterChip(
+                                selected = answer == "false",
+                                onClick = { answer = "false" },
+                                label = { Text("错误") }
+                            )
+                        }
+                    }
+                } else {
+                    item {
+                        OutlinedTextField(
+                            value = answer,
+                            onValueChange = { answer = it },
+                            label = { Text("答案 *") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -489,10 +580,11 @@ private fun QuestionFormDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val optionsJson = buildOptionsJson(optionList)
                     onConfirm(QuestionRequest(
                         content = content.trim(),
                         type = type,
-                        options = options.takeIf { it.isNotBlank() },
+                        options = optionsJson.takeIf { it.isNotBlank() },
                         answer = answer.trim(),
                         analysis = analysis.takeIf { it.isNotBlank() },
                         difficulty = difficulty,
@@ -505,6 +597,29 @@ private fun QuestionFormDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
+}
+
+private val jsonParser = Json { ignoreUnknownKeys = true }
+
+private fun parseOptionList(optionsJson: String?): List<String> {
+    if (optionsJson.isNullOrBlank()) return listOf("", "", "", "")
+    return try {
+        val list = jsonParser.decodeFromString<List<String>>(optionsJson)
+        list.map { it.removePrefix("A. ").removePrefix("B. ").removePrefix("C. ").removePrefix("D. ").removePrefix("E. ").trim() }
+    } catch (_: Exception) {
+        listOf("", "", "", "")
+    }
+}
+
+private fun buildOptionsJson(list: List<String>): String {
+    val valid = list.mapIndexedNotNull { index, text ->
+        val trimmed = text.trim()
+        if (trimmed.isNotBlank()) {
+            val letter = ('A' + index).toString()
+            "\"$letter. $trimmed\""
+        } else null
+    }
+    return if (valid.isEmpty()) "" else "[${valid.joinToString(",")}]"
 }
 
 // ─── 帮助函数 ─────────────────────────────────────────────────────────────────

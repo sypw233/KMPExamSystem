@@ -11,6 +11,8 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
+import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
@@ -72,46 +74,6 @@ class QuestionApi : BaseApiService() {
         }
     }
 
-    /** 按课程获取题目 */
-    suspend fun getQuestionsByCourse(token: String, courseId: Long): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/course/$courseId", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
-    }
-
-    /** 按类型筛选题目 */
-    suspend fun getQuestionsByType(token: String, type: String): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/type/$type", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
-    }
-
-    /** 按难度筛选题目 (easy, medium, hard) */
-    suspend fun getQuestionsByDifficulty(token: String, difficulty: String): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/difficulty/$difficulty", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
-    }
-
-    /** 按分类筛选题目 */
-    suspend fun getQuestionsByCategory(token: String, category: String): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/category/$category", token = token)
-        return when (result) {
-            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
-            is NetworkResult.Error -> ApiResponse(500, result.message, null)
-            else -> ApiResponse(500, "未知状态", null)
-        }
-    }
-
     /** 创建题目 */
     suspend fun createQuestion(token: String, request: QuestionRequest): ApiResponse<QuestionResponse> {
         val result = postWithToken(endpoint = QUESTION_ENDPOINT, token = token, body = request)
@@ -151,7 +113,7 @@ class QuestionApi : BaseApiService() {
      */
     suspend fun importQuestions(token: String, bankId: Long, fileBytes: ByteArray, fileName: String): ApiResponse<ImportResultResponse> {
         return try {
-            val response = httpClient.post(HttpClientConfig.getApiUrl("$QUESTION_ENDPOINT/import?bankId=$bankId")) {
+            val response = httpClient.post(HttpClientConfig.getApiUrl("/api/question-import-export/import?bankId=$bankId")) {
                 header(io.ktor.http.HttpHeaders.Authorization, "Bearer $token")
                 setBody(
                     io.ktor.client.request.forms.MultiPartFormDataContent(
@@ -176,13 +138,32 @@ class QuestionApi : BaseApiService() {
     }
 
     /**
+     * 批量删除题目
+     * @param token 访问令牌
+     * @param request 批量删除请求（ID列表）
+     * @return 批量删除结果
+     */
+    suspend fun batchDeleteQuestions(token: String, request: BatchDeleteRequest): ApiResponse<BatchDeleteResult> {
+        val result = postWithToken(
+            endpoint = "$QUESTION_ENDPOINT/batch-delete",
+            token = token,
+            body = request
+        )
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /**
      * 下载题目导入模板
      * @param token 访问令牌
      * @return 模板文件字节数组
      */
     suspend fun downloadTemplate(token: String): ApiResponse<ByteArray> {
         return try {
-            val response = httpClient.get(HttpClientConfig.getApiUrl("$QUESTION_ENDPOINT/template")) {
+            val response = httpClient.get(HttpClientConfig.getApiUrl("/api/question-import-export/template")) {
                 header(io.ktor.http.HttpHeaders.Authorization, "Bearer $token")
             }
             if (response.status == io.ktor.http.HttpStatusCode.OK) {
@@ -193,6 +174,36 @@ class QuestionApi : BaseApiService() {
             }
         } catch (e: Exception) {
             ApiResponse(500, e.message ?: "下载异常", null)
+        }
+    }
+
+    /** 按类型筛选题目 */
+    suspend fun getQuestionsByType(token: String, type: String): ApiResponse<List<QuestionResponse>> {
+        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/type/$type", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /** 按难度筛选题目 */
+    suspend fun getQuestionsByDifficulty(token: String, difficulty: String): ApiResponse<List<QuestionResponse>> {
+        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/difficulty/$difficulty", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
+        }
+    }
+
+    /** 按分类筛选题目 */
+    suspend fun getQuestionsByCategory(token: String, category: String): ApiResponse<List<QuestionResponse>> {
+        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/category/$category", token = token)
+        return when (result) {
+            is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
+            is NetworkResult.Error -> ApiResponse(500, result.message, null)
+            else -> ApiResponse(500, "未知状态", null)
         }
     }
 }

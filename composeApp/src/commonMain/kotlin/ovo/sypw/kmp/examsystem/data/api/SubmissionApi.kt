@@ -4,6 +4,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
 import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
@@ -20,12 +21,12 @@ class SubmissionApi : BaseApiService() {
 
     /**
      * 开始考试（创建答题记录），后端返回 SubmissionResponse
+     * POST /api/exams/{examId}/submissions
      */
     suspend fun startExam(token: String, examId: Long): ApiResponse<SubmissionResponse> {
         val result = postWithToken(
-            endpoint = "$SUBMISSION_ENDPOINT/start",
-            token = token,
-            parameters = mapOf("examId" to examId)
+            endpoint = "/api/exams/$examId/submissions",
+            token = token
         )
         return when (result) {
             is NetworkResult.Success -> {
@@ -110,7 +111,7 @@ class SubmissionApi : BaseApiService() {
     suspend fun gradeSubmission(
         token: String,
         submissionId: Long,
-        grades: Map<Long, Int>
+        grades: Map<String, Int>
     ): ApiResponse<SubmissionResponse> {
         val result = postWithToken(
             endpoint = "$SUBMISSION_ENDPOINT/$submissionId/grade",
@@ -128,9 +129,25 @@ class SubmissionApi : BaseApiService() {
     }
 
     /**
-     * 获取某场考试的所有提交记录（教师/管理员）
+     * 获取某次提交的监考记录
      */
-    suspend fun getExamSubmissions(token: String, examId: Long): ApiResponse<List<SubmissionResponse>> {
+    suspend fun getProctoringEvents(token: String, submissionId: Long): ApiResponse<List<ProctoringEventResponse>> {
+        val result = getWithToken(endpoint = "$SUBMISSION_ENDPOINT/$submissionId/proctoring", token = token)
+        return when (result) {
+            is NetworkResult.Success -> {
+                val data = result.data.parseData<List<ProctoringEventResponse>>()
+                ApiResponse(code = result.data.code, message = result.data.msg, data = data)
+            }
+            is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
+            else -> ApiResponse(code = 500, message = "未知状态", data = null)
+        }
+    }
+
+    /**
+     * 获取某次考试的所有提交记录
+     * GET /api/submissions/exam/{examId}
+     */
+    suspend fun getSubmissionsByExamId(token: String, examId: Long): ApiResponse<List<SubmissionResponse>> {
         val result = getWithToken(endpoint = "$SUBMISSION_ENDPOINT/exam/$examId", token = token)
         return when (result) {
             is NetworkResult.Success -> {

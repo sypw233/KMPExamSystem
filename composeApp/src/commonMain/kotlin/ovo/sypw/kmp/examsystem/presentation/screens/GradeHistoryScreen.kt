@@ -52,6 +52,7 @@ import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsViewModel
+import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 /**
  * 成绩历史页面
@@ -74,9 +75,9 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
         userId?.let { viewModel.loadStudentStatistics(it) }
     }
 
-    if (detailSubmissionId != null) {
+    detailSubmissionId?.let { id ->
         ovo.sypw.kmp.examsystem.presentation.screens.student.GradeDetailScreen(
-            submissionId = detailSubmissionId!!,
+            submissionId = id,
             onBack = { detailSubmissionId = null }
         )
         return

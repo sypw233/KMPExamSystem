@@ -48,7 +48,7 @@ data class ProctoringEventRequest(
  */
 @Serializable
 data class GradeRequest(
-    val questionScores: Map<Long, Int>     // questionId -> score
+    val questionScores: Map<String, Int>   // questionId -> score, key为字符串以匹配后端JSON
 )
 
 /**
@@ -59,6 +59,18 @@ data class SubjectiveGradeDetail(
     val questionId: Long,
     val score: Int,
     val comment: String? = null
+)
+
+/**
+ * 监考事件响应
+ */
+@Serializable
+data class ProctoringEventResponse(
+    val id: Long,
+    val submissionId: Long,
+    val eventType: String,
+    val detail: String? = null,
+    val eventTime: String? = null
 )
 
 /**

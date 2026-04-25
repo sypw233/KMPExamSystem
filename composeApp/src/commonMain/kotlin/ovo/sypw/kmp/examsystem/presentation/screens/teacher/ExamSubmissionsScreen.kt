@@ -62,9 +62,9 @@ fun ExamSubmissionsScreen(
         viewModel.loadSubmissions(examId)
     }
 
-    if (selectedSubmissionId != null) {
+    selectedSubmissionId?.let { id ->
         GradeSubmissionScreen(
-            submissionId = selectedSubmissionId!!,
+            submissionId = id,
             viewModel = viewModel,
             onBack = { 
                 selectedSubmissionId = null 

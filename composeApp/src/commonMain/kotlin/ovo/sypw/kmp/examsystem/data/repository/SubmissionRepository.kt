@@ -54,7 +54,7 @@ class SubmissionRepository(
      * @param submissionId 提交记录 ID
      * @param grades 评分 Map（questionId -> score）
      */
-    suspend fun gradeSubmission(submissionId: Long, grades: Map<Long, Int>): Result<SubmissionResponse> =
+    suspend fun gradeSubmission(submissionId: Long, grades: Map<String, Int>): Result<SubmissionResponse> =
         runWithToken { token ->
             val r = submissionApi.gradeSubmission(token, submissionId, grades)
             if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
@@ -62,10 +62,11 @@ class SubmissionRepository(
 
     /**
      * 获取某场考试的所有提交记录（教师/管理员）
+     * 复用分页查询接口取全量
      */
     suspend fun getExamSubmissions(examId: Long): Result<List<SubmissionResponse>> = runWithToken { token ->
-        val r = submissionApi.getExamSubmissions(token, examId)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        val r = submissionApi.querySubmissions(token, examId = examId, page = 0, size = 999)
+        if (r.code == 200 && r.data != null) r.data.content else throw Exception(r.message)
     }
 
     /**

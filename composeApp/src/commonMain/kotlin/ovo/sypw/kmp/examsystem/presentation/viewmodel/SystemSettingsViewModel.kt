@@ -40,7 +40,7 @@ class SystemSettingsViewModel(
             _uiState.value = SystemSettingsUiState.Loading
             aiGradingRepository.getAiConfigs()
                 .onSuccess { _uiState.value = SystemSettingsUiState.Success(it) }
-                .onFailure { _uiState.value = SystemSettingsUiState.Error(it.message ?: "Failed to load AI config") }
+                .onFailure { _uiState.value = SystemSettingsUiState.Error(it.message ?: "加载 AI 配置失败") }
         }
     }
 
@@ -53,10 +53,10 @@ class SystemSettingsViewModel(
                     configValue = configValue.trim()
                 )
             ).onSuccess {
-                _actionState.value = SystemSettingsActionState.Success("AI config updated")
+                _actionState.value = SystemSettingsActionState.Success("AI 配置已更新")
                 refresh()
             }.onFailure {
-                _actionState.value = SystemSettingsActionState.Error(it.message ?: "Save failed")
+                _actionState.value = SystemSettingsActionState.Error(it.message ?: "保存失败")
             }
         }
     }

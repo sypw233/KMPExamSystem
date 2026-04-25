@@ -54,8 +54,11 @@ fun StudentSelector(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchKeyword by remember { mutableStateOf("") }
+    var retryTrigger by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(retryTrigger) {
+        isLoading = true
+        errorMessage = null
         userManageRepository.loadUsersByRole("student")
             .onSuccess { students = it }
             .onFailure { errorMessage = it.message ?: "加载学生列表失败" }
@@ -129,7 +132,15 @@ fun StudentSelector(
                             modifier = Modifier.fillMaxWidth().height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TextButton(onClick = {
+                                    retryTrigger++
+                                }) {
+                                    Text("重试")
+                                }
+                            }
                         }
                     }
                     filteredStudents.isEmpty() -> {
