@@ -63,7 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
@@ -342,9 +342,9 @@ fun QuestionBankScreen() {
                                                             horizontalArrangement = Arrangement.SpaceBetween
                                                         ) {
                                                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                                Text(questionTypeLabel(question.type), style = MaterialTheme.typography.labelSmall)
+                                                                Text(QuestionUtils.questionTypeLabel(question.type), style = MaterialTheme.typography.labelSmall)
                                                                 if (!question.difficulty.isNullOrBlank()) {
-                                                                    val diffLabel = difficultyOptions.find { it.first == question.difficulty }?.second ?: question.difficulty
+                                                                    val diffLabel = QuestionUtils.difficultyOptions.find { it.first == question.difficulty }?.second ?: question.difficulty
                                                                     Text(diffLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                                                 }
                                                             }
@@ -443,15 +443,6 @@ fun QuestionBankScreen() {
     }
 }
 
-private fun questionTypeLabel(type: String): String = when (type) {
-    "single" -> "单选"
-    "multiple" -> "多选"
-    "true_false" -> "判断"
-    "fill_blank" -> "填空"
-    "short_answer" -> "简答"
-    else -> type
-}
-
 @Composable
 private fun EditBankDialog(
     title: String,
@@ -495,31 +486,6 @@ private fun EditBankDialog(
     )
 }
 
-private val questionTypeOptions = listOf("single" to "单选", "multiple" to "多选", "true_false" to "判断", "fill_blank" to "填空", "short_answer" to "简答")
-private val difficultyOptions = listOf("easy" to "简单", "medium" to "中等", "hard" to "困难")
-private val jsonParser = Json { ignoreUnknownKeys = true }
-
-private fun parseOptionsJson(optionsJson: String?): List<String> {
-    if (optionsJson.isNullOrBlank()) return listOf("", "", "", "")
-    return try {
-        val list = jsonParser.decodeFromString<List<String>>(optionsJson)
-        list.map { it.removePrefix("A. ").removePrefix("B. ").removePrefix("C. ").removePrefix("D. ").removePrefix("E. ").trim() }
-    } catch (_: Exception) {
-        listOf("", "", "", "")
-    }
-}
-
-private fun buildOptionsJson(list: List<String>): String {
-    val valid = list.mapIndexedNotNull { index, text ->
-        val trimmed = text.trim()
-        if (trimmed.isNotBlank()) {
-            val letter = ('A' + index).toString()
-            "\"$letter. $trimmed\""
-        } else null
-    }
-    return if (valid.isEmpty()) "" else "[${valid.joinToString(",")}]"
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuestionFormDialog(
@@ -533,7 +499,7 @@ private fun QuestionFormDialog(
     var difficultyExpanded by remember { mutableStateOf(false) }
     var selectedDifficulty by remember { mutableStateOf(initial?.difficulty ?: "medium") }
     var options by remember {
-        val initialOptions = parseOptionsJson(initial?.options)
+        val initialOptions = QuestionUtils.parseOptionsJson(initial?.options)
         mutableStateOf(initialOptions.toMutableList())
     }
     var answer by remember { mutableStateOf(initial?.answer ?: "") }
@@ -564,7 +530,7 @@ private fun QuestionFormDialog(
                     onExpandedChange = { typeExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = questionTypeOptions.first { it.first == selectedType }.second,
+                        value = QuestionUtils.questionTypeOptions.first { it.first == selectedType }.second,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("题目类型") },
@@ -572,7 +538,7 @@ private fun QuestionFormDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = typeExpanded, onDismissRequest = { typeExpanded = false }) {
-                        questionTypeOptions.forEach { (value, label) ->
+                        QuestionUtils.questionTypeOptions.forEach { (value, label) ->
                             DropdownMenuItem(text = { Text(label) }, onClick = {
                                 selectedType = value
                                 typeExpanded = false
@@ -592,7 +558,7 @@ private fun QuestionFormDialog(
                     onExpandedChange = { difficultyExpanded = it }
                 ) {
                     OutlinedTextField(
-                        value = difficultyOptions.first { it.first == selectedDifficulty }.second,
+                        value = QuestionUtils.difficultyOptions.first { it.first == selectedDifficulty }.second,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("难度") },
@@ -600,7 +566,7 @@ private fun QuestionFormDialog(
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(expanded = difficultyExpanded, onDismissRequest = { difficultyExpanded = false }) {
-                        difficultyOptions.forEach { (value, label) ->
+                        QuestionUtils.difficultyOptions.forEach { (value, label) ->
                             DropdownMenuItem(text = { Text(label) }, onClick = {
                                 selectedDifficulty = value
                                 difficultyExpanded = false
@@ -737,7 +703,7 @@ private fun QuestionFormDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val optionsJson = buildOptionsJson(options).takeIf { it.isNotBlank() }
+                    val optionsJson = QuestionUtils.buildOptionsJson(options).takeIf { it.isNotBlank() }
 
                     onConfirm(
                         QuestionRequest(

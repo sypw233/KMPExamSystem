@@ -53,6 +53,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -302,7 +303,7 @@ private fun QuestionItem(
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(
-                    text = "$number. [${questionTypeLabel(question.type)}]",
+                    text = "$number. [${QuestionUtils.questionTypeLabel(question.type)}]",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -414,15 +415,6 @@ private fun formatExamTime(seconds: Int): String {
     val minutes = (seconds % 3600) / 60
     val secs = seconds % 60
     return if (hours > 0) "%02d:%02d:%02d".format(hours, minutes, secs) else "%02d:%02d".format(minutes, secs)
-}
-
-private fun questionTypeLabel(type: String): String = when (type) {
-    "single" -> "单选"
-    "multiple" -> "多选"
-    "true_false" -> "判断"
-    "fill_blank" -> "填空"
-    "short_answer" -> "简答"
-    else -> type
 }
 
 private fun parseOptions(optionsJson: String?): List<String> {

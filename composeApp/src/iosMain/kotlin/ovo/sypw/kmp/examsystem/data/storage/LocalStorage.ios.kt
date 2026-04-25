@@ -20,7 +20,7 @@ actual class LocalStorage {
      * @param value 值
      */
     actual suspend fun saveString(key: String, value: String) {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             userDefaults.setObject(value, key)
             userDefaults.synchronize()
         }
@@ -32,7 +32,7 @@ actual class LocalStorage {
      * @return 值，如果不存在则返回null
      */
     actual suspend fun getString(key: String): String? {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             userDefaults.stringForKey(key)
         }
     }
@@ -43,7 +43,7 @@ actual class LocalStorage {
      * @param value 值
      */
     actual suspend fun saveBoolean(key: String, value: Boolean) {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             userDefaults.setBool(value, key)
             userDefaults.synchronize()
         }
@@ -56,7 +56,7 @@ actual class LocalStorage {
      * @return 值，如果不存在则返回默认值
      */
     actual suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             if (userDefaults.objectForKey(key) != null) {
                 userDefaults.boolForKey(key)
             } else {
@@ -71,7 +71,7 @@ actual class LocalStorage {
      * @param value 值
      */
     actual suspend fun saveInt(key: String, value: Int) {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             userDefaults.setInteger(value.toLong(), key)
             userDefaults.synchronize()
         }
@@ -84,7 +84,7 @@ actual class LocalStorage {
      * @return 值，如果不存在则返回默认值
      */
     actual suspend fun getInt(key: String, defaultValue: Int): Int {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             if (userDefaults.objectForKey(key) != null) {
                 userDefaults.integerForKey(key).toInt()
             } else {
@@ -99,7 +99,7 @@ actual class LocalStorage {
      * @param value 值
      */
     actual suspend fun saveLong(key: String, value: Long) {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             userDefaults.setInteger(value, key)
             userDefaults.synchronize()
         }
@@ -112,7 +112,7 @@ actual class LocalStorage {
      * @return 值，如果不存在则返回默认值
      */
     actual suspend fun getLong(key: String, defaultValue: Long): Long {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             if (userDefaults.objectForKey(key) != null) {
                 userDefaults.integerForKey(key)
             } else {
@@ -126,7 +126,7 @@ actual class LocalStorage {
      * @param key 键
      */
     actual suspend fun remove(key: String) {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             userDefaults.removeObjectForKey(key)
             userDefaults.synchronize()
         }
@@ -136,7 +136,7 @@ actual class LocalStorage {
      * 清除所有数据
      */
     actual suspend fun clear() {
-        withContext(Dispatchers.Main) {
+        withContext(Dispatchers.Default) {
             val bundleId = NSBundle.mainBundle.bundleIdentifier
             if (bundleId != null) {
                 userDefaults.removePersistentDomainForName(bundleId)
@@ -155,7 +155,7 @@ actual class LocalStorage {
      * @return 如果包含返回true，否则返回false
      */
     actual suspend fun contains(key: String): Boolean {
-        return withContext(Dispatchers.Main) {
+        return withContext(Dispatchers.Default) {
             userDefaults.objectForKey(key) != null
         }
     }

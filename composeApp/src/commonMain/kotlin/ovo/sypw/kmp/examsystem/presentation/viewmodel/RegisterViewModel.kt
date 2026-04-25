@@ -136,9 +136,9 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
 /**
  * 注册界面 UI 状态
  */
-sealed class RegisterUiState {
-    data object Idle : RegisterUiState()
-    data object Loading : RegisterUiState()
-    data object Success : RegisterUiState()
-    data class Error(val message: String) : RegisterUiState()
+sealed interface RegisterUiState {
+    data object Idle : RegisterUiState
+    data object Loading : RegisterUiState
+    data object Success : RegisterUiState
+    data class Error(val message: String) : RegisterUiState
 }

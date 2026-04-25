@@ -79,9 +79,9 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 /**
  * 登录界面 UI 状态
  */
-sealed class LoginUiState {
-    data object Idle : LoginUiState()
-    data object Loading : LoginUiState()
-    data object Success : LoginUiState()
-    data class Error(val message: String) : LoginUiState()
+sealed interface LoginUiState {
+    data object Idle : LoginUiState
+    data object Loading : LoginUiState
+    data object Success : LoginUiState
+    data class Error(val message: String) : LoginUiState
 }

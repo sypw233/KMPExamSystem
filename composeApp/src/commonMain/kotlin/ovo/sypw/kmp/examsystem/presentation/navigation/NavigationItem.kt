@@ -2,12 +2,10 @@ package ovo.sypw.kmp.examsystem.presentation.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ManageAccounts
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.SettingsApplications
@@ -22,8 +20,6 @@ object AppRoutes {
     const val EXAMS       = "exams"        // 考试（学生参加 / 教师&管理员管理）
     const val USERS       = "users"        // 用户管理（仅管理员）
     const val PROFILE     = "profile"      // 我的（所有角色）
-    const val STATISTICS  = "statistics"   // 数据概览（管理员首页 = statistics）
-    const val NOTIFICATIONS = "notifications" // 通知（嵌套在 profile，这里保留路由）
     const val QUESTION_BANKS = "question_banks"
     const val SYSTEM_SETTINGS = "system_settings"
 }
