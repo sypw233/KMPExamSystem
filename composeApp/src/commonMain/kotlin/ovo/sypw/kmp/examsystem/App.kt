@@ -38,7 +38,6 @@ import ovo.sypw.kmp.examsystem.presentation.theme.AppTheme
 import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.getResponsiveLayoutConfig
 
@@ -86,52 +85,57 @@ private fun MainAppContent() {
         authRepository.checkAuthState()
     }
 
-    // 使用 Box 确保 GlobalDialog 在最顶层
-    Box(modifier = Modifier.fillMaxSize()) {
-        when (authState) {
-            is AuthState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is AuthState.Unauthenticated, is AuthState.Error -> {
-                // 未登录，显示登录或注册界面
-                if (showRegisterScreen) {
-                    RegisterScreen(
-                        onRegisterSuccess = {
-                            showRegisterScreen = false
-                        },
-                        onNavigateToLogin = {
-                            showRegisterScreen = false
+    // 使用 BoxWithConstraints 获取窗口尺寸，为所有子组件提供响应式配置
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val layoutConfig = getResponsiveLayoutConfig(maxWidth)
+        CompositionLocalProvider(LocalResponsiveConfig provides layoutConfig) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (authState) {
+                    is AuthState.Loading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
-                    )
-                } else {
-                    LoginScreen(
-                        onLoginSuccess = {
-                            // 登录成功后会自动更新 authState
-                        },
-                        onNavigateToRegister = {
-                            showRegisterScreen = true
-                        }
-                    )
-                }
-            }
+                    }
 
-    is AuthState.Authenticated -> {
-                // 已登录，显示主界面
-                AuthenticatedContent(authState as AuthState.Authenticated)
+                    is AuthState.Unauthenticated, is AuthState.Error -> {
+                        // 未登录，显示登录或注册界面
+                        if (showRegisterScreen) {
+                            RegisterScreen(
+                                onRegisterSuccess = {
+                                    showRegisterScreen = false
+                                },
+                                onNavigateToLogin = {
+                                    showRegisterScreen = false
+                                }
+                            )
+                        } else {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    // 登录成功后会自动更新 authState
+                                },
+                                onNavigateToRegister = {
+                                    showRegisterScreen = true
+                                }
+                            )
+                        }
+                    }
+
+                    is AuthState.Authenticated -> {
+                        // 已登录，显示主界面
+                        AuthenticatedContent(authState as AuthState.Authenticated)
+                    }
+                }
+
+                // 全局弹窗 - 放在最后确保在最顶层显示
+                GlobalDialog(
+                    config = currentDialog,
+                    onDismiss = { dialogManager.dismiss() }
+                )
             }
         }
-
-        // 全局弹窗 - 放在最后确保在最顶层显示
-        GlobalDialog(
-            config = currentDialog,
-            onDismiss = { dialogManager.dismiss() }
-        )
     }
 }
 
@@ -148,33 +152,30 @@ private fun AuthenticatedContent(authState: AuthState.Authenticated) {
     LaunchedEffect(authState.user.role) {
         navigationManager.setRoleFromString(authState.user.role)
     }
-    BoxWithConstraints(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        val layoutConfig = getResponsiveLayoutConfig(maxWidth)
 
-        if (isInExamMode && currentExamId != null) {
-            // 考试模式：全屏显示，隐藏所有导航
-            ExamTakingScreen(
-                examId = currentExamId!!,
-                navigationManager = navigationManager,
-                onExitExam = {
-                    // 退出考试后返回考试列表
-                    navigationManager.navigateTo("exams")
-                }
-            )
-        } else {
-            // 正常模式：根据屏幕尺寸显示不同的导航布局
-            when (layoutConfig.screenSize) {
-                ResponsiveUtils.ScreenSize.COMPACT, ResponsiveUtils.ScreenSize.MEDIUM -> {
-                    // 移动端：底部导航布局
-                    MobileLayout(navigationManager, layoutConfig)
-                }
+    val config = LocalResponsiveConfig.current
 
-                ResponsiveUtils.ScreenSize.EXPANDED -> {
-                    // 桌面端：侧边导航布局
-                    DesktopLayout(navigationManager, layoutConfig)
-                }
+    if (isInExamMode && currentExamId != null) {
+        // 考试模式：全屏显示，隐藏所有导航
+        ExamTakingScreen(
+            examId = currentExamId!!,
+            navigationManager = navigationManager,
+            onExitExam = {
+                // 退出考试后返回考试列表
+                navigationManager.navigateTo("exams")
+            }
+        )
+    } else {
+        // 正常模式：根据屏幕尺寸显示不同的导航布局
+        when (config.screenSize) {
+            ResponsiveUtils.ScreenSize.COMPACT, ResponsiveUtils.ScreenSize.MEDIUM -> {
+                // 移动端：底部导航布局
+                MobileLayout(navigationManager)
+            }
+
+            ResponsiveUtils.ScreenSize.EXPANDED -> {
+                // 桌面端：侧边导航布局
+                DesktopLayout(navigationManager)
             }
         }
     }
@@ -185,8 +186,7 @@ private fun AuthenticatedContent(authState: AuthState.Authenticated) {
  */
 @Composable
 private fun MobileLayout(
-    navigationManager: NavigationManager,
-    layoutConfig: ResponsiveLayoutConfig
+    navigationManager: NavigationManager
 ) {
     Column(
         modifier = Modifier.fillMaxSize()
@@ -199,8 +199,7 @@ private fun MobileLayout(
         ) {
             MainContent(
                 navigationManager = navigationManager,
-                modifier = Modifier.fillMaxSize(),
-                layoutConfig = layoutConfig
+                modifier = Modifier.fillMaxSize()
             )
         }
 
@@ -216,8 +215,7 @@ private fun MobileLayout(
  */
 @Composable
 private fun DesktopLayout(
-    navigationManager: NavigationManager,
-    layoutConfig: ResponsiveLayoutConfig
+    navigationManager: NavigationManager
 ) {
     Row(
         modifier = Modifier.fillMaxSize()
@@ -235,8 +233,7 @@ private fun DesktopLayout(
         ) {
             MainContent(
                 navigationManager = navigationManager,
-                modifier = Modifier.fillMaxSize(),
-                layoutConfig = layoutConfig
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
@@ -251,11 +248,8 @@ private fun DesktopLayout(
 @Composable
 private fun MainContent(
     navigationManager: NavigationManager,
-    modifier: Modifier = Modifier,
-    layoutConfig: ResponsiveLayoutConfig
+    modifier: Modifier = Modifier
 ) {
     val route = navigationManager.currentScreen.value
-    CompositionLocalProvider(LocalResponsiveConfig provides layoutConfig) {
-        NavigationScreen(route, navigationManager)
-    }
+    NavigationScreen(route, navigationManager)
 }
