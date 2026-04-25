@@ -31,6 +31,12 @@ class QuestionBankRepository(
         } else throw Exception(r.message)
     }
 
+    /** 获取题库详情 */
+    suspend fun getBankDetail(bankId: Long): Result<QuestionBankResponse> = runWithToken { token ->
+        val r = questionBankApi.getBankDetail(token, bankId)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
     suspend fun createBank(request: QuestionBankRequest): Result<QuestionBankResponse> = runWithToken { token ->
         val r = questionBankApi.createBank(token, request)
         if (r.code == 200 && r.data != null) { loadMyBanks(); r.data }

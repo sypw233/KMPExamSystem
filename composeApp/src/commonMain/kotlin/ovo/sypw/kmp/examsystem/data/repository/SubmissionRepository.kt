@@ -70,6 +70,14 @@ class SubmissionRepository(
     }
 
     /**
+     * 获取某次提交的监考记录
+     */
+    suspend fun getProctoringEvents(submissionId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse>> = runWithToken { token ->
+        val r = submissionApi.getProctoringEvents(token, submissionId)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /**
      * 分页查询提交记录
      */
     suspend fun querySubmissions(

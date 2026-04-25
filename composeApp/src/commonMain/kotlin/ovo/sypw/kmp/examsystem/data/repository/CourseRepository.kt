@@ -111,6 +111,12 @@ class CourseRepository(
         } else throw Exception(r.message)
     }
 
+    /** 获取课程详情 */
+    suspend fun getCourseDetail(courseId: Long): Result<CourseResponse> = runWithToken { token ->
+        val r = courseApi.getCourseDetail(token, courseId)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+    }
+
     /** 获取课程下的考试列表 */
     suspend fun getCourseExams(courseId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>> = runWithToken { token ->
         val r = courseApi.getCourseExams(token, courseId)

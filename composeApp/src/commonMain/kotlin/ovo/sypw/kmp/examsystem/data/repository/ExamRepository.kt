@@ -107,6 +107,18 @@ class ExamRepository(
         }
     }
 
+    /** 学生：获取可参加的考试 */
+    suspend fun getMyAvailableExams(): Result<List<ExamResponse>> = runWithToken { token ->
+        val r = examApi.getMyAvailableExams(token)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
+    /** 学生：获取已完成的考试 */
+    suspend fun getMyCompletedExams(): Result<List<ExamResponse>> = runWithToken { token ->
+        val r = examApi.getMyCompletedExams(token)
+        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    }
+
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->
         val r = examApi.getExamsByCourse(token, courseId)
         if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)

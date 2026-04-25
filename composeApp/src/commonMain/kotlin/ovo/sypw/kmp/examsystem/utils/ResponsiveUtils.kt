@@ -172,7 +172,7 @@ fun getResponsiveLayoutConfig(screenWidth: Dp): ResponsiveLayoutConfig {
         screenSizeOrigin = screenWidth,
         screenPadding = ResponsiveUtils.Padding.getScreenPadding(screenSize),
         contentPadding = ResponsiveUtils.Padding.getContentPadding(screenSize),
-        cardPadding = ResponsiveUtils.Padding.getContentPadding(screenSize),
+        cardPadding = ResponsiveUtils.Padding.getCardPadding(screenSize),
         verticalSpacing = ResponsiveUtils.Spacing.getVerticalSpacing(screenSize),
         horizontalSpacing = ResponsiveUtils.Spacing.getHorizontalSpacing(screenSize),
         columnCount = ResponsiveUtils.Grid.getColumnCount(screenSize),
