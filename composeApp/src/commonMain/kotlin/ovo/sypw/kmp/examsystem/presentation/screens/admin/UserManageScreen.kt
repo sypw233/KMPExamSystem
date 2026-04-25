@@ -1,11 +1,7 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.admin
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,29 +17,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.LockReset
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,17 +49,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
-import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
-import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserListState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserManageViewModel
@@ -389,106 +368,6 @@ private fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams)
     }
 }
 
-// ── 用户卡片 ─────────────────────────────────────────────────────────────────
-
-@Composable
-private fun UserCard(
-    user: UserResponse,
-    isBatchMode: Boolean = false,
-    isSelected: Boolean = false,
-    onToggleSelect: () -> Unit = {},
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onResetPassword: () -> Unit,
-    onToggleStatus: () -> Unit
-) {
-    val isEnabled = user.status == 1
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isSelected -> MaterialTheme.colorScheme.secondaryContainer
-                isEnabled -> MaterialTheme.colorScheme.surface
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isBatchMode) {
-                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            // 用户信息
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        user.realName ?: user.username,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    RoleBadge(role = user.role)
-                    if (!isEnabled) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Badge(containerColor = MaterialTheme.colorScheme.errorContainer) {
-                            Text("禁用", color = MaterialTheme.colorScheme.onErrorContainer)
-                        }
-                    }
-                }
-                Text(
-                    "@${user.username}  ${user.email ?: ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // 操作按钮
-            if (!isBatchMode) {
-                Row {
-                    IconButton(onClick = onToggleStatus) {
-                        Icon(
-                            if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
-                            contentDescription = if (isEnabled) "禁用" else "启用",
-                            tint = if (isEnabled) MaterialTheme.colorScheme.error
-                                   else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = onResetPassword) {
-                        Icon(Icons.Default.LockReset, contentDescription = "重置密码")
-                    }
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Person, contentDescription = "编辑")
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "删除",
-                             tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RoleBadge(role: String) {
-    val (label, color) = when (role.lowercase()) {
-        "admin"   -> "管理员" to MaterialTheme.colorScheme.tertiary
-        "teacher" -> "教师" to MaterialTheme.colorScheme.secondary
-        else      -> "学生" to MaterialTheme.colorScheme.primary
-    }
-    Badge(containerColor = color.copy(alpha = 0.15f)) {
-        Text(label, color = color, style = MaterialTheme.typography.labelSmall)
-    }
-}
-
 // ── 分页控制 ─────────────────────────────────────────────────────────────────
 
 @Composable
@@ -516,228 +395,4 @@ private fun PaginationBar(
             Text("下一页")
         }
     }
-}
-
-// ── 新建用户弹窗 ─────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CreateUserDialog(
-    onConfirm: (UserCreateRequest) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var realName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var role by remember { mutableStateOf("student") }
-    var roleExpanded by remember { mutableStateOf(false) }
-
-    val isValid = username.length >= 3 && password.length >= 6 && role.isNotEmpty()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("新建用户") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("用户名 *") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("密码 * (≥6位)") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = realName,
-                    onValueChange = { realName = it },
-                    label = { Text("真实姓名") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("邮箱") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                ExposedDropdownMenuBox(
-                    expanded = roleExpanded,
-                    onExpandedChange = { roleExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = roleDisplayName(role),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("角色 *") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                        listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = { role = v; roleExpanded = false }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(UserCreateRequest(
-                        username = username.trim(),
-                        password = password,
-                        realName = realName.takeIf { it.isNotBlank() },
-                        email = email.takeIf { it.isNotBlank() },
-                        role = role
-                    ))
-                },
-                enabled = isValid
-            ) { Text("创建") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
-    )
-}
-
-// ── 编辑用户弹窗 ─────────────────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun EditUserDialog(
-    user: UserResponse,
-    onConfirm: (UserUpdateRequest) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var realName by remember { mutableStateOf(user.realName ?: "") }
-    var email by remember { mutableStateOf(user.email ?: "") }
-    var role by remember { mutableStateOf(user.role) }
-    var roleExpanded by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("编辑用户：${user.username}") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                OutlinedTextField(
-                    value = realName,
-                    onValueChange = { realName = it },
-                    label = { Text("真实姓名") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("邮箱") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                ExposedDropdownMenuBox(
-                    expanded = roleExpanded,
-                    onExpandedChange = { roleExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = roleDisplayName(role),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("角色") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
-                        listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = { role = v; roleExpanded = false }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                onConfirm(UserUpdateRequest(
-                    realName = realName.takeIf { it.isNotBlank() },
-                    email = email.takeIf { it.isNotBlank() },
-                    role = role
-                ))
-            }) { Text("保存") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
-    )
-}
-
-// ── 重置密码弹窗 ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun ResetPasswordDialog(
-    username: String,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    val isValid = newPassword.length >= 6 && newPassword == confirmPassword
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("重置密码：$username") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = { newPassword = it },
-                    label = { Text("新密码 (≥6位)") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("确认密码") },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    isError = confirmPassword.isNotEmpty() && newPassword != confirmPassword,
-                    supportingText = {
-                        if (confirmPassword.isNotEmpty() && newPassword != confirmPassword) {
-                            Text("两次密码不一致", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(newPassword) }, enabled = isValid) { Text("重置") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
-    )
-}
-
-private fun roleDisplayName(role: String) = when (role.lowercase()) {
-    "admin"   -> "管理员"
-    "teacher" -> "教师"
-    else      -> "学生"
 }
