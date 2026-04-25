@@ -111,6 +111,7 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
     val myCoursesState by courseViewModel.myCoursesState.collectAsState()
     val actionState by courseViewModel.actionState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val config = LocalResponsiveConfig.current
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<CourseResponse?>(null) }
@@ -170,9 +171,9 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
                         Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
                     } else {
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier),
+                            contentPadding = PaddingValues(config.screenPadding),
+                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                         ) {
                             items(s.courses, key = { it.id }) { course ->
                                 ManageCourseCard(
@@ -494,6 +495,7 @@ private fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     var examDetailCourse by remember { mutableStateOf<CourseResponse?>(null) }
     var courseExams by remember { mutableStateOf<List<ExamResponse>>(emptyList()) }
     var loadingCourseExams by remember { mutableStateOf(false) }
+    val config = LocalResponsiveConfig.current
 
     LaunchedEffect(enrollState) {
         when (val state = enrollState) {
@@ -619,6 +621,7 @@ private fun StudentCourseList(
     onWithdraw: (CourseResponse) -> Unit,
     onViewCourseExams: (CourseResponse) -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     when (state) {
         is CourseUiState.Loading -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -642,8 +645,8 @@ private fun StudentCourseList(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(config.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                 ) {
                     items(state.courses, key = { it.id }) { course ->
                         StudentCourseCard(

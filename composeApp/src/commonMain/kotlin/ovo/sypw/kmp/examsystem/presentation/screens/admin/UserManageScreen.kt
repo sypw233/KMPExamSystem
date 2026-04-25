@@ -92,6 +92,7 @@ fun UserManageScreen() {
     val actionState by viewModel.actionState.collectAsState()
     val queryParams by viewModel.queryParams.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val config = LocalResponsiveConfig.current
 
     // 弹窗状态
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -221,7 +222,7 @@ fun UserManageScreen() {
                     }
                     is UserListState.Success -> {
                         val page = state.page
-                        Column(modifier = Modifier.then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier).fillMaxSize()) {
+                        Column(modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier).fillMaxSize()) {
                             // 统计行
                             Text(
                                 "共 ${page.totalElements} 位用户，第 ${page.number + 1}/${page.totalPages} 页",

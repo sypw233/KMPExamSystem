@@ -50,6 +50,7 @@ fun RegisterScreen(
     val role by viewModel.role.collectAsState()
 
     var passwordVisible by remember { mutableStateOf(false) }
+    val config = LocalResponsiveConfig.current
 
     // 监听注册成功和错误
     LaunchedEffect(uiState) {
@@ -96,8 +97,8 @@ fun RegisterScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
-                    .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
+                    .padding(config.screenPadding)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
                     .verticalScroll(rememberScrollState()),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,

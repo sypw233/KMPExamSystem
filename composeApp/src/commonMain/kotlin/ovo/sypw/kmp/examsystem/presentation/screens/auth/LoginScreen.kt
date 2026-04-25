@@ -42,6 +42,7 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     
     var passwordVisible by remember { mutableStateOf(false) }
+    val config = LocalResponsiveConfig.current
 
     // 监听登录成功
     LaunchedEffect(uiState) {
@@ -75,8 +76,8 @@ fun LoginScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
-                    .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier), // 桌面端适配关键：限制最大宽度
+                    .padding(config.screenPadding)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier), // 桌面端适配关键：限制最大宽度
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),

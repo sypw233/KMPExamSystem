@@ -51,6 +51,7 @@ fun DashboardScreen(
     val upcomingExamsState by examViewModel.upcomingExams.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
+    val config = LocalResponsiveConfig.current
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -65,8 +66,8 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .padding(horizontal = config.screenPadding, vertical = config.contentPadding),
+                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
                 // 问候区
                 item {

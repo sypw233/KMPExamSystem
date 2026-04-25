@@ -205,14 +205,15 @@ private fun ProfileMainScreen(
     onOpenHelp: () -> Unit
 ) {
     val isStudent = user?.role?.uppercase() == "STUDENT"
+    val config = LocalResponsiveConfig.current
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 680.dp) else Modifier)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(config.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         UserInfoCard(user = user, onClick = onOpenEditProfile)

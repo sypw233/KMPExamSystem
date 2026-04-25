@@ -114,6 +114,7 @@ fun TeacherExamManageScreen(
     val actionState by viewModel.actionState.collectAsState()
     val courseUiState by courseViewModel.allCoursesState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val config = LocalResponsiveConfig.current
 
     val courses = availableCourses.takeIf { it.isNotEmpty() }
         ?: (courseUiState as? CourseUiState.Success)?.courses ?: emptyList()
@@ -306,8 +307,8 @@ fun TeacherExamManageScreen(
                             }
                         } else {
                             LazyColumn(
-                                modifier = Modifier.then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier).fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
+                                modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier).fillMaxSize(),
+                                contentPadding = PaddingValues(config.screenPadding),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 items(filteredExams, key = { it.id }) { exam ->

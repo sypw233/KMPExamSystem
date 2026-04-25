@@ -48,6 +48,7 @@ import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 fun AdminDashboardScreen() {
     val viewModel: AdminDashboardViewModel = koinInject()
     val uiState by viewModel.uiState.collectAsState()
+    val config = LocalResponsiveConfig.current
 
     Scaffold(
         topBar = {
@@ -83,7 +84,7 @@ fun AdminDashboardScreen() {
                 is AdminDashboardUiState.Success -> {
                     val data = state.data
                     BoxWithConstraints(
-                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier).padding(16.dp)
+                        modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier).padding(config.screenPadding)
                     ) {
                         val isCompact = maxWidth < 600.dp
                         val statPairs = listOf(

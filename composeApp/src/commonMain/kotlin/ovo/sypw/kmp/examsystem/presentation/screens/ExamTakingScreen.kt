@@ -148,6 +148,7 @@ private fun ExamContent(
     var showForceSubmitDialog by remember { mutableStateOf(false) }
     val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
+    val config = LocalResponsiveConfig.current
 
     LaunchedEffect(Unit) {
         if (hasDuration) {
@@ -230,8 +231,8 @@ private fun ExamContent(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
+                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
                 itemsIndexed(exam.questions) { index, examQuestion ->
                     val question = examQuestion.question ?: return@itemsIndexed

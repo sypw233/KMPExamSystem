@@ -134,12 +134,13 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
 
 @Composable
 private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordClick: (Long) -> Unit) {
+    val config = LocalResponsiveConfig.current
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(config.screenPadding),
+        verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
     ) {
         // 概览卡片
         item { StatsSummaryCard(statistics = statistics) }

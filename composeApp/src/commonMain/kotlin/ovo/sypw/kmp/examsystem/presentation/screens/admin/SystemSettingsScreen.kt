@@ -55,6 +55,7 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
     val uiState by viewModel.uiState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
+    val config = LocalResponsiveConfig.current
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -109,7 +110,7 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
                 }
                 is SystemSettingsUiState.Success -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 760.dp) else Modifier).padding(16.dp),
+                        modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 760.dp) else Modifier).padding(config.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.configs, key = { it.configKey }) { config ->

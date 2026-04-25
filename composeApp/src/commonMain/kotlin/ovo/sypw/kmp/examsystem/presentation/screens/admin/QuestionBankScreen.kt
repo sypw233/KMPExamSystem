@@ -94,6 +94,7 @@ fun QuestionBankScreen() {
     var deleteDialog by remember { mutableStateOf<QuestionBankResponse?>(null) }
     var questionFormDialog by remember { mutableStateOf(false) }
     var editQuestionDialog by remember { mutableStateOf<QuestionResponse?>(null) }
+    val config = LocalResponsiveConfig.current
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -184,7 +185,7 @@ fun QuestionBankScreen() {
                 }
                 is QuestionBankUiState.Success -> {
                     Row(
-                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1200.dp) else Modifier).padding(16.dp),
+                        modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1200.dp) else Modifier).padding(config.screenPadding),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Card(modifier = Modifier.weight(1f)) {
