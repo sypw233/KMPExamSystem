@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.data.storage
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import platform.Foundation.NSBundle
 import platform.Foundation.NSUserDefaults
 
 /**
@@ -136,7 +137,15 @@ actual class LocalStorage {
      */
     actual suspend fun clear() {
         withContext(Dispatchers.Main) {
-
+            val bundleId = NSBundle.mainBundle.bundleIdentifier
+            if (bundleId != null) {
+                userDefaults.removePersistentDomainForName(bundleId)
+            } else {
+                userDefaults.dictionaryRepresentation().keys.forEach { key ->
+                    userDefaults.removeObjectForKey(key as String)
+                }
+            }
+            userDefaults.synchronize()
         }
     }
 

@@ -147,6 +147,6 @@ fun createFileUtils(context: Context): FileUtils {
  * @return FileUtils实例
  */
 actual fun createFileUtils(): FileUtils {
-    throw IllegalStateException("Android平台需要Context参数，请使用createFileUtils(context: Context)")
+    return AndroidFileUtils(org.koin.core.context.GlobalContext.get().get())
 }
     
