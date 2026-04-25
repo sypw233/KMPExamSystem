@@ -40,6 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsActionState
@@ -107,7 +109,7 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
                 }
                 is SystemSettingsUiState.Success -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().widthIn(max = 760.dp).padding(16.dp),
+                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 760.dp) else Modifier).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.configs, key = { it.configKey }) { config ->

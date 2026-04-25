@@ -61,6 +61,8 @@ import androidx.compose.ui.text.font.FontWeight
 import coil3.compose.AsyncImage
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -207,7 +209,7 @@ private fun ProfileMainScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .widthIn(max = 680.dp)
+            .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 680.dp) else Modifier)
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),

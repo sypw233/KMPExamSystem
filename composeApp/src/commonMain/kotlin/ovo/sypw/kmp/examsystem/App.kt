@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import ovo.sypw.kmp.examsystem.presentation.screens.auth.RegisterScreen
 import ovo.sypw.kmp.examsystem.presentation.theme.AppTheme
 import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.getResponsiveLayoutConfig
@@ -253,5 +255,7 @@ private fun MainContent(
     layoutConfig: ResponsiveLayoutConfig
 ) {
     val route = navigationManager.currentScreen.value
-    NavigationScreen(route, navigationManager)
+    CompositionLocalProvider(LocalResponsiveConfig provides layoutConfig) {
+        NavigationScreen(route, navigationManager)
+    }
 }

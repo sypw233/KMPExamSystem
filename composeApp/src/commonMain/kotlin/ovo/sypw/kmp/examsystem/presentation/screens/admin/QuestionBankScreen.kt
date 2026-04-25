@@ -61,6 +61,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
@@ -182,7 +184,7 @@ fun QuestionBankScreen() {
                 }
                 is QuestionBankUiState.Success -> {
                     Row(
-                        modifier = Modifier.fillMaxSize().widthIn(max = 1200.dp).padding(16.dp),
+                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1200.dp) else Modifier).padding(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Card(modifier = Modifier.weight(1f)) {

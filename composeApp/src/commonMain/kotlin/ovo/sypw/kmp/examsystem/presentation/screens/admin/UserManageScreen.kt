@@ -69,6 +69,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
@@ -219,7 +221,7 @@ fun UserManageScreen() {
                     }
                     is UserListState.Success -> {
                         val page = state.page
-                        Column(modifier = Modifier.widthIn(max = 960.dp).fillMaxSize()) {
+                        Column(modifier = Modifier.then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier).fillMaxSize()) {
                             // 统计行
                             Text(
                                 "共 ${page.totalElements} 位用户，第 ${page.number + 1}/${page.totalPages} 页",

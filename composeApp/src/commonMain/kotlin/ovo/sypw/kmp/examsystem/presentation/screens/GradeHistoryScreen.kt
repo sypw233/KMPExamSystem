@@ -45,6 +45,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.StudentScoreRecord
 import ovo.sypw.kmp.examsystem.data.dto.StudentStatisticsResponse
@@ -135,7 +137,7 @@ private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordC
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .widthIn(max = 800.dp),
+            .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {

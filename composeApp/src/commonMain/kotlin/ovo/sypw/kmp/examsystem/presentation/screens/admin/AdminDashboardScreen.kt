@@ -35,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SystemOverviewResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AdminDashboardUiState
@@ -81,7 +83,7 @@ fun AdminDashboardScreen() {
                 is AdminDashboardUiState.Success -> {
                     val data = state.data
                     BoxWithConstraints(
-                        modifier = Modifier.fillMaxSize().widthIn(max = 1000.dp).padding(16.dp)
+                        modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier).padding(16.dp)
                     ) {
                         val isCompact = maxWidth < 600.dp
                         val statPairs = listOf(

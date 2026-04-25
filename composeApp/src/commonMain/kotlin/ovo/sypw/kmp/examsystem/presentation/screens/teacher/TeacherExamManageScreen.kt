@@ -75,6 +75,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -304,7 +306,7 @@ fun TeacherExamManageScreen(
                             }
                         } else {
                             LazyColumn(
-                                modifier = Modifier.widthIn(max = 900.dp).fillMaxSize(),
+                                modifier = Modifier.then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier).fillMaxSize(),
                                 contentPadding = PaddingValues(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
