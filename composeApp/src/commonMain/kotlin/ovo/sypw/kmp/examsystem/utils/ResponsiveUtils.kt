@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -270,4 +274,62 @@ fun ResponsiveNarrowContent(
         maxWidth = maxWidth,
         content = content
     )
+}
+
+/**
+ * 响应式懒加载网格
+ * 根据屏幕尺寸自动调整列数：COMPACT=1, MEDIUM=2, EXPANDED=3
+ *
+ * @param items 数据列表
+ * @param key 项的唯一键
+ * @param modifier 修饰符
+ * @param contentPadding 内容内边距
+ * @param verticalArrangement 垂直间距
+ * @param horizontalArrangement 水平间距（多列时有效）
+ * @param itemContent 单项内容渲染
+ */
+@Composable
+fun <T> ResponsiveLazyVerticalGrid(
+    items: List<T>,
+    key: ((T) -> Any)? = null,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
+    itemContent: @Composable (T) -> Unit
+) {
+    val config = LocalResponsiveConfig.current
+    val columns = config.columnCount
+
+    if (columns == 1 || items.isEmpty()) {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = contentPadding,
+            verticalArrangement = verticalArrangement
+        ) {
+            items(items, key = key) { itemContent(it) }
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = contentPadding,
+            verticalArrangement = verticalArrangement
+        ) {
+            items(items.chunked(columns).withIndex().toList(), key = { it.index }) { (_, rowItems) ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = horizontalArrangement
+                ) {
+                    rowItems.forEach { item ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            itemContent(item)
+                        }
+                    }
+                    repeat(columns - rowItems.size) {
+                        Box(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
 }
