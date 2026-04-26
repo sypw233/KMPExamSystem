@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
@@ -58,6 +59,7 @@ fun ExamSubmissionsScreen(
 ) {
     val viewModel: GradeSubmissionViewModel = koinInject()
     val uiState by viewModel.uiState.collectAsState()
+    val config = LocalResponsiveConfig.current
 
     var selectedSubmissionId by remember { mutableStateOf<Long?>(null) }
 
@@ -109,17 +111,18 @@ fun ExamSubmissionsScreen(
                             Text("暂无学生提交答卷", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier)
-                        ) {
-                            items(state.submissions, key = { it.id }) { submission ->
-                                SubmissionCard(
-                                    submission = submission,
-                                    onClick = { selectedSubmissionId = submission.id }
-                                )
-                            }
+                        ResponsiveLazyVerticalGrid(
+                            items = state.submissions,
+                            key = { it.id },
+                            contentPadding = PaddingValues(config.screenPadding),
+                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                            modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier)
+                        ) { submission ->
+                            SubmissionCard(
+                                submission = submission,
+                                onClick = { selectedSubmissionId = submission.id }
+                            )
                         }
                     }
                 }
@@ -130,6 +133,7 @@ fun ExamSubmissionsScreen(
 
 @Composable
 private fun SubmissionCard(submission: SubmissionResponse, onClick: () -> Unit) {
+    val config = LocalResponsiveConfig.current
     val isGraded = submission.status == 2
     val statusColor = if (isGraded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val statusIcon = if (isGraded) Icons.Default.CheckCircle else Icons.Default.Schedule
@@ -140,7 +144,7 @@ private fun SubmissionCard(submission: SubmissionResponse, onClick: () -> Unit) 
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Default.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))

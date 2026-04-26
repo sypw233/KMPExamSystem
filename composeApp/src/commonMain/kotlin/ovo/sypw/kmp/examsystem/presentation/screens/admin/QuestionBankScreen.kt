@@ -52,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
@@ -324,18 +325,22 @@ fun QuestionBankScreen() {
                                     if (filteredQuestions.isEmpty()) {
                                         Text("无匹配题目。", modifier = Modifier.padding(16.dp))
                                     } else {
-                                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            items(filteredQuestions, key = { it.id }) { question ->
-                                                QuestionCard(
-                                                    question = question,
-                                                    onEdit = { editQuestionDialog = question },
-                                                    onDelete = {
-                                                        selectedBank?.let { bank ->
-                                                            viewModel.removeQuestionFromBank(bank.id, question.id)
-                                                        }
+                                        ResponsiveLazyVerticalGrid(
+                                            items = filteredQuestions,
+                                            key = { it.id },
+                                            modifier = Modifier.fillMaxSize(),
+                                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                        ) { question ->
+                                            QuestionCard(
+                                                question = question,
+                                                onEdit = { editQuestionDialog = question },
+                                                onDelete = {
+                                                    selectedBank?.let { bank ->
+                                                        viewModel.removeQuestionFromBank(bank.id, question.id)
                                                     }
-                                                )
-                                            }
+                                                }
+                                            )
                                         }
                                     }
                                 } else {

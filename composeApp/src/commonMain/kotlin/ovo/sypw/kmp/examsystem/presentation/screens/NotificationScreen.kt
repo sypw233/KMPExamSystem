@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
@@ -66,6 +67,12 @@ import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
+
+private sealed class NotificationGridItem {
+    data class Data(val notification: ovo.sypw.kmp.examsystem.data.dto.NotificationResponse) : NotificationGridItem()
+    data object LoadMore : NotificationGridItem()
+    data object FooterSpacer : NotificationGridItem()
+}
 
 /**
  * 通知列表独立页面
@@ -82,6 +89,7 @@ fun NotificationScreen(onBack: () -> Unit) {
     val isAdmin = (authState as? AuthState.Authenticated)?.user?.role?.uppercase() == "ADMIN"
 
     var showSendDialog by remember { mutableStateOf(false) }
+    val config = LocalResponsiveConfig.current
 
     Scaffold(
         topBar = {
@@ -167,25 +175,42 @@ fun NotificationScreen(onBack: () -> Unit) {
                             }
                         }
                     } else {
-                        LazyColumn(
+                        val hasMore by viewModel.hasMore.collectAsState()
+                        val listItems = buildList {
+                            addAll(state.notifications.map { NotificationGridItem.Data(it) })
+                            if (hasMore) add(NotificationGridItem.LoadMore)
+                            add(NotificationGridItem.FooterSpacer)
+                        }
+                        ResponsiveLazyVerticalGrid(
+                            items = listItems,
+                            key = {
+                                when (it) {
+                                    is NotificationGridItem.Data -> it.notification.id
+                                    NotificationGridItem.LoadMore -> "load_more"
+                                    NotificationGridItem.FooterSpacer -> "footer_spacer"
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxSize()
-                                .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
-                            contentPadding = PaddingValues(vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            items(state.notifications, key = { it.id }) { notification ->
-                                SwipeToDismissNotificationItem(
-                                    notification = notification,
-                                    onMarkRead = { viewModel.markAsRead(notification.id) },
-                                    onDelete = { viewModel.deleteNotification(notification.id) }
-                                )
-                            }
-                            item {
-                                val hasMore by viewModel.hasMore.collectAsState()
-                                if (hasMore) {
+                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
+                            contentPadding = PaddingValues(
+                                horizontal = config.screenPadding,
+                                vertical = config.verticalSpacing
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                        ) { item ->
+                            when (item) {
+                                is NotificationGridItem.Data -> {
+                                    SwipeToDismissNotificationItem(
+                                        notification = item.notification,
+                                        onMarkRead = { viewModel.markAsRead(item.notification.id) },
+                                        onDelete = { viewModel.deleteNotification(item.notification.id) }
+                                    )
+                                }
+                                NotificationGridItem.LoadMore -> {
                                     Box(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         TextButton(onClick = { viewModel.loadMore() }) {
@@ -193,7 +218,9 @@ fun NotificationScreen(onBack: () -> Unit) {
                                         }
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
+                                NotificationGridItem.FooterSpacer -> {
+                                    Spacer(modifier = Modifier.height(config.verticalSpacing))
+                                }
                             }
                         }
                     }
@@ -265,6 +292,7 @@ private fun NotificationListItem(
     notification: NotificationResponse,
     onMarkRead: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     Surface(
         onClick = onMarkRead,
         color = if (notification.isRead)
@@ -276,7 +304,7 @@ private fun NotificationListItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(config.cardPadding),
             verticalAlignment = Alignment.Top
         ) {
             // 类型图标
@@ -397,3 +425,5 @@ private fun notificationTypeIcon(type: String): ImageVector = when (type) {
     "COURSE_UPDATE" -> Icons.Default.Announcement
     else -> Icons.Default.Notifications
 }
+
+

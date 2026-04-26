@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -138,7 +138,7 @@ private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordC
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
+            .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
         contentPadding = PaddingValues(config.screenPadding),
         verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
     ) {
@@ -161,15 +161,23 @@ private fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecordC
                 }
             }
         } else {
-            items(statistics.scores, key = { it.examId }) { record ->
-                val clickable = record.submissionId != null
-                GradeRecordCard(
-                    record = record,
-                    clickable = clickable,
-                    onClick = {
-                        record.submissionId?.let { onRecordClick(it) }
-                    }
-                )
+            item {
+                ResponsiveLazyVerticalGrid(
+                    items = statistics.scores,
+                    key = { it.examId },
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                ) { record ->
+                    val clickable = record.submissionId != null
+                    GradeRecordCard(
+                        record = record,
+                        clickable = clickable,
+                        onClick = {
+                            record.submissionId?.let { onRecordClick(it) }
+                        }
+                    )
+                }
             }
         }
 
@@ -252,6 +260,7 @@ private fun StatItem(label: String, value: String) {
 
 @Composable
 private fun GradeRecordCard(record: StudentScoreRecord, clickable: Boolean, onClick: () -> Unit) {
+    val config = LocalResponsiveConfig.current
     Card(
         modifier = Modifier.fillMaxWidth().then(
             if (clickable) Modifier.clickable(onClick = onClick) else Modifier
@@ -263,7 +272,7 @@ private fun GradeRecordCard(record: StudentScoreRecord, clickable: Boolean, onCl
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(config.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 状态图标
