@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @Composable
 fun StudentCourseCard(
@@ -39,12 +40,13 @@ fun StudentCourseCard(
     onWithdraw: () -> Unit,
     onViewCourseExams: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(config.cardPadding)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(48.dp)) {
                     Box(contentAlignment = Alignment.Center) {

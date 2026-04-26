@@ -3,10 +3,8 @@ package ovo.sypw.kmp.examsystem.presentation.screens.admin
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,8 +32,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SystemOverviewResponse
@@ -83,58 +83,34 @@ fun AdminDashboardScreen() {
                 }
                 is AdminDashboardUiState.Success -> {
                     val data = state.data
-                    BoxWithConstraints(
+                    val statPairs = listOf(
+                        "用户" to data.overview.totalUsers.toString(),
+                        "学生" to data.overview.studentCount.toString(),
+                        "教师" to data.overview.teacherCount.toString(),
+                        "管理员" to data.overview.adminCount.toString(),
+                        "课程" to data.overview.totalCourses.toString(),
+                        "考试" to data.overview.totalExams.toString(),
+                        "题目" to data.overview.totalQuestions.toString(),
+                        "提交" to data.overview.totalSubmissions.toString()
+                    )
+                    val rowCount = (statPairs.size + config.columnCount - 1) / config.columnCount
+                    val estimatedCardHeight = config.cardPadding * 2 + 100.dp
+                    val gridHeight = estimatedCardHeight * rowCount + config.verticalSpacing * (rowCount - 1)
+                    Box(
                         modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier).padding(config.screenPadding)
                     ) {
-                        val isCompact = maxWidth < 600.dp
-                        val statPairs = listOf(
-                            "用户" to data.overview.totalUsers.toString(),
-                            "学生" to data.overview.studentCount.toString(),
-                            "教师" to data.overview.teacherCount.toString(),
-                            "管理员" to data.overview.adminCount.toString(),
-                            "课程" to data.overview.totalCourses.toString(),
-                            "考试" to data.overview.totalExams.toString(),
-                            "题目" to data.overview.totalQuestions.toString(),
-                            "提交" to data.overview.totalSubmissions.toString()
-                        )
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                         ) {
-                            if (isCompact) {
-                                // 手机端: 2列布局
-                                val rows = statPairs.chunked(2)
-                                items(rows) { row ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        row.forEach { (title, value) ->
-                                            StatCard(title, value, Modifier.weight(1f))
-                                        }
-                                    }
-                                }
-                            } else {
-                                // 桌面端: 4列布局
-                                item {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        statPairs.take(4).forEach { (title, value) ->
-                                            StatCard(title, value, Modifier.weight(1f))
-                                        }
-                                    }
-                                }
-                                item {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        statPairs.drop(4).forEach { (title, value) ->
-                                            StatCard(title, value, Modifier.weight(1f))
-                                        }
-                                    }
+                            item {
+                                ResponsiveLazyVerticalGrid(
+                                    items = statPairs,
+                                    modifier = Modifier.fillMaxWidth().height(gridHeight),
+                                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                ) { (title, value) ->
+                                    StatCard(title, value, Modifier.fillMaxWidth(), config.cardPadding)
                                 }
                             }
                             item {
@@ -162,12 +138,12 @@ fun AdminDashboardScreen() {
 }
 
 @Composable
-private fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
+private fun StatCard(title: String, value: String, modifier: Modifier = Modifier, cardPadding: Dp = 16.dp) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(cardPadding)) {
             Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }

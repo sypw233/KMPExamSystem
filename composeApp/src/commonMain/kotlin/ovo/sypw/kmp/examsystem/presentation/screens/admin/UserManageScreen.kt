@@ -3,6 +3,7 @@ package ovo.sypw.kmp.examsystem.presentation.screens.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -51,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
@@ -209,29 +209,30 @@ fun UserManageScreen() {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                             )
-                            LazyColumn(
+                            ResponsiveLazyVerticalGrid(
+                                items = page.content,
+                                key = { it.id },
                                 modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(page.content, key = { it.id }) { user ->
-                                    val isSelected = user.id in selectedIds
-                                    UserCard(
-                                        user = user,
-                                        isBatchMode = isBatchMode,
-                                        isSelected = isSelected,
-                                        onToggleSelect = {
-                                            selectedIds = if (isSelected) selectedIds - user.id else selectedIds + user.id
-                                        },
-                                        onEdit = { showEditDialog = user },
-                                        onDelete = { showDeleteConfirm = user },
-                                        onResetPassword = { showResetPwdDialog = user },
-                                        onToggleStatus = {
-                                            if (user.status == 1) viewModel.disableUser(user.id)
-                                            else viewModel.enableUser(user.id)
-                                        }
-                                    )
-                                }
-                                item { Spacer(modifier = Modifier.height(80.dp)) }
+                                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                                contentPadding = PaddingValues(bottom = 80.dp)
+                            ) { user ->
+                                val isSelected = user.id in selectedIds
+                                UserCard(
+                                    user = user,
+                                    isBatchMode = isBatchMode,
+                                    isSelected = isSelected,
+                                    onToggleSelect = {
+                                        selectedIds = if (isSelected) selectedIds - user.id else selectedIds + user.id
+                                    },
+                                    onEdit = { showEditDialog = user },
+                                    onDelete = { showDeleteConfirm = user },
+                                    onResetPassword = { showResetPwdDialog = user },
+                                    onToggleStatus = {
+                                        if (user.status == 1) viewModel.disableUser(user.id)
+                                        else viewModel.enableUser(user.id)
+                                    }
+                                )
                             }
                             // 分页控制
                             if (page.totalPages > 1) {

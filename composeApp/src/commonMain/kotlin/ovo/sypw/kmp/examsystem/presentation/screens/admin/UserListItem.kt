@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @Composable
 fun UserCard(
@@ -40,9 +42,10 @@ fun UserCard(
     onResetPassword: () -> Unit,
     onToggleStatus: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     val isEnabled = user.status == 1
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = config.cardPadding),
         colors = CardDefaults.cardColors(
             containerColor = when {
                 isSelected -> MaterialTheme.colorScheme.secondaryContainer
@@ -53,7 +56,7 @@ fun UserCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(config.contentPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (isBatchMode) {

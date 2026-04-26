@@ -62,6 +62,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.EnrollState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,20 +148,25 @@ private fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: UserR
                     if (s.courses.isEmpty()) {
                         Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
                     } else {
-                        LazyColumn(
+                        ResponsiveLazyVerticalGrid(
+                            items = s.courses,
+                            key = { it.id },
                             modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier),
-                            contentPadding = PaddingValues(config.screenPadding),
-                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
-                        ) {
-                            items(s.courses, key = { it.id }) { course ->
-                                ManageCourseCard(
-                                    course = course,
-                                    onEdit = { showEditDialog = course },
-                                    onDelete = { showDeleteConfirm = course },
-                                    onManageEnrollments = { showEnrollmentDialog = course }
-                                )
-                            }
-                            item { Spacer(modifier = Modifier.height(80.dp)) }
+                            contentPadding = PaddingValues(
+                                start = config.screenPadding,
+                                end = config.screenPadding,
+                                top = config.screenPadding,
+                                bottom = config.screenPadding + 80.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                        ) { course ->
+                            ManageCourseCard(
+                                course = course,
+                                onEdit = { showEditDialog = course },
+                                onDelete = { showDeleteConfirm = course },
+                                onManageEnrollments = { showEnrollmentDialog = course }
+                            )
                         }
                     }
                 }
@@ -382,21 +388,22 @@ private fun StudentCourseList(
                     Text("暂无课程")
                 }
             } else {
-                LazyColumn(
+                ResponsiveLazyVerticalGrid(
+                    items = state.courses,
+                    key = { it.id },
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(config.screenPadding),
-                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
-                ) {
-                    items(state.courses, key = { it.id }) { course ->
-                        StudentCourseCard(
-                            course = course,
-                            showEnrollButton = showEnrollButton,
-                            isEnrolling = enrollingState is EnrollState.Loading,
-                            onEnroll = { onEnroll(course.id) },
-                            onWithdraw = { onWithdraw(course) },
-                            onViewCourseExams = { onViewCourseExams(course) }
-                        )
-                    }
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                ) { course ->
+                    StudentCourseCard(
+                        course = course,
+                        showEnrollButton = showEnrollButton,
+                        isEnrolling = enrollingState is EnrollState.Loading,
+                        onEnroll = { onEnroll(course.id) },
+                        onWithdraw = { onWithdraw(course) },
+                        onViewCourseExams = { onViewCourseExams(course) }
+                    )
                 }
             }
         }

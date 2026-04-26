@@ -3,13 +3,11 @@ package ovo.sypw.kmp.examsystem.presentation.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -21,6 +19,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
@@ -65,7 +65,7 @@ fun DashboardScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier)
                     .padding(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
@@ -73,7 +73,8 @@ fun DashboardScreen(
                 item {
                     GreetingSection(
                         userName = user?.realName ?: "同学",
-                        unreadCount = unreadCount
+                        unreadCount = unreadCount,
+                        config = config
                     )
                 }
 
@@ -83,7 +84,7 @@ fun DashboardScreen(
                         text = "系统通知",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        modifier = Modifier.padding(bottom = config.verticalSpacing)
                     )
                     when (notificationState) {
                         is NotificationUiState.Loading -> {
@@ -113,17 +114,22 @@ fun DashboardScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             } else {
-                                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    notifications.take(3).forEach { notification ->
-                                        NotificationCard(
-                                            notification = notification,
-                                            onMarkRead = {
-                                                if (!notification.isRead) {
-                                                    notificationViewModel.markAsRead(notification.id)
-                                                }
+                                ResponsiveLazyVerticalGrid(
+                                    items = notifications.take(3),
+                                    key = { it.id },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                ) { notification ->
+                                    NotificationCard(
+                                        notification = notification,
+                                        onMarkRead = {
+                                            if (!notification.isRead) {
+                                                notificationViewModel.markAsRead(notification.id)
                                             }
-                                        )
-                                    }
+                                        },
+                                        config = config
+                                    )
                                 }
                             }
                         }
@@ -172,29 +178,34 @@ fun DashboardScreen(
                                         style = MaterialTheme.typography.bodyMedium)
                                 }
                             } else {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    items(exams, key = { it.id }) { exam ->
-                                        ExamCardRefined(exam = exam, onStartExam = onNavigateToExams)
-                                    }
+                                ResponsiveLazyVerticalGrid(
+                                    items = exams,
+                                    key = { it.id },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                ) { exam ->
+                                    ExamCardRefined(
+                                        exam = exam,
+                                        onStartExam = onNavigateToExams,
+                                        config = config
+                                    )
                                 }
                             }
                         }
                     }
                 }
 
-                item { Spacer(modifier = Modifier.height(24.dp)) }
+                item { Spacer(modifier = Modifier.height(config.verticalSpacing * 2)) }
             }
         }
     }
 }
 
 @Composable
-private fun GreetingSection(userName: String, unreadCount: Long) {
+private fun GreetingSection(userName: String, unreadCount: Long, config: ResponsiveLayoutConfig) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = config.contentPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -237,7 +248,8 @@ private fun GreetingSection(userName: String, unreadCount: Long) {
 @Composable
 private fun NotificationCard(
     notification: NotificationResponse,
-    onMarkRead: () -> Unit
+    onMarkRead: () -> Unit,
+    config: ResponsiveLayoutConfig
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -254,7 +266,7 @@ private fun NotificationCard(
         ),
         onClick = onMarkRead
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.padding(config.cardPadding), verticalAlignment = Alignment.CenterVertically) {
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
@@ -269,7 +281,7 @@ private fun NotificationCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(config.horizontalSpacing * 2))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -301,15 +313,15 @@ private fun NotificationCard(
 }
 
 @Composable
-private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit) {
+private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit, config: ResponsiveLayoutConfig) {
     Card(
-        modifier = Modifier.width(320.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(config.cardPadding)) {
             Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small) {
                 Text(
                     text = exam.courseName,
@@ -319,7 +331,7 @@ private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(config.verticalSpacing))
 
             Text(
                 text = exam.title,
@@ -329,15 +341,15 @@ private fun ExamCardRefined(exam: ExamResponse, onStartExam: () -> Unit) {
                 maxLines = 2
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(config.verticalSpacing))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconText(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(config.horizontalSpacing * 2))
                 IconText(Icons.Default.Assignment, "满分 ${exam.totalScore}")
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(config.verticalSpacing))
 
             Button(
                 onClick = onStartExam,
