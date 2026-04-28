@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @Composable
 fun EditProfileDialog(
@@ -35,6 +36,7 @@ fun EditProfileDialog(
     onConfirm: (String, String?, String?) -> Unit,
     onUploadAvatar: (onSuccess: (String) -> Unit, onError: (String) -> Unit) -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var realName by remember { mutableStateOf(user.realName.orEmpty()) }
     var email by remember { mutableStateOf(user.email.orEmpty()) }
     var avatarUrl by remember { mutableStateOf(user.avatar) }
@@ -134,6 +136,7 @@ fun ChangePasswordDialog(
     onDismiss: () -> Unit,
     onConfirm: (oldPwd: String, newPwd: String) -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var oldPwd by remember { mutableStateOf("") }
     var newPwd by remember { mutableStateOf("") }
     var confirmPwd by remember { mutableStateOf("") }
@@ -181,6 +184,7 @@ fun ChangePasswordDialog(
 
 @Composable
 fun HelpDialog(onDismiss: () -> Unit) {
+    val config = LocalResponsiveConfig.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("帮助中心") },
@@ -201,6 +205,7 @@ fun HelpDialog(onDismiss: () -> Unit) {
 
 @Composable
 fun HelpItem(title: String, desc: String) {
+    val config = LocalResponsiveConfig.current
     Column {
         Text(title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         Text(desc, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

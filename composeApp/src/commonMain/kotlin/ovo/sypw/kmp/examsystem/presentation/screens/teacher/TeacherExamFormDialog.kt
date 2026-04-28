@@ -51,6 +51,7 @@ import kotlinx.datetime.toLocalDateTime
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +63,7 @@ fun ExamFormDialog(
     onConfirm: (ExamRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var examTitle by remember { mutableStateOf(initial?.title ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
     var duration by remember { mutableStateOf(initial?.duration?.toString() ?: "60") }

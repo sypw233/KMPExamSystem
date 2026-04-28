@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @Composable
 fun ManageExamCard(
@@ -48,6 +49,7 @@ fun ManageExamCard(
     onRandomCompose: (() -> Unit)? = null,
     onViewSubmissions: (() -> Unit)? = null
 ) {
+    val config = LocalResponsiveConfig.current
     val statusColor = when (exam.status) {
         0 -> MaterialTheme.colorScheme.outlineVariant
         1 -> MaterialTheme.colorScheme.primaryContainer

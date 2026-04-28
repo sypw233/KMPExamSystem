@@ -51,6 +51,7 @@ import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 import ovo.sypw.kmp.examsystem.presentation.components.StudentSelector
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +62,7 @@ fun CourseFormDialog(
     onConfirm: (CourseRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var name by remember { mutableStateOf(initial?.courseName ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
 
@@ -141,6 +143,7 @@ fun EnrollmentManageDialog(
     courseViewModel: CourseViewModel,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     val courseRepository: CourseRepository = koinInject()
     val scope = rememberCoroutineScope()
     val students by courseViewModel.courseStudents.collectAsState()

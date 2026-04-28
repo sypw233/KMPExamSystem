@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +49,7 @@ fun QuestionFormDialog(
     onConfirm: (QuestionRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var content by remember { mutableStateOf(initial?.content ?: "") }
     var typeExpanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(initial?.type ?: "single") }

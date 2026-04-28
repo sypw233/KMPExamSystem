@@ -32,9 +32,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @Composable
 fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
+    val config = LocalResponsiveConfig.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -140,6 +142,7 @@ fun MenuItem(
     textColor: Color = MaterialTheme.colorScheme.onSurface,
     iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
+    val config = LocalResponsiveConfig.current
     Surface(onClick = onClick, color = Color.Transparent) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),

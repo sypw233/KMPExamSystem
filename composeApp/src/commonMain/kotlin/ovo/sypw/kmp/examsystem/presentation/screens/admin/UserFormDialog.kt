@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +33,7 @@ fun CreateUserDialog(
     onConfirm: (UserCreateRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var realName by remember { mutableStateOf("") }
@@ -126,6 +128,7 @@ fun EditUserDialog(
     onConfirm: (UserUpdateRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var realName by remember { mutableStateOf(user.realName ?: "") }
     var email by remember { mutableStateOf(user.email ?: "") }
     var role by remember { mutableStateOf(user.role) }

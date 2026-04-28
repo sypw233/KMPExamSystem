@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @Composable
 fun EditBankDialog(
@@ -26,6 +27,7 @@ fun EditBankDialog(
     onConfirm: (String, String?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     var name by remember { mutableStateOf(initialName) }
     var description by remember { mutableStateOf(initialDescription) }
 
@@ -67,6 +69,7 @@ fun DeleteBankDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("删除题库") },
