@@ -1,8 +1,10 @@
 package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.SubmissionApi
-import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
+import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -62,18 +64,15 @@ class SubmissionRepository(
 
     /**
      * 获取某场考试的所有提交记录（教师/管理员）
-     * 注：当前使用大页码一次性取全量，超大班级（>5000人）可能丢失数据。
-     * 如需支持超大班级，应改为真正的分页加载。
      */
     suspend fun getExamSubmissions(examId: Long): Result<List<SubmissionResponse>> = runWithToken { token ->
-        val r = submissionApi.querySubmissions(token, examId = examId, page = 0, size = 5000)
-        if (r.code == 200 && r.data != null) r.data.content else throw Exception(r.message)
+        fetchSubmissionPages { page, size -> submissionApi.querySubmissions(token, examId = examId, page = page, size = size) }
     }
 
     /**
      * 获取某次提交的监考记录
      */
-    suspend fun getProctoringEvents(submissionId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse>> = runWithToken { token ->
+    suspend fun getProctoringEvents(submissionId: Long): Result<List<ProctoringEventResponse>> = runWithToken { token ->
         val r = submissionApi.getProctoringEvents(token, submissionId)
         if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
     }
@@ -91,6 +90,26 @@ class SubmissionRepository(
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
+    private suspend fun fetchSubmissionPages(
+        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageSubmissionResponse>
+    ): List<SubmissionResponse> {
+        val submissions = mutableListOf<SubmissionResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+
+        do {
+            val response = requestPage(page, size)
+            if (response.code != 200) throw Exception(response.message)
+            val data = response.data ?: break
+            submissions += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        return submissions.distinctBy { it.id }
+    }
+
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
         return try {
             val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
@@ -100,4 +119,3 @@ class SubmissionRepository(
         }
     }
 }
-
