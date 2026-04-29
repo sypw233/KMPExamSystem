@@ -18,7 +18,9 @@ import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,11 +55,14 @@ fun ExamsScreen(
     val config = LocalResponsiveConfig.current
     val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
     var selectedExam by remember { mutableStateOf<ExamResponse?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("我的考试") },
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = {
                         if (selectedTab == 0) examViewModel.loadPublishedExams()
@@ -73,10 +78,22 @@ fun ExamsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(
+        LaunchedEffect(notStartedState, endedState) {
+            isRefreshing = false
+        }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                if (selectedTab == 0) examViewModel.loadPublishedExams()
+                else examViewModel.loadEndedExams()
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+        ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
         ) {
             if (isDesktop) {
@@ -140,6 +157,7 @@ fun ExamsScreen(
                     }
                 }
             }
+        }
         }
     }
 }

@@ -9,7 +9,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
  * 课程模块 Koin 配置
  */
 val courseModule = module {
-    single { CourseApi() }
+    single { CourseApi(get()) }
     single { CourseRepository(get(), get()) }
     factory { CourseViewModel(get()) }
 }

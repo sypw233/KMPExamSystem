@@ -161,6 +161,17 @@ class NotificationViewModel(
     }
 
     private fun updateSuccessState() {
-        _uiState.value = NotificationUiState.Success(notificationRepository.notifications.value)
+        val currentList = notificationRepository.notifications.value
+        _uiState.value = NotificationUiState.Success(currentList)
+
+        // After server-side mutations (e.g., delete) that change list size,
+        // the server's pagination may have shifted. Recalculate pagination state.
+        val expectedSize = (_currentPage.value + 1) * pageSize
+        if (currentList.size < expectedSize) {
+            _currentPage.value = if (currentList.isEmpty()) 0
+                else (currentList.size - 1) / pageSize
+            // Assume there might be more items since server pages may have shifted
+            _hasMore.value = currentList.isNotEmpty()
+        }
     }
 }

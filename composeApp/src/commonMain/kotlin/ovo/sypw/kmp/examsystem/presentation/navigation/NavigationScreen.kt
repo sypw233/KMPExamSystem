@@ -1,5 +1,10 @@
 package ovo.sypw.kmp.examsystem.presentation.navigation
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import ovo.sypw.kmp.examsystem.presentation.screens.CoursesScreen
@@ -31,7 +36,14 @@ fun NavigationScreen(
 ) {
     val role by navigationManager.userRole
 
-    when (route) {
+    AnimatedContent(
+        targetState = route,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+        },
+        label = "NavigationTransition"
+    ) { targetRoute ->
+    when (targetRoute) {
 
         // ── 首页 ──────────────────────────────────────────────────────────
         AppRoutes.HOME -> {
@@ -94,5 +106,6 @@ fun NavigationScreen(
         else -> {
             DashboardScreen()
         }
+    }
     }
 }

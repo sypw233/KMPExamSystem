@@ -7,14 +7,16 @@ import ovo.sypw.kmp.examsystem.data.dto.LoginRequest
 import ovo.sypw.kmp.examsystem.data.dto.RegisterRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
 import ovo.sypw.kmp.examsystem.data.dto.UserProfileRequest
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 认证 API 服务
  * 处理用户登录、注册、Token 刷新等操作
+ * @param httpClient 共享的HTTP客户端实例
  */
-class AuthApi : BaseApiService() {
+class AuthApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val AUTH_ENDPOINT = "/api/auth"

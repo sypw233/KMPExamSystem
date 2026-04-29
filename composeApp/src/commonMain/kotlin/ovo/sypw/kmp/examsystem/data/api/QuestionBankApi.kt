@@ -5,13 +5,15 @@ import ovo.sypw.kmp.examsystem.data.dto.PageQuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 题库管理 API 服务（教师/管理员，全部 8 个接口）
+ * @param httpClient 共享的HTTP客户端实例
  */
-class QuestionBankApi : BaseApiService() {
+class QuestionBankApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val BANK_ENDPOINT = "/api/question-banks"

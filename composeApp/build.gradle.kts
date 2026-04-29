@@ -53,6 +53,8 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.material.icons.extended)
+            // 跨平台返回键处理
+            implementation("org.jetbrains.compose.ui:ui-backhandler:1.9.3")
             // KMP ViewModel
             implementation(libs.kmp.viewmodel)
             implementation(libs.kmp.viewmodel.compose)

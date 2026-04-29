@@ -9,7 +9,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
  * 通知模块 Koin 配置
  */
 val notificationModule = module {
-    single { NotificationApi() }
+    single { NotificationApi(get()) }
     single { NotificationRepository(get(), get()) }
     factory { NotificationViewModel(get()) }
 }

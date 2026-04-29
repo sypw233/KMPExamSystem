@@ -175,7 +175,7 @@ private fun DetailQuestionItem(
             val answerColor = when {
                 !isObjective -> MaterialTheme.colorScheme.onSurfaceVariant
                 !hasAnswered -> MaterialTheme.colorScheme.onSurfaceVariant
-                isCorrect -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                isCorrect -> MaterialTheme.colorScheme.tertiary
                 isPartial -> MaterialTheme.colorScheme.tertiary
                 else -> MaterialTheme.colorScheme.error
             }

@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +43,8 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     
     var passwordVisible by remember { mutableStateOf(false) }
+    var usernameInteracted by remember { mutableStateOf(false) }
+    var passwordInteracted by remember { mutableStateOf(false) }
     val config = LocalResponsiveConfig.current
 
     // 监听登录成功
@@ -75,7 +78,7 @@ fun LoginScreen(
             // 登录卡片容器 - 限制最大宽度以适配桌面端
             Card(
                 modifier = Modifier
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FORM) else Modifier)
                     .fillMaxWidth()
                     .padding(config.screenPadding), // 桌面端适配关键：限制最大宽度
                 colors = CardDefaults.cardColors(
@@ -111,10 +114,15 @@ fun LoginScreen(
                         value = username,
                         onValueChange = { viewModel.updateUsername(it) },
                         label = { Text("用户名") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) usernameInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
                         enabled = uiState !is LoginUiState.Loading,
+                        isError = usernameInteracted && username.isBlank(),
+                        supportingText = if (usernameInteracted && username.isBlank()) {
+                            { Text("请输入用户名") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null)
                         },
@@ -131,10 +139,15 @@ fun LoginScreen(
                         value = password,
                         onValueChange = { viewModel.updatePassword(it) },
                         label = { Text("密码") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) passwordInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
                         enabled = uiState !is LoginUiState.Loading,
+                        isError = passwordInteracted && password.isBlank(),
+                        supportingText = if (passwordInteracted && password.isBlank()) {
+                            { Text("请输入密码") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null)
                         },
@@ -160,7 +173,11 @@ fun LoginScreen(
 
                     // 登录按钮
                     Button(
-                        onClick = { viewModel.login() },
+                        onClick = {
+                            usernameInteracted = true
+                            passwordInteracted = true
+                            viewModel.login()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),

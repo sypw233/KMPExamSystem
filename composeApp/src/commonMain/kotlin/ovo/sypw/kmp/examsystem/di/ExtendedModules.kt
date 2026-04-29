@@ -14,7 +14,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsViewModel
  * 题库管理模块 DI
  */
 val questionBankModule = module {
-    single { QuestionBankApi() }
+    single { QuestionBankApi(get()) }
     single { QuestionBankRepository(get(), get()) }
     factory { QuestionBankViewModel(get(), get()) }
 }
@@ -23,7 +23,7 @@ val questionBankModule = module {
  * 文件管理模块 DI
  */
 val fileModule = module {
-    single { FileApi() }
+    single { FileApi(get()) }
     single { FileRepository(get(), get()) }
 }
 
@@ -31,7 +31,7 @@ val fileModule = module {
  * AI 辅助判题模块 DI
  */
 val aiGradingModule = module {
-    single { AiGradingApi() }
+    single { AiGradingApi(get()) }
     single { AiGradingRepository(get(), get()) }
     factory { SystemSettingsViewModel(get()) }
 }

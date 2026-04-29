@@ -2,8 +2,10 @@ package ovo.sypw.kmp.examsystem.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 
 /**
  * 导航管理器
@@ -27,11 +29,16 @@ class NavigationManager {
     private val _currentExamId = mutableStateOf<Long?>(null)
     val currentExamId: State<Long?> = _currentExamId
 
+    // 导航历史栈
+    private val _navigationHistory = mutableStateListOf<String>()
+    val navigationHistory: SnapshotStateList<String> = _navigationHistory
+
     // ─── 角色 ─────────────────────────────────────────────────────────────
 
     /** 设置当前用户角色（登录成功后调用） */
     fun setRole(role: UserRole) {
         _userRole.value = role
+        clearHistory()
         // 切换角色时，若当前路由在新角色的导航项中不存在，跳回首页
         val validRoutes = getNavigationItemsForRole(role).map { it.route }
         if (_currentScreen.value !in validRoutes) {
@@ -53,12 +60,29 @@ class NavigationManager {
     /** 导航到指定路由（考试模式中不允许切换） */
     fun navigateTo(route: String) {
         if (_isInExamMode.value) return
+        if (route != _currentScreen.value) {
+            _navigationHistory.add(_currentScreen.value)
+        }
         _currentScreen.value = route
     }
 
     /** 检查当前是否在指定路由 */
     fun isCurrentScreen(route: String): Boolean =
         _currentScreen.value == route
+
+    /** 返回上一个页面，若历史为空则不做操作 */
+    fun popBack(): Boolean {
+        if (_isInExamMode.value) return false
+        if (_navigationHistory.isEmpty()) return false
+        val previous = _navigationHistory.removeLast()
+        _currentScreen.value = previous
+        return true
+    }
+
+    /** 清空导航历史（角色切换时调用） */
+    fun clearHistory() {
+        _navigationHistory.clear()
+    }
 
     // ─── 考试模式 ─────────────────────────────────────────────────────────
 

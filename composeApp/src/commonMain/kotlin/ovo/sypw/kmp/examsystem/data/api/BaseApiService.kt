@@ -22,15 +22,11 @@ import ovo.sypw.kmp.examsystem.utils.Logger
 /**
  * 基础API服务类
  * 提供通用的网络请求方法
+ * @param httpClient 共享的HTTP客户端实例,通过DI注入
  */
-abstract class BaseApiService {
-
-    /**
-     * HTTP客户端实例
-     */
-    protected val httpClient: HttpClient by lazy {
-        HttpClientConfig.createHttpClient()
-    }
+abstract class BaseApiService(
+    protected val httpClient: HttpClient
+) {
 
     /**
      * 执行GET请求

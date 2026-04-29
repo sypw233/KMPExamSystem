@@ -40,9 +40,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
@@ -152,7 +154,7 @@ fun ExamTakingScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 private fun ExamContent(
     exam: ExamTakingUiState.Ready,
@@ -174,6 +176,11 @@ private fun ExamContent(
     val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val config = LocalResponsiveConfig.current
+
+    // 返回键处理：弹出交卷确认对话框
+    BackHandler {
+        showExitDialog = true
+    }
 
     // 【修复 BUG-04】精确倒计时：记录起始 TimeMark，每秒对齐到整秒
     LaunchedEffect(Unit) {
@@ -275,7 +282,7 @@ private fun ExamContent(
         ) {
             LazyColumn(
                 modifier = Modifier.then(
-                    if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier
+                    if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.EXAM_TAKING) else Modifier
                 ).fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)

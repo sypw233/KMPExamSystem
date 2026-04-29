@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 
@@ -104,6 +105,7 @@ internal fun ExamList(
     onStartExam: (Long) -> Unit,
     onRetry: () -> Unit
 ) {
+    val config = LocalResponsiveConfig.current
     when (state) {
         is ExamListUiState.Loading -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -133,9 +135,9 @@ internal fun ExamList(
                     items = state.exams,
                     key = { it.id },
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(vertical = config.verticalSpacing),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                    horizontalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                 ) { exam ->
                     ExamCard(
                         exam = exam,
@@ -148,8 +150,8 @@ internal fun ExamList(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(config.screenPadding),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                 ) {
                     items(state.exams, key = { it.id }) { exam ->
                         ExamCard(

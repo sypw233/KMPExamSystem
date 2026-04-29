@@ -15,13 +15,15 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 统计分析 API 服务（全部 5 个接口）
+ * @param httpClient 共享的HTTP客户端实例
  */
-class StatisticsApi : BaseApiService() {
+class StatisticsApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val STATISTICS_ENDPOINT = "/api/statistics"

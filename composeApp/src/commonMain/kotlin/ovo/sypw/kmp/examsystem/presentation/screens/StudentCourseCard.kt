@@ -73,7 +73,7 @@ fun StudentCourseCard(
                     Text("${course.enrollmentCount} 人已选", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                 }
                 if (showEnrollButton) {
-                    FilledTonalButton(onClick = onEnroll, enabled = !isEnrolling, modifier = Modifier.height(32.dp)) {
+                    FilledTonalButton(onClick = onEnroll, enabled = !isEnrolling) {
                         Text(if (isEnrolling) "处理中..." else "选课")
                     }
                 } else {
@@ -84,8 +84,7 @@ fun StudentCourseCard(
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.height(32.dp)
+                            )
                         ) { Text("退课") }
                     }
                 }

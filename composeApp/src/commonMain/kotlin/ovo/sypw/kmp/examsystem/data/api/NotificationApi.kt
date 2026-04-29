@@ -5,13 +5,15 @@ import ovo.sypw.kmp.examsystem.data.dto.CreateNotificationRequest
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageNotificationResponse
 import ovo.sypw.kmp.examsystem.data.dto.UnreadCountResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 通知相关 API 服务
+ * @param httpClient 共享的HTTP客户端实例
  */
-class NotificationApi : BaseApiService() {
+class NotificationApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val NOTIFICATION_ENDPOINT = "/api/notifications"

@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +58,8 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
     val config = LocalResponsiveConfig.current
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var showEditDialog by remember { mutableStateOf<CourseResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<CourseResponse?>(null) }
     var showEnrollmentDialog by remember { mutableStateOf<CourseResponse?>(null) }
@@ -79,6 +82,7 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
         topBar = {
             TopAppBar(
                 title = { Text(if (userRole == UserRole.ADMIN) "全部课程" else "我的授课") },
+                scrollBehavior = scrollBehavior,
                 actions = {
                     IconButton(onClick = {
                         if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
@@ -96,8 +100,19 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
         },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
+        LaunchedEffect(allCoursesState, myCoursesState) {
+            isRefreshing = false
+        }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
         val state = if (userRole == UserRole.ADMIN) allCoursesState else myCoursesState
-        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             when (val s = state) {
                 is CourseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
                 is CourseUiState.Error -> {
@@ -144,6 +159,7 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                     }
                 }
             }
+        }
         }
     }
 

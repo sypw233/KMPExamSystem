@@ -9,14 +9,16 @@ import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 用户管理 API（仅管理员，全部 9 个接口）
  * Base path: /api/admin/users
+ * @param httpClient 共享的HTTP客户端实例
  */
-class UserManageApi : BaseApiService() {
+class UserManageApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val USER_ENDPOINT = "/api/admin/users"

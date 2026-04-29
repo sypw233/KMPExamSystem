@@ -6,13 +6,15 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageCourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageExamResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 课程相关 API 服务
+ * @param httpClient 共享的HTTP客户端实例
  */
-class CourseApi : BaseApiService() {
+class CourseApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val COURSE_ENDPOINT = "/api/courses"

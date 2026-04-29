@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -66,6 +67,7 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     val authState by authRepository.authState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedTab by remember { mutableStateOf(0) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var withdrawingCourse by remember { mutableStateOf<CourseResponse?>(null) }
     var examDetailCourse by remember { mutableStateOf<CourseResponse?>(null) }
     var courseExams by remember { mutableStateOf<List<ExamResponse>>(emptyList()) }
@@ -99,7 +101,18 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        LaunchedEffect(allCoursesState, myCoursesState) {
+            isRefreshing = false
+        }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                if (selectedTab == 0) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
+            },
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             PrimaryTabRow(selectedTabIndex = selectedTab) {
                 listOf("全部", "已选").forEachIndexed { index, title ->
                     Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(title) })
@@ -124,6 +137,7 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                     }
                 )
             }
+        }
         }
     }
 

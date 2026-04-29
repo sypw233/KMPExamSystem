@@ -10,7 +10,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsViewModel
  * 统计分析模块 Koin 配置
  */
 val statisticsModule = module {
-    single { StatisticsApi() }
+    single { StatisticsApi(get()) }
     single { StatisticsRepository(get(), get()) }
     factory { StatisticsViewModel(get()) }
     factory { AdminDashboardViewModel(get(), get()) }

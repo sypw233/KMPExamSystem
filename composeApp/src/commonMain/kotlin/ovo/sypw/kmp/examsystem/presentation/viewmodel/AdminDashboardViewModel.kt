@@ -11,6 +11,7 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseStatisticsResponse
 import ovo.sypw.kmp.examsystem.data.dto.SystemOverviewResponse
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.data.repository.StatisticsRepository
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 data class AdminDashboardData(
     val overview: SystemOverviewResponse = SystemOverviewResponse(),
@@ -45,7 +46,11 @@ class AdminDashboardViewModel(
             }
 
             val topCourseStats = coroutineScope {
-                val courseIds = courseRepository.loadAllCourses().getOrDefault(emptyList()).take(4).map { it.id }
+                val courseResult = courseRepository.loadAllCourses()
+                if (courseResult.isFailure) {
+                    Logger.w("AdminDashboardViewModel", "加载课程列表失败: ${courseResult.exceptionOrNull()?.message}")
+                }
+                val courseIds = courseResult.getOrDefault(emptyList()).take(4).map { it.id }
                 courseIds.map { courseId ->
                     async { statisticsRepository.getCourseStatistics(courseId).getOrNull() }
                 }.mapNotNull { it.await() }

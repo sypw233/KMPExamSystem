@@ -68,6 +68,7 @@ fun UserManageScreen() {
     val config = LocalResponsiveConfig.current
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var showEditDialog by remember { mutableStateOf<UserResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<UserResponse?>(null) }
     var showResetPwdDialog by remember { mutableStateOf<UserResponse?>(null) }
@@ -95,6 +96,7 @@ fun UserManageScreen() {
             if (isBatchMode) {
                 TopAppBar(
                     title = { Text("已选择 ${selectedIds.size} 位用户") },
+                    scrollBehavior = scrollBehavior,
                     navigationIcon = {
                         IconButton(onClick = { isBatchMode = false; selectedIds = emptySet() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, "退出批量")
@@ -113,6 +115,7 @@ fun UserManageScreen() {
             } else {
                 TopAppBar(
                     title = { Text("用户管理") },
+                    scrollBehavior = scrollBehavior,
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     ),

@@ -104,11 +104,9 @@ object HttpClientConfig {
                 level = if (DEBUG) LogLevel.ALL else LogLevel.INFO
                 sanitizeHeader { header -> header == HttpHeaders.Authorization }
 
-                // Debug 模式下不过滤，否则只记录包含 "api" 的请求
+                // 非 Debug 模式下过滤静态资源请求，只记录 API 调用
                 if (!DEBUG) {
-                    filter { request ->
-                        request.url.host.contains("api")
-                    }
+                    filter { true }
                 }
             }
 

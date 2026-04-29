@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.api
 
+import io.ktor.client.HttpClient
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -27,8 +28,9 @@ import kotlin.time.ExperimentalTime
 /**
  * API测试服务类
  * 负责执行各种HTTP请求测试
+ * @param httpClient 共享的HTTP客户端实例
  */
-class ApiTestService : BaseApiService() {
+class ApiTestService(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     /**
      * 执行API测试请求

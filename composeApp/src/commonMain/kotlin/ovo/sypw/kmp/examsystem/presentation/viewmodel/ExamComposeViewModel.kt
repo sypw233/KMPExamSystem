@@ -75,25 +75,24 @@ class ExamComposeViewModel(
 
         _uiState.value = ExamComposeUiState.Loading
         viewModelScope.launch {
-            try {
-                // 1. Load exam detail
-                val exam = examRepository.getExamDetail(examId).getOrThrow()
-                // 2. Load questions currently in exam
-                val examQuestions = examRepository.getExamQuestions(examId).getOrDefault(emptyList())
-                // 3. Load my questions for exam composition
-                val courseQuestions = questionRepository.loadMyQuestions().getOrDefault(emptyList())
-                // 4. Load my banks for random compose
-                val banks = questionBankRepository.loadMyBanks().getOrDefault(emptyList())
-
-                _uiState.value = ExamComposeUiState.Success(
-                    exam = exam,
-                    examQuestions = examQuestions,
-                    courseQuestions = courseQuestions,
-                    myBanks = banks
-                )
-            } catch (e: Exception) {
-                _uiState.value = ExamComposeUiState.Error(e.message ?: "加载组卷数据失败")
+            // 1. Load exam detail
+            val exam = examRepository.getExamDetail(examId).getOrElse {
+                _uiState.value = ExamComposeUiState.Error(it.message ?: "加载考试详情失败")
+                return@launch
             }
+            // 2. Load questions currently in exam
+            val examQuestions = examRepository.getExamQuestions(examId).getOrDefault(emptyList())
+            // 3. Load my questions for exam composition
+            val courseQuestions = questionRepository.loadMyQuestions().getOrDefault(emptyList())
+            // 4. Load my banks for random compose
+            val banks = questionBankRepository.loadMyBanks().getOrDefault(emptyList())
+
+            _uiState.value = ExamComposeUiState.Success(
+                exam = exam,
+                examQuestions = examQuestions,
+                courseQuestions = courseQuestions,
+                myBanks = banks
+            )
         }
     }
 

@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.api
 
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
@@ -17,8 +18,9 @@ import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 文件管理 API 服务（全部 4 个接口）
+ * @param httpClient 共享的HTTP客户端实例
  */
-class FileApi : BaseApiService() {
+class FileApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val FILE_ENDPOINT = "/api/files"

@@ -7,13 +7,15 @@ import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 答题与评分相关 API 服务
+ * @param httpClient 共享的HTTP客户端实例
  */
-class SubmissionApi : BaseApiService() {
+class SubmissionApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val SUBMISSION_ENDPOINT = "/api/submissions"

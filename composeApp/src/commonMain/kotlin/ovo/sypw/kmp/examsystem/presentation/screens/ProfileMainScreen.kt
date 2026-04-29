@@ -75,7 +75,7 @@ internal fun ProfileMainScreen(
                 Column(
                     modifier = Modifier
                         .weight(0.85f)
-                        .widthIn(max = 420.dp)
+                        .widthIn(max = ResponsiveUtils.MaxWidths.PROFILE_FORM)
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                     horizontalAlignment = Alignment.CenterHorizontally

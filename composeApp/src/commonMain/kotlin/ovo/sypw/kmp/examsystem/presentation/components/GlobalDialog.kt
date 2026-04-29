@@ -97,14 +97,15 @@ private fun getDialogIcon(type: DialogType): ImageVector {
 
 /**
  * 根据弹窗类型获取颜色
+ * 使用 MaterialTheme.colorScheme 语义颜色令牌，支持深色主题自适应
  */
 @Composable
 private fun getDialogColor(type: DialogType): Color {
     return when (type) {
-        DialogType.INFO -> Color(0xFF2196F3)      // 蓝色
-        DialogType.WARNING -> Color(0xFFFFA726)   // 橙色
-        DialogType.ERROR -> Color(0xFFF44336)     // 红色
-        DialogType.SUCCESS -> Color(0xFF4CAF50)   // 绿色
-        DialogType.CONFIRM -> Color(0xFF9C27B0)   // 紫色
+        DialogType.INFO -> MaterialTheme.colorScheme.primary
+        DialogType.WARNING -> MaterialTheme.colorScheme.tertiary
+        DialogType.ERROR -> MaterialTheme.colorScheme.error
+        DialogType.SUCCESS -> MaterialTheme.colorScheme.primary
+        DialogType.CONFIRM -> MaterialTheme.colorScheme.secondary
     }
 }

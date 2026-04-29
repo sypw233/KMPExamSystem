@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.api
 
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
@@ -23,8 +24,9 @@ import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 题目管理 API 服务（教师/管理员）
+ * @param httpClient 共享的HTTP客户端实例
  */
-class QuestionApi : BaseApiService() {
+class QuestionApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val QUESTION_ENDPOINT = "/api/questions"

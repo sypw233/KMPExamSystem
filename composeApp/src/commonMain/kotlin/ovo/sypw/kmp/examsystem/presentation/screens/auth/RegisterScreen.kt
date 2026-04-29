@@ -17,6 +17,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +51,13 @@ fun RegisterScreen(
     val role by viewModel.role.collectAsState()
 
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var usernameInteracted by remember { mutableStateOf(false) }
+    var passwordInteracted by remember { mutableStateOf(false) }
+    var confirmPasswordInteracted by remember { mutableStateOf(false) }
+    var realNameInteracted by remember { mutableStateOf(false) }
+    var emailInteracted by remember { mutableStateOf(false) }
     val config = LocalResponsiveConfig.current
 
     // 监听注册成功和错误
@@ -96,7 +104,7 @@ fun RegisterScreen(
             // 注册卡片容器 - 限制最大宽度适配桌面端
             Card(
                 modifier = Modifier
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FORM) else Modifier)
                     .fillMaxWidth()
                     .padding(config.screenPadding)
                     .verticalScroll(rememberScrollState()),
@@ -131,9 +139,14 @@ fun RegisterScreen(
                         value = username,
                         onValueChange = { viewModel.updateUsername(it) },
                         label = { Text("用户名") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) usernameInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        isError = usernameInteracted && username.length < 3,
+                        supportingText = if (usernameInteracted && username.length < 3) {
+                            { Text("用户名至少需要3个字符") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null)
                         },
@@ -150,9 +163,14 @@ fun RegisterScreen(
                         value = password,
                         onValueChange = { viewModel.updatePassword(it) },
                         label = { Text("密码") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) passwordInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        isError = passwordInteracted && password.length < 6,
+                        supportingText = if (passwordInteracted && password.length < 6) {
+                            { Text("密码至少需要6个字符") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null)
                         },
@@ -173,14 +191,52 @@ fun RegisterScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // 确认密码
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("确认密码") },
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) confirmPasswordInteracted = true },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium,
+                        isError = confirmPasswordInteracted && confirmPassword != password,
+                        supportingText = if (confirmPasswordInteracted && confirmPassword != password) {
+                            { Text("两次输入的密码不一致") }
+                        } else null,
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null)
+                        },
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Next
+                        ),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = if (confirmPasswordVisible) "隐藏密码" else "显示密码"
+                                )
+                            }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // 真实姓名
                     OutlinedTextField(
                         value = realName,
                         onValueChange = { viewModel.updateRealName(it) },
                         label = { Text("真实姓名") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) realNameInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        isError = realNameInteracted && realName.isBlank(),
+                        supportingText = if (realNameInteracted && realName.isBlank()) {
+                            { Text("请输入真实姓名") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Badge, contentDescription = null)
                         },
@@ -197,9 +253,14 @@ fun RegisterScreen(
                         value = email,
                         onValueChange = { viewModel.updateEmail(it) },
                         label = { Text("邮箱（选填）") },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .onFocusChanged { if (!it.isFocused) emailInteracted = true },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        isError = emailInteracted && email.isNotBlank() && !email.contains("@"),
+                        supportingText = if (emailInteracted && email.isNotBlank() && !email.contains("@")) {
+                            { Text("请输入有效的邮箱地址") }
+                        } else null,
                         leadingIcon = {
                             Icon(Icons.Default.Email, contentDescription = null)
                         },
@@ -257,7 +318,14 @@ fun RegisterScreen(
 
                     // 注册按钮
                     Button(
-                        onClick = { viewModel.register() },
+                        onClick = {
+                            usernameInteracted = true
+                            passwordInteracted = true
+                            confirmPasswordInteracted = true
+                            realNameInteracted = true
+                            emailInteracted = true
+                            viewModel.register()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),

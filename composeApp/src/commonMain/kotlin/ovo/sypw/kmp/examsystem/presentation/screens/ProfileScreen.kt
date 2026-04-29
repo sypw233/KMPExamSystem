@@ -12,7 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -23,6 +25,7 @@ import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ProfileScreen() {
     val authRepository: AuthRepository = koinInject()
@@ -45,6 +48,11 @@ fun ProfileScreen() {
 
     LaunchedEffect(Unit) {
         notificationViewModel.loadUnreadCount()
+    }
+
+    // 子页面返回处理
+    BackHandler(enabled = currentSubScreen != null) {
+        currentSubScreen = null
     }
 
     when (currentSubScreen) {

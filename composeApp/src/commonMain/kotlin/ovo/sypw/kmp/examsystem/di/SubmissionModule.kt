@@ -9,7 +9,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
  * 答题提交模块 Koin 配置
  */
 val submissionModule = module {
-    single { SubmissionApi() }
+    single { SubmissionApi(get()) }
     single { SubmissionRepository(get(), get()) }
     factory { ExamTakingViewModel(get(), get()) }
     factory { ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel(get(), get(), get()) }

@@ -142,7 +142,7 @@ actual class LocalStorage {
                 userDefaults.removePersistentDomainForName(bundleId)
             } else {
                 userDefaults.dictionaryRepresentation().keys.forEach { key ->
-                    userDefaults.removeObjectForKey(key as String)
+                    (key as? String)?.let { userDefaults.removeObjectForKey(it) }
                 }
             }
             userDefaults.synchronize()

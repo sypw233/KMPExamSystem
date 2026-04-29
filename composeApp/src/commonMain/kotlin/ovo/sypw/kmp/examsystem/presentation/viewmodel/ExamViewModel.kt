@@ -69,15 +69,19 @@ class ExamViewModel(
     // 当前角色（影响调用哪套 API）
     private var userRole: UserRole = UserRole.UNKNOWN
 
-    init {
-        loadPublishedExams()
-        loadEndedExams()
-    }
-
-    /** 设置用户角色，管理员加载全量，教师加载我的 */
+    /** 设置用户角色，根据角色加载对应数据 */
     fun setRole(role: UserRole) {
         userRole = role
-        loadManagerExams()
+        when (role) {
+            UserRole.STUDENT -> {
+                loadPublishedExams()
+                loadEndedExams()
+            }
+            UserRole.ADMIN, UserRole.TEACHER -> {
+                loadManagerExams()
+            }
+            UserRole.UNKNOWN -> { /* 不加载 */ }
+        }
     }
 
     /** 管理员/教师视角：加载考试列表（管理员看全部，教师看我的） */

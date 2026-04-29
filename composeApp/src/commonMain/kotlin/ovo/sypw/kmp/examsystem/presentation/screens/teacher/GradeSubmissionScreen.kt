@@ -236,13 +236,14 @@ private fun GradeQuestionItem(
 ) {
     val q = examQuestion.question ?: return
     var isLoadingAi by remember { mutableStateOf(false) }
+    val config = LocalResponsiveConfig.current
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(config.cardPadding)) {
             // 题目
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("题目 ${examQuestion.orderNum}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

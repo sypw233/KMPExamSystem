@@ -10,13 +10,15 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageExamResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * 考试相关 API 服务
+ * @param httpClient 共享的HTTP客户端实例
  */
-class ExamApi : BaseApiService() {
+class ExamApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val EXAM_ENDPOINT = "/api/exams"

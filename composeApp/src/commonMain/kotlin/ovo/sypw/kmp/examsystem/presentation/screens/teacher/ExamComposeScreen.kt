@@ -161,7 +161,7 @@ fun ExamComposeScreen(
 
                     Column(
                         modifier = Modifier.then(
-                            if (screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier
+                            if (screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.EXAM_COMPOSE) else Modifier
                         ).fillMaxSize()
                     ) {
                         Surface(

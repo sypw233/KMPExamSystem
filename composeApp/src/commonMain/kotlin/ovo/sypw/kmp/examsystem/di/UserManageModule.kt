@@ -9,7 +9,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserManageViewModel
  * 用户管理模块 DI（管理员专用）
  */
 val userManageModule = module {
-    single { UserManageApi() }
+    single { UserManageApi(get()) }
     single { UserManageRepository(get(), get()) }
     factory { UserManageViewModel(get()) }
 }

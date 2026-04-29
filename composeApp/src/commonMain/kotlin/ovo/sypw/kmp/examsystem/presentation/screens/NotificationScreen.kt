@@ -31,7 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +73,8 @@ fun NotificationScreen(onBack: () -> Unit) {
     val isAdmin = (authState as? AuthState.Authenticated)?.user?.role?.uppercase() == "ADMIN"
 
     var showSendDialog by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val config = LocalResponsiveConfig.current
 
     Scaffold(
@@ -90,6 +94,7 @@ fun NotificationScreen(onBack: () -> Unit) {
                         }
                     }
                 },
+                scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
@@ -117,10 +122,21 @@ fun NotificationScreen(onBack: () -> Unit) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Box(
+        LaunchedEffect(uiState) {
+            isRefreshing = false
+        }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                isRefreshing = true
+                viewModel.loadNotifications()
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+        ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
         ) {
             when (val state = uiState) {
@@ -209,6 +225,7 @@ fun NotificationScreen(onBack: () -> Unit) {
                     }
                 }
             }
+        }
         }
     }
 

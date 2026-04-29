@@ -36,6 +36,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -57,6 +58,8 @@ fun CourseFormDialog(
 ) {
     var name by remember { mutableStateOf(initial?.courseName ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
+    var nameInteracted by remember { mutableStateOf(false) }
+    var descriptionInteracted by remember { mutableStateOf(false) }
     val normalizedName = name.trim()
     val normalizedDescription = description.trim()
     val isValid = normalizedName.isNotBlank() && normalizedName.length <= 100 && normalizedDescription.length <= 500
@@ -73,18 +76,28 @@ fun CourseFormDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("课程名称 *") },
-                    supportingText = { Text("${normalizedName.length}/100") },
-                    isError = normalizedName.length > 100,
-                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = if (nameInteracted && normalizedName.isBlank()) {
+                        { Text("请输入课程名称") }
+                    } else {
+                        { Text("${normalizedName.length}/100") }
+                    },
+                    isError = (nameInteracted && normalizedName.isBlank()) || normalizedName.length > 100,
+                    modifier = Modifier.fillMaxWidth()
+                        .onFocusChanged { if (!it.isFocused) nameInteracted = true },
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("课程描述") },
-                    supportingText = { Text("${normalizedDescription.length}/500") },
-                    isError = normalizedDescription.length > 500,
-                    modifier = Modifier.fillMaxWidth(),
+                    supportingText = if (descriptionInteracted && normalizedDescription.length > 500) {
+                        { Text("课程描述不能超过500字") }
+                    } else {
+                        { Text("${normalizedDescription.length}/500") }
+                    },
+                    isError = descriptionInteracted && normalizedDescription.length > 500,
+                    modifier = Modifier.fillMaxWidth()
+                        .onFocusChanged { if (!it.isFocused) descriptionInteracted = true },
                     minLines = 3
                 )
             }
@@ -92,6 +105,8 @@ fun CourseFormDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    nameInteracted = true
+                    descriptionInteracted = true
                     onConfirm(
                         CourseRequest(
                             courseName = normalizedName,

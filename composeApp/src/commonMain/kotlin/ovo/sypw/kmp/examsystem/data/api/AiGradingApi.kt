@@ -7,13 +7,15 @@ import ovo.sypw.kmp.examsystem.data.dto.AiConfigRequest
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigResponse
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingRequest
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse
+import io.ktor.client.HttpClient
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
 /**
  * AI 辅助判题 API 服务（全部 3 个接口）
+ * @param httpClient 共享的HTTP客户端实例
  */
-class AiGradingApi : BaseApiService() {
+class AiGradingApi(httpClient: HttpClient) : BaseApiService(httpClient) {
 
     companion object {
         private const val AI_ENDPOINT = "/api/ai-grading"

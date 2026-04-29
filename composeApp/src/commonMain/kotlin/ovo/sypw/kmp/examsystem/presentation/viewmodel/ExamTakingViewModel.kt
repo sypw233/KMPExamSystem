@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
@@ -48,6 +50,9 @@ class ExamTakingViewModel(
     private val _isSubmitting = MutableStateFlow(false)
     val isSubmitting: StateFlow<Boolean> = _isSubmitting.asStateFlow()
 
+    // 防止 enterExam / submitExam 等并发竞态的互斥锁
+    private val examEntryMutex = Mutex()
+
     // 提交错误消息（不覆盖 uiState，让 UI 通过 Snackbar 显示，保留 Ready 状态供重试）
     private val _submitErrorMessage = MutableStateFlow<String?>(null)
     val submitErrorMessage: StateFlow<String?> = _submitErrorMessage.asStateFlow()
@@ -66,45 +71,56 @@ class ExamTakingViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = ExamTakingUiState.Loading
-            if (currentExamId != examId) {
-                currentExamId = examId
-                currentSubmissionId = -1
-                _answers.value = emptyMap()
-            }
-
-            if (currentSubmissionId <= 0) {
-                val startResult = submissionRepository.startExam(examId)
-                val submission = startResult.getOrNull()
-                if (submission == null) {
-                    _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
-                    return@launch
+            examEntryMutex.withLock {
+                // 获取锁后再次检查，防止并发调用时重复进入
+                val stateAfterLock = _uiState.value
+                if (currentExamId == examId &&
+                    stateAfterLock !is ExamTakingUiState.Idle &&
+                    stateAfterLock !is ExamTakingUiState.Error
+                ) {
+                    return@withLock
                 }
-                currentSubmissionId = submission.id
-            }
 
-            // 加载考试详情
-            val examResult = examRepository.getExamDetail(examId)
-            val exam = examResult.getOrNull()
-            if (exam == null) {
-                _uiState.value = ExamTakingUiState.Error(
-                    examResult.exceptionOrNull()?.message ?: "加载考试信息失败，请重试"
-                )
-                return@launch
-            }
+                _uiState.value = ExamTakingUiState.Loading
+                if (currentExamId != examId) {
+                    currentExamId = examId
+                    currentSubmissionId = -1
+                    _answers.value = emptyMap()
+                }
 
-            // 使用学生试卷接口，确保答题端不会拿到标准答案和解析
-            val questionsResult = examRepository.getExamPaperQuestions(examId)
-            val questions = questionsResult.getOrNull()
-            if (questions == null) {
-                _uiState.value = ExamTakingUiState.Error(
-                    questionsResult.exceptionOrNull()?.message ?: "加载试题失败，请重试"
-                )
-                return@launch
-            }
+                if (currentSubmissionId <= 0) {
+                    val startResult = submissionRepository.startExam(examId)
+                    val submission = startResult.getOrNull()
+                    if (submission == null) {
+                        _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
+                        return@withLock
+                    }
+                    currentSubmissionId = submission.id
+                }
 
-            _answers.value = emptyMap()
-            _uiState.value = ExamTakingUiState.Ready(exam, questions, currentSubmissionId)
+                // 加载考试详情
+                val examResult = examRepository.getExamDetail(examId)
+                val exam = examResult.getOrNull()
+                if (exam == null) {
+                    _uiState.value = ExamTakingUiState.Error(
+                        examResult.exceptionOrNull()?.message ?: "加载考试信息失败，请重试"
+                    )
+                    return@withLock
+                }
+
+                // 使用学生试卷接口，确保答题端不会拿到标准答案和解析
+                val questionsResult = examRepository.getExamPaperQuestions(examId)
+                val questions = questionsResult.getOrNull()
+                if (questions == null) {
+                    _uiState.value = ExamTakingUiState.Error(
+                        questionsResult.exceptionOrNull()?.message ?: "加载试题失败，请重试"
+                    )
+                    return@withLock
+                }
+
+                _answers.value = emptyMap()
+                _uiState.value = ExamTakingUiState.Ready(exam, questions, currentSubmissionId)
+            }
         }
     }
 
@@ -160,18 +176,24 @@ class ExamTakingViewModel(
         if (_uiState.value !is ExamTakingUiState.Ready) return
 
         viewModelScope.launch {
-            _isSubmitting.value = true
-            _submitErrorMessage.value = null
+            examEntryMutex.withLock {
+                // 获取锁后再次检查，防止并发提交
+                if (_isSubmitting.value) return@withLock
+                if (_uiState.value !is ExamTakingUiState.Ready) return@withLock
 
-            val answers = _answers.value.filterValues { it.isNotBlank() }
-            val result = submissionRepository.submitExam(currentExamId, answers)
-            result.onSuccess { submission ->
-                _uiState.value = ExamTakingUiState.Submitted(submission)
-            }.onFailure { e ->
-                // 提交失败：保留 Ready 状态，用 submitErrorMessage 通知 UI 显示 Snackbar
-                _submitErrorMessage.value = e.message ?: "提交失败，请重试"
+                _isSubmitting.value = true
+                _submitErrorMessage.value = null
+
+                val answers = _answers.value.filterValues { it.isNotBlank() }
+                val result = submissionRepository.submitExam(currentExamId, answers)
+                result.onSuccess { submission ->
+                    _uiState.value = ExamTakingUiState.Submitted(submission)
+                }.onFailure { e ->
+                    // 提交失败：保留 Ready 状态，用 submitErrorMessage 通知 UI 显示 Snackbar
+                    _submitErrorMessage.value = e.message ?: "提交失败，请重试"
+                }
+                _isSubmitting.value = false
             }
-            _isSubmitting.value = false
         }
     }
 

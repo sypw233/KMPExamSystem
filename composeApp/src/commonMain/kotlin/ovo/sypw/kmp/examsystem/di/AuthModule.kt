@@ -11,7 +11,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterViewModel
  */
 val authModule = module {
     // API
-    single { AuthApi() }
+    single { AuthApi(get()) }
     
     // Repository
     single { AuthRepository(get(), get()) }

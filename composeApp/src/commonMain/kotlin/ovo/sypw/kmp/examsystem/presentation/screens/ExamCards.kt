@@ -196,7 +196,7 @@ private fun InfoChip(icon: ImageVector, value: String) {
         Icon(
             icon,
             contentDescription = null,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.outline
         )
         Spacer(modifier = Modifier.width(4.dp))

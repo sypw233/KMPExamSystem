@@ -7,6 +7,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
  * 答题提交仓库（完整版）
@@ -45,8 +46,9 @@ class SubmissionRepository(
         try {
             val token = tokenStorage.getAccessToken() ?: return
             submissionApi.recordProctoringEvent(token, ProctoringEventRequest(examId, eventType, detail))
-        } catch (_: Exception) {
-            // 监考事件记录失败不阻断主流程
+        } catch (e: Exception) {
+            // 监考事件记录失败不阻断主流程，但记录日志便于排查
+            Logger.e("SubmissionRepository", "监考事件记录失败: $eventType - ${e.message}")
         }
     }
 

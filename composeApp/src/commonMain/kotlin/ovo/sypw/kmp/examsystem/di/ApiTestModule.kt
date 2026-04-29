@@ -17,7 +17,7 @@ val apiTestModule = module {
      * 单例模式，负责执行HTTP请求
      */
     single<ApiTestService> {
-        ApiTestService()
+        ApiTestService(get())
     }
 
     /**
