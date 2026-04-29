@@ -44,9 +44,9 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
         ) {
             // 头像
             val avatarUrl = user?.avatar

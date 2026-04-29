@@ -47,7 +47,7 @@ fun EditProfileDialog(
         title = { Text("编辑个人资料") },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {

@@ -78,7 +78,7 @@ fun ManageExamCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(config.cardPadding)) {
             if (isBatchMode) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
@@ -124,7 +124,7 @@ fun ManageExamCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)) {
                 Text("${exam.questionCount} 题", style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.outline)
                 Text("满分 ${exam.totalScore}", style = MaterialTheme.typography.bodySmall,
