@@ -85,13 +85,27 @@ class ExamApi : BaseApiService() {
     }
 
     /** 按状态筛选考试 (0-草稿, 1-已发布, 2-已结束) */
-    suspend fun getExamsByStatus(token: String, status: Int): ApiResponse<PageExamResponse> {
-        return getAllExams(token = token, status = status)
+    suspend fun getExamsByStatus(
+        token: String,
+        status: Int,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageExamResponse> {
+        return getAllExams(token = token, page = page, size = size, status = status)
     }
 
     /** 获取指定课程的所有考试 */
-    suspend fun getExamsByCourse(token: String, courseId: Long): ApiResponse<PageExamResponse> {
-        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/course/$courseId", token = token)
+    suspend fun getExamsByCourse(
+        token: String,
+        courseId: Long,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageExamResponse> {
+        val result = getWithToken(
+            endpoint = "$EXAM_ENDPOINT/course/$courseId",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

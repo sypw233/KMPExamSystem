@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.ExamApi
+import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.ComposeRandomExamRequest
@@ -12,6 +13,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
@@ -26,24 +28,17 @@ class ExamRepository(
     val myExams: StateFlow<List<ExamResponse>> = _myExams.asStateFlow()
 
     suspend fun loadPublishedExams(): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getExamsByStatus(token, 1)
-        if (r.code == 200) {
-            val data = r.data?.content ?: emptyList()
-            _publishedExams.value = data
-            data
-        } else {
-            throw Exception(r.message)
+        fetchExamPages { page, size -> examApi.getExamsByStatus(token, 1, page, size) }.also {
+            _publishedExams.value = it
         }
     }
 
     suspend fun loadAllExams(): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getAllExams(token)
-        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
+        fetchExamPages { page, size -> examApi.getAllExams(token, page, size) }
     }
 
     suspend fun loadExamsByStatus(status: Int): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getExamsByStatus(token, status)
-        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
+        fetchExamPages { page, size -> examApi.getExamsByStatus(token, status, page, size) }
     }
 
     suspend fun getExamDetail(examId: Long): Result<ExamResponse> = runWithToken { token ->
@@ -120,8 +115,7 @@ class ExamRepository(
     }
 
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getExamsByCourse(token, courseId)
-        if (r.code == 200) r.data?.content ?: emptyList() else throw Exception(r.message)
+        fetchExamPages { page, size -> examApi.getExamsByCourse(token, courseId, page, size) }
     }
 
     suspend fun patchExam(examId: Long, status: Int): Result<ExamResponse> = runWithToken { token ->
@@ -207,6 +201,26 @@ class ExamRepository(
                 score = question.score
             )
         )
+
+    private suspend fun fetchExamPages(
+        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageExamResponse>
+    ): List<ExamResponse> {
+        val exams = mutableListOf<ExamResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+
+        do {
+            val response = requestPage(page, size)
+            if (response.code != 200) throw Exception(response.message)
+            val data = response.data ?: break
+            exams += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        return exams.distinctBy { it.id }
+    }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
         return try {
