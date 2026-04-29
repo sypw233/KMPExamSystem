@@ -96,6 +96,7 @@ class CourseViewModel(
 
     /** 新建课程 */
     fun createCourse(request: CourseRequest) {
+        if (_actionState.value is CourseActionState.Loading) return
         _actionState.value = CourseActionState.Loading
         viewModelScope.launch {
             courseRepository.createCourse(request).fold(
@@ -110,6 +111,7 @@ class CourseViewModel(
 
     /** 更新课程 */
     fun updateCourse(courseId: Long, request: CourseRequest) {
+        if (_actionState.value is CourseActionState.Loading) return
         _actionState.value = CourseActionState.Loading
         viewModelScope.launch {
             courseRepository.updateCourse(courseId, request).fold(
@@ -124,6 +126,7 @@ class CourseViewModel(
 
     /** 删除课程 */
     fun deleteCourse(courseId: Long) {
+        if (_actionState.value is CourseActionState.Loading) return
         _actionState.value = CourseActionState.Loading
         viewModelScope.launch {
             courseRepository.deleteCourse(courseId).fold(

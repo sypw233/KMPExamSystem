@@ -61,6 +61,7 @@ class QuestionBankViewModel(
 
     fun createBank(name: String, description: String?) {
         if (name.isBlank()) return
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionBankRepository.createBank(QuestionBankRequest(name.trim(), description?.takeIf { it.isNotBlank() }))
@@ -74,6 +75,7 @@ class QuestionBankViewModel(
 
     fun updateBank(bankId: Long, name: String, description: String?) {
         if (name.isBlank()) return
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionBankRepository.updateBank(bankId, QuestionBankRequest(name.trim(), description?.takeIf { it.isNotBlank() }))
@@ -86,6 +88,7 @@ class QuestionBankViewModel(
     }
 
     fun deleteBank(bankId: Long) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionBankRepository.deleteBank(bankId)
@@ -132,6 +135,7 @@ class QuestionBankViewModel(
     }
 
     fun addQuestionToBank(bankId: Long, questionId: Long) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionBankRepository.addQuestionToBank(bankId, questionId)
@@ -145,6 +149,7 @@ class QuestionBankViewModel(
     }
 
     fun removeQuestionFromBank(bankId: Long, questionId: Long) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionBankRepository.removeQuestionFromBank(bankId, questionId)
@@ -158,6 +163,7 @@ class QuestionBankViewModel(
     }
 
     fun createQuestion(request: QuestionRequest) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionRepository.createQuestion(request)
@@ -174,6 +180,7 @@ class QuestionBankViewModel(
     }
 
     fun updateQuestion(questionId: Long, request: QuestionRequest) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionRepository.updateQuestion(questionId, request)
@@ -193,6 +200,7 @@ class QuestionBankViewModel(
         onSuccess: (ByteArray) -> Unit,
         onError: (String) -> Unit
     ) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionRepository.downloadTemplate()
@@ -214,6 +222,7 @@ class QuestionBankViewModel(
         onSuccess: (ImportResultResponse) -> Unit,
         onError: (String) -> Unit
     ) {
+        if (_actionState.value is QuestionBankActionState.Loading) return
         _actionState.value = QuestionBankActionState.Loading
         viewModelScope.launch {
             questionRepository.importQuestions(bankId, fileBytes, fileName)

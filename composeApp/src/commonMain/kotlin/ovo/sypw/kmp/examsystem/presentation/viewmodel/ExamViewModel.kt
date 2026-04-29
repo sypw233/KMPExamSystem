@@ -135,6 +135,7 @@ class ExamViewModel(
 
     /** 创建考试 */
     fun createExam(request: ExamRequest) {
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.createExam(request).fold(
@@ -149,6 +150,7 @@ class ExamViewModel(
 
     /** 更新考试 */
     fun updateExam(examId: Long, request: ExamRequest) {
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.updateExam(examId, request).fold(
@@ -163,6 +165,7 @@ class ExamViewModel(
 
     /** 删除考试 */
     fun deleteExam(examId: Long) {
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.deleteExam(examId).fold(
@@ -178,6 +181,7 @@ class ExamViewModel(
     /** 批量删除考试 */
     fun batchDeleteExams(ids: List<Long>) {
         if (ids.isEmpty()) return
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.batchDeleteExams(ids).fold(
@@ -194,6 +198,7 @@ class ExamViewModel(
 
     /** 发布考试 */
     fun publishExam(examId: Long) {
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.publishExam(examId).fold(

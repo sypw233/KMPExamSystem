@@ -76,6 +76,7 @@ class UserManageViewModel(
 
     /** 新建用户 */
     fun createUser(request: UserCreateRequest) {
+        if (_actionState.value is UserActionState.Loading) return
         _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.createUser(request).fold(
@@ -90,6 +91,7 @@ class UserManageViewModel(
 
     /** 更新用户 */
     fun updateUser(userId: Long, request: UserUpdateRequest) {
+        if (_actionState.value is UserActionState.Loading) return
         _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.updateUser(userId, request).fold(
@@ -104,6 +106,7 @@ class UserManageViewModel(
 
     /** 删除用户 */
     fun deleteUser(userId: Long) {
+        if (_actionState.value is UserActionState.Loading) return
         _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.deleteUser(userId).fold(
@@ -118,6 +121,7 @@ class UserManageViewModel(
 
     /** 重置密码 */
     fun resetPassword(userId: Long, newPassword: String) {
+        if (_actionState.value is UserActionState.Loading) return
         _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.resetPassword(userId, newPassword).fold(
@@ -129,6 +133,8 @@ class UserManageViewModel(
 
     /** 启用用户 */
     fun enableUser(userId: Long) {
+        if (_actionState.value is UserActionState.Loading) return
+        _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.enableUser(userId).fold(
                 onSuccess = {
@@ -142,6 +148,8 @@ class UserManageViewModel(
 
     /** 禁用用户 */
     fun disableUser(userId: Long) {
+        if (_actionState.value is UserActionState.Loading) return
+        _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.disableUser(userId).fold(
                 onSuccess = {
@@ -156,6 +164,7 @@ class UserManageViewModel(
     /** 批量删除用户 */
     fun batchDeleteUsers(ids: List<Long>) {
         if (ids.isEmpty()) return
+        if (_actionState.value is UserActionState.Loading) return
         _actionState.value = UserActionState.Loading
         viewModelScope.launch {
             userManageRepository.batchDeleteUsers(ids).fold(

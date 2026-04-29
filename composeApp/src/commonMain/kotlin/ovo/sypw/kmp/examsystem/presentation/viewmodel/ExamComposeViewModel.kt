@@ -130,6 +130,7 @@ class ExamComposeViewModel(
         lenientMode: Boolean = false
     ) {
         val examId = currentExamId ?: return
+        if (_randomComposeState.value is RandomComposeState.Loading) return
         _randomComposeState.value = RandomComposeState.Loading
         viewModelScope.launch {
             val request = ComposeRandomExamRequest(
@@ -155,6 +156,7 @@ class ExamComposeViewModel(
 
     fun addQuestionToExam(questionId: Long, score: Int) {
         val examId = currentExamId ?: return
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             val currentState = _uiState.value as? ExamComposeUiState.Success ?: return@launch
@@ -174,6 +176,7 @@ class ExamComposeViewModel(
 
     fun removeQuestionFromExam(questionId: Long) {
         val examId = currentExamId ?: return
+        if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.removeQuestionFromExam(examId, questionId).onSuccess {
