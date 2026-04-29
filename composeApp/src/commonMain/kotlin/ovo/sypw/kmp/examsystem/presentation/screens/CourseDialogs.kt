@@ -20,10 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -46,40 +43,23 @@ import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
-import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
-import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 import ovo.sypw.kmp.examsystem.presentation.components.StudentSelector
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
-import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseFormDialog(
     title: String,
     initial: CourseResponse? = null,
-    isAdmin: Boolean = false,
     onConfirm: (CourseRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val config = LocalResponsiveConfig.current
     var name by remember { mutableStateOf(initial?.courseName ?: "") }
     var description by remember { mutableStateOf(initial?.description ?: "") }
-
-    // 教师选择器状态（仅管理员）
-    val userManageRepository: UserManageRepository = koinInject()
-    var teachers by remember { mutableStateOf<List<UserResponse>>(emptyList()) }
-    var selectedTeacherId by remember { mutableStateOf<Long?>(initial?.teacherId) }
-    var teacherExpanded by remember { mutableStateOf(false) }
-    var teachersLoaded by remember { mutableStateOf(false) }
-
-    if (isAdmin && !teachersLoaded) {
-        LaunchedEffect(Unit) {
-            userManageRepository.loadUsersByRole("teacher")
-                .onSuccess { teachers = it; teachersLoaded = true }
-                .onFailure { teachersLoaded = true }
-        }
-    }
+    val normalizedName = name.trim()
+    val normalizedDescription = description.trim()
+    val isValid = normalizedName.isNotBlank() && normalizedName.length <= 100 && normalizedDescription.length <= 500
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -89,33 +69,24 @@ fun CourseFormDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("课程名称 *") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("课程描述") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
-
-                if (isAdmin) {
-                    ExposedDropdownMenuBox(expanded = teacherExpanded, onExpandedChange = { teacherExpanded = it }) {
-                        OutlinedTextField(
-                            value = teachers.find { it.id == selectedTeacherId }?.let { "${it.realName ?: it.username} (${it.id})" } ?: "不指定",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("授课教师") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(teacherExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor()
-                        )
-                        ExposedDropdownMenu(expanded = teacherExpanded, onDismissRequest = { teacherExpanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text("不指定") },
-                                onClick = { selectedTeacherId = null; teacherExpanded = false }
-                            )
-                            teachers.forEach { teacher ->
-                                DropdownMenuItem(
-                                    text = { Text("${teacher.realName ?: teacher.username} (${teacher.id})") },
-                                    onClick = { selectedTeacherId = teacher.id; teacherExpanded = false }
-                                )
-                            }
-                        }
-                    }
-                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("课程名称 *") },
+                    supportingText = { Text("${normalizedName.length}/100") },
+                    isError = normalizedName.length > 100,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("课程描述") },
+                    supportingText = { Text("${normalizedDescription.length}/500") },
+                    isError = normalizedDescription.length > 500,
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
             }
         },
         confirmButton = {
@@ -123,13 +94,13 @@ fun CourseFormDialog(
                 onClick = {
                     onConfirm(
                         CourseRequest(
-                            courseName = name.trim(),
-                            description = description.takeIf { it.isNotBlank() },
-                            teacherId = selectedTeacherId
+                            courseName = normalizedName,
+                            description = normalizedDescription.ifBlank { null },
+                            status = initial?.status ?: 1
                         )
                     )
                 },
-                enabled = name.isNotBlank()
+                enabled = isValid
             ) { Text("保存") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
@@ -143,7 +114,6 @@ fun EnrollmentManageDialog(
     courseViewModel: CourseViewModel,
     onDismiss: () -> Unit
 ) {
-    val config = LocalResponsiveConfig.current
     val courseRepository: CourseRepository = koinInject()
     val scope = rememberCoroutineScope()
     val students by courseViewModel.courseStudents.collectAsState()
@@ -187,7 +157,7 @@ fun EnrollmentManageDialog(
                                 enrollment = student,
                                 onRemove = {
                                     scope.launch {
-                                        courseRepository.removeStudentFromCourse(course.id, student.id)
+                                        courseRepository.removeStudentFromCourse(course.id, student.studentId)
                                         courseViewModel.loadCourseStudents(course.id)
                                     }
                                 }

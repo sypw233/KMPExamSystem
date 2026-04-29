@@ -30,19 +30,22 @@ class CourseRepository(
     /**
      * 获取所有活跃课程列表（分页）
      */
-    suspend fun loadAllCourses(): Result<List<CourseResponse>> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
-            val response = courseApi.getAllActiveCourses(token)
-            if (response.code == 200) {
-                val data = response.data?.content ?: emptyList()
-                _allCourses.value = data
-                Result.success(data)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun loadAllCourses(): Result<List<CourseResponse>> = runWithToken { token ->
+        val courses = mutableListOf<CourseResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+        do {
+            val response = courseApi.getAllActiveCourses(token, page, size)
+            if (response.code != 200) throw Exception(response.message)
+            val data = response.data ?: break
+            courses += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        courses.distinctBy { it.id }.also {
+            _allCourses.value = it
         }
     }
 
@@ -119,8 +122,20 @@ class CourseRepository(
 
     /** 获取课程下的考试列表 */
     suspend fun getCourseExams(courseId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>> = runWithToken { token ->
-        val r = courseApi.getCourseExams(token, courseId)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        val exams = mutableListOf<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+        do {
+            val r = courseApi.getCourseExams(token, courseId, page, size)
+            if (r.code != 200) throw Exception(r.message)
+            val data = r.data ?: break
+            exams += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        exams.distinctBy { it.id }
     }
 
     /** 获取选课学生 */

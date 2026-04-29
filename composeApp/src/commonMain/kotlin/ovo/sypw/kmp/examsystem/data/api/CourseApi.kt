@@ -4,8 +4,8 @@ import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
-import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageCourseResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.result.NetworkResult
 import ovo.sypw.kmp.examsystem.data.dto.result.parseData
 
@@ -103,8 +103,17 @@ class CourseApi : BaseApiService() {
     }
 
     /** 获取课程下的考试列表 */
-    suspend fun getCourseExams(token: String, courseId: Long): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = "$COURSE_ENDPOINT/$courseId/exams", token = token)
+    suspend fun getCourseExams(
+        token: String,
+        courseId: Long,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageExamResponse> {
+        val result = getWithToken(
+            endpoint = "$COURSE_ENDPOINT/$courseId/exams",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

@@ -169,7 +169,6 @@ private fun CourseManageDialogs(
     if (showCreateDialog) {
         CourseFormDialog(
             title = "创建课程",
-            isAdmin = userRole == UserRole.ADMIN,
             onConfirm = {
                 courseViewModel.createCourse(it)
                 onDismissCreate()
@@ -182,7 +181,6 @@ private fun CourseManageDialogs(
         CourseFormDialog(
             title = "编辑课程",
             initial = course,
-            isAdmin = userRole == UserRole.ADMIN,
             onConfirm = {
                 courseViewModel.updateCourse(course.id, it)
                 onDismissEdit()

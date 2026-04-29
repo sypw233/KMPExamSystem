@@ -38,7 +38,6 @@ data class EnrollmentResponse(
 data class CourseRequest(
     val courseName: String,
     val description: String? = null,
-    val teacherId: Long? = null,
     val status: Int = 1
 )
 
@@ -57,4 +56,3 @@ data class PageCourseResponse(
     val numberOfElements: Int = 0,
     val empty: Boolean = true
 )
-

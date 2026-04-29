@@ -48,7 +48,6 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
-import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.EnrollState
@@ -59,7 +58,6 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
     val authRepository: AuthRepository = koinInject()
     val courseRepository: CourseRepository = koinInject()
-    val examRepository: ExamRepository = koinInject()
     val scope = rememberCoroutineScope()
 
     val allCoursesState by courseViewModel.allCoursesState.collectAsState()
@@ -120,7 +118,7 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                         examDetailCourse = course
                         loadingCourseExams = true
                         scope.launch {
-                            courseExams = examRepository.getExamsByCourse(course.id).getOrDefault(emptyList())
+                            courseExams = courseRepository.getCourseExams(course.id).getOrDefault(emptyList())
                             loadingCourseExams = false
                         }
                     }
