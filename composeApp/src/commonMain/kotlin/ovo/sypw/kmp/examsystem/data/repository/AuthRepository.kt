@@ -11,6 +11,7 @@ import ovo.sypw.kmp.examsystem.data.dto.UserInfo
 import ovo.sypw.kmp.examsystem.data.dto.UserProfileRequest
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
  * 认证仓库
@@ -136,6 +137,7 @@ class AuthRepository(
                 false
             }
         } catch (e: Exception) {
+            Logger.e("AuthRepository", "Token刷新失败: ${e.message}")
             false
         }
     }

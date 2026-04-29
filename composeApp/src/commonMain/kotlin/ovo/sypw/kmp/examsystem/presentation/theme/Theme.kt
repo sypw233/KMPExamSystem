@@ -1,10 +1,12 @@
 package ovo.sypw.kmp.examsystem.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import ovo.sypw.kmp.examsystem.presentation.theme.AppShapes
 import ovo.sypw.kmp.examsystem.presentation.theme.AppTypography
 
@@ -105,3 +107,19 @@ fun AppTheme(
         content = content
     )
 }
+
+/**
+ * 语义颜色扩展属性
+ * 提供 info/warning/success 颜色令牌，支持深色主题自适应
+ */
+val ColorScheme.info: Color
+    @Composable
+    get() = if (isSystemInDarkTheme()) md_theme_dark_info else md_theme_light_info
+
+val ColorScheme.warning: Color
+    @Composable
+    get() = if (isSystemInDarkTheme()) md_theme_dark_warning else md_theme_light_warning
+
+val ColorScheme.success: Color
+    @Composable
+    get() = if (isSystemInDarkTheme()) md_theme_dark_success else md_theme_light_success

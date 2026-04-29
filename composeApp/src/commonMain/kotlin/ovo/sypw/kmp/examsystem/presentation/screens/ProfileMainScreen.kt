@@ -29,6 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -218,15 +219,14 @@ private fun OutlinedActionButton(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
         modifier = modifier.height(50.dp),
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, color)
     ) {
         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text)
+        Text(text, color = color)
     }
 }

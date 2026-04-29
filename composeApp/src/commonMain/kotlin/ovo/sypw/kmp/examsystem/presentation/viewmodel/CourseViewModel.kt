@@ -57,11 +57,6 @@ class CourseViewModel(
     private val _courseStudents = MutableStateFlow<List<EnrollmentResponse>>(emptyList())
     val courseStudents: StateFlow<List<EnrollmentResponse>> = _courseStudents.asStateFlow()
 
-    init {
-        loadAllCourses()
-        loadMyCourses()
-    }
-
     /** 加载所有活跃课程 */
     fun loadAllCourses() {
         viewModelScope.launch {
