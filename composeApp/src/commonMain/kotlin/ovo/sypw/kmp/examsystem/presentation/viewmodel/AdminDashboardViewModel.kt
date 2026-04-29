@@ -50,7 +50,10 @@ class AdminDashboardViewModel(
                 if (courseResult.isFailure) {
                     Logger.w("AdminDashboardViewModel", "加载课程列表失败: ${courseResult.exceptionOrNull()?.message}")
                 }
-                val courseIds = courseResult.getOrDefault(emptyList()).take(4).map { it.id }
+                val courseIds = courseResult.getOrElse {
+                    Logger.w("AdminDashboardViewModel", "加载课程列表失败: ${it.message}")
+                    emptyList()
+                }.take(4).map { it.id }
                 courseIds.map { courseId ->
                     async { statisticsRepository.getCourseStatistics(courseId).getOrNull() }
                 }.mapNotNull { it.await() }
