@@ -106,11 +106,11 @@ private fun DashboardNotificationCard(
             containerColor = if (notification.isRead)
                 MaterialTheme.colorScheme.surfaceVariant
             else
-                MaterialTheme.colorScheme.inverseSurface,
+                MaterialTheme.colorScheme.primaryContainer,
             contentColor = if (notification.isRead)
                 MaterialTheme.colorScheme.onSurfaceVariant
             else
-                MaterialTheme.colorScheme.inverseOnSurface
+                MaterialTheme.colorScheme.onPrimaryContainer
         ),
         onClick = onMarkRead
     ) {

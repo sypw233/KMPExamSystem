@@ -124,12 +124,7 @@ class ExamViewModel(
     fun loadExamDetail(examId: Long) {
         viewModelScope.launch {
             _examDetail.value = ExamDetailUiState.Loading
-            val examResult = examRepository.getExamDetail(examId)
-            examResult.onFailure { e ->
-                _examDetail.value = ExamDetailUiState.Error(e.message ?: "加载考试详情失败")
-                return@launch
-            }
-            val exam = examResult.getOrElse { e ->
+            val exam = examRepository.getExamDetail(examId).getOrElse { e ->
                 _examDetail.value = ExamDetailUiState.Error(e.message ?: "加载考试详情失败")
                 return@launch
             }

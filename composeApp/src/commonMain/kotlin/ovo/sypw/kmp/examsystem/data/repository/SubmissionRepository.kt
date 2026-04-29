@@ -62,10 +62,11 @@ class SubmissionRepository(
 
     /**
      * 获取某场考试的所有提交记录（教师/管理员）
-     * 复用分页查询接口取全量
+     * 注：当前使用大页码一次性取全量，超大班级（>5000人）可能丢失数据。
+     * 如需支持超大班级，应改为真正的分页加载。
      */
     suspend fun getExamSubmissions(examId: Long): Result<List<SubmissionResponse>> = runWithToken { token ->
-        val r = submissionApi.querySubmissions(token, examId = examId, page = 0, size = 999)
+        val r = submissionApi.querySubmissions(token, examId = examId, page = 0, size = 5000)
         if (r.code == 200 && r.data != null) r.data.content else throw Exception(r.message)
     }
 

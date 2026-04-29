@@ -11,6 +11,7 @@ import ovo.sypw.kmp.examsystem.presentation.screens.admin.QuestionBankScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.UserManageScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.teacher.TeacherExamManageScreen
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
  * 主路由分发组件
@@ -84,6 +85,7 @@ fun NavigationScreen(
             if (role == UserRole.ADMIN) {
                 SystemSettingsScreen()
             } else {
+                Logger.w("NavigationScreen: 非管理员角色($role)访问 SYSTEM_SETTINGS 路由，已重定向到首页")
                 DashboardScreen()
             }
         }

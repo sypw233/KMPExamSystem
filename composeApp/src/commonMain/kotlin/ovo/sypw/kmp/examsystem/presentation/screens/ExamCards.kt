@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.utils.StringUtils
 
 @Composable
 internal fun ExamCard(
@@ -98,7 +99,7 @@ internal fun ExamCard(
             if (!exam.startTime.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "开始 ${exam.startTime.take(16).replace("T", " ")}",
+                    text = "开始 ${StringUtils.formatDateTime(exam.startTime)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -168,7 +169,7 @@ internal fun ExamPreviewCard(
                 InfoRow(Icons.Default.Assignment, "满分", "${exam.totalScore} 分")
                 InfoRow(Icons.Default.Schedule, "题目数量", "${exam.questionCount} 题")
                 if (!exam.startTime.isNullOrBlank()) {
-                    InfoRow(Icons.Default.Schedule, "开始时间", exam.startTime.take(16).replace("T", " "))
+                    InfoRow(Icons.Default.Schedule, "开始时间", StringUtils.formatDateTime(exam.startTime))
                 }
             }
 

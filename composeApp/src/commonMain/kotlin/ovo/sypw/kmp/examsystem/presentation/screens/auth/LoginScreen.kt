@@ -114,6 +114,7 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        enabled = uiState !is LoginUiState.Loading,
                         leadingIcon = {
                             Icon(Icons.Default.Person, contentDescription = null)
                         },
@@ -133,6 +134,7 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
+                        enabled = uiState !is LoginUiState.Loading,
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null)
                         },

@@ -9,10 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -63,7 +68,8 @@ internal fun QuestionItem(
 
             when (question.type) {
                 "single" -> {
-                    val options = parseOptions(question.options)
+                    // 【修复 SEC-01】使用 QuestionUtils.parseOptionsJson 正确解析 JSON 数组
+                    val options = QuestionUtils.parseOptionsJson(question.options)
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
                         Row(
@@ -80,7 +86,7 @@ internal fun QuestionItem(
                     }
                 }
                 "multiple" -> {
-                    val options = parseOptions(question.options)
+                    val options = QuestionUtils.parseOptionsJson(question.options)
                     val selectedSet = if (currentAnswer.isBlank()) emptySet() else currentAnswer.split(",").toSet()
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
@@ -133,15 +139,52 @@ internal fun ExamResultSummary(
 ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-            Text("交卷成功", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            // 【UX-03】添加状态图标和更清晰的视觉层级
+            Icon(
+                imageVector = if (needsGrading) Icons.Default.HourglassEmpty else Icons.Default.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(72.dp),
+                tint = if (needsGrading)
+                    MaterialTheme.colorScheme.tertiary
+                else
+                    MaterialTheme.colorScheme.primary
+            )
             Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "交卷成功",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(12.dp))
             if (needsGrading) {
-                Text("主观题正在等待教师评分。", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "主观题正在等待教师评分。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (objectiveScore != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "客观题得分: $objectiveScore",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             } else {
-                Text("客观题得分: $objectiveScore", style = MaterialTheme.typography.titleMedium)
-                Text("总分: ${totalScore ?: "--"}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                if (objectiveScore != null) {
+                    Text(
+                        "客观题得分: $objectiveScore",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                Text(
+                    "总分: ${totalScore ?: "--"}",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Button(onClick = onExit, modifier = Modifier.fillMaxWidth()) { Text("返回首页") }
         }
     }
@@ -152,16 +195,4 @@ internal fun formatExamTime(seconds: Int): String {
     val minutes = (seconds % 3600) / 60
     val secs = seconds % 60
     return if (hours > 0) "%02d:%02d:%02d".format(hours, minutes, secs) else "%02d:%02d".format(minutes, secs)
-}
-
-private fun parseOptions(optionsJson: String?): List<String> {
-    if (optionsJson.isNullOrBlank()) return emptyList()
-    return try {
-        optionsJson.trim('[', ']')
-            .split("\",\"")
-            .map { it.trim('"', ' ') }
-            .filter { it.isNotBlank() }
-    } catch (_: Exception) {
-        emptyList()
-    }
 }

@@ -36,13 +36,11 @@ class AuthRepository(
             val response = authApi.login(request)
             
             if (response.code == 200 && response.data != null) {
-                // 保存 Token
-                tokenStorage.saveAccessToken(response.data.accessToken)
-                tokenStorage.saveRefreshToken(response.data.refreshToken)
-                
-                // 获取用户信息
+                // 先获取用户信息（验证 Token 确实可用），成功后再持久化保存
                 val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
                 if (userInfoResponse.code == 200 && userInfoResponse.data != null) {
+                    tokenStorage.saveAccessToken(response.data.accessToken)
+                    tokenStorage.saveRefreshToken(response.data.refreshToken)
                     _authState.value = AuthState.Authenticated(userInfoResponse.data)
                     Result.success(userInfoResponse.data)
                 } else {
@@ -71,13 +69,11 @@ class AuthRepository(
             val response = authApi.register(request)
             
             if (response.code == 200 && response.data != null) {
-                // 保存 Token
-                tokenStorage.saveAccessToken(response.data.accessToken)
-                tokenStorage.saveRefreshToken(response.data.refreshToken)
-                
-                // 获取用户信息
+                // 先获取用户信息（验证 Token 确实可用），成功后再持久化保存
                 val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
                 if (userInfoResponse.code == 200 && userInfoResponse.data != null) {
+                    tokenStorage.saveAccessToken(response.data.accessToken)
+                    tokenStorage.saveRefreshToken(response.data.refreshToken)
                     _authState.value = AuthState.Authenticated(userInfoResponse.data)
                     Result.success(userInfoResponse.data)
                 } else {

@@ -70,7 +70,6 @@ fun DashboardScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier)
                         .padding(horizontal = config.screenPadding, vertical = config.contentPadding),
                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                 ) {
