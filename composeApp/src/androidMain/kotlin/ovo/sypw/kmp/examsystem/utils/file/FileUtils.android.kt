@@ -4,10 +4,14 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import io.github.vinceglb.filekit.core.FileKit
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.openFilePicker
+import io.github.vinceglb.filekit.dialogs.openFileSaver
+import io.github.vinceglb.filekit.readBytes
+import io.github.vinceglb.filekit.write
 
 /**
  * Android平台的FileUtils实现
@@ -30,9 +34,9 @@ class AndroidFileUtils(private val context: Context) : FileUtils {
      */
     override suspend fun selectImage(): PlatformFile? {
         return try {
-            FileKit.pickFile(
-                type = PickerType.Image,
-                mode = PickerMode.Single
+            FileKit.openFilePicker(
+                type = FileKitType.Image,
+                mode = FileKitMode.Single
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -47,9 +51,9 @@ class AndroidFileUtils(private val context: Context) : FileUtils {
      */
     override suspend fun selectFile(): PlatformFile? {
         return try {
-            FileKit.pickFile(
-                type = PickerType.File(),
-                mode = PickerMode.Single
+            FileKit.openFilePicker(
+                type = FileKitType.File(),
+                mode = FileKitMode.Single
             )
         } catch (e: Exception) {
             e.printStackTrace()
@@ -72,11 +76,11 @@ class AndroidFileUtils(private val context: Context) : FileUtils {
         extension: String
     ): PlatformFile? {
         return try {
-            val file = FileKit.saveFile(
-                bytes = data,
-                baseName = fileName,
+            val file = FileKit.openFileSaver(
+                suggestedName = fileName,
                 extension = extension
             )
+            file?.write(data)
             file
         } catch (e: Exception) {
             e.printStackTrace()

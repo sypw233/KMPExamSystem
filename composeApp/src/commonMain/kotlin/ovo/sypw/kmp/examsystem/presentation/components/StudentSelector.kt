@@ -75,6 +75,7 @@ fun StudentSelector(
             }
         }
     }
+    val loadError = errorMessage
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -127,13 +128,13 @@ fun StudentSelector(
                             CircularProgressIndicator()
                         }
                     }
-                    errorMessage != null -> {
+                    loadError != null -> {
                         Box(
                             modifier = Modifier.fillMaxWidth().height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(errorMessage!!, color = MaterialTheme.colorScheme.error)
+                                Text(loadError, color = MaterialTheme.colorScheme.error)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 TextButton(onClick = {
                                     retryTrigger++

@@ -42,6 +42,18 @@ object ResponsiveUtils {
     object Breakpoints {
         val COMPACT_MAX = 600.dp
         val MEDIUM_MAX = 840.dp
+        val EXPANDED_LARGE = 1200.dp  // 大屏桌面断点
+    }
+
+    /**
+     * 统一内容最大宽度常量
+     * 避免各屏幕随意使用不同数值
+     */
+    object MaxWidths {
+        val FULL = 1200.dp      // 全宽内容（仪表盘、管理页）
+        val STANDARD = 960.dp   // 标准内容（列表页）
+        val NARROW = 800.dp     // 窄内容（考试、通知）
+        val FORM = 480.dp       // 表单内容（登录、注册、设置）
     }
 
     /**
@@ -53,6 +65,13 @@ object ResponsiveUtils {
             screenWidth < Breakpoints.MEDIUM_MAX -> ScreenSize.MEDIUM
             else -> ScreenSize.EXPANDED
         }
+    }
+
+    /**
+     * 判断是否为宽屏桌面（>1200dp）
+     */
+    fun isLargeDesktop(screenWidth: Dp): Boolean {
+        return screenWidth >= Breakpoints.EXPANDED_LARGE
     }
 
     /**
@@ -115,6 +134,13 @@ object ResponsiveUtils {
                 ScreenSize.MEDIUM -> 2
                 ScreenSize.EXPANDED -> 3
             }
+        }
+
+        /**
+         * 根据可用宽度动态计算列数（比固定断点更灵活）
+         */
+        fun getAdaptiveColumnCount(availableWidth: Dp, minItemWidth: Dp = 300.dp): Int {
+            return (availableWidth / minItemWidth).toInt().coerceAtLeast(1)
         }
 
         fun getMaxCardWidth(screenSize: ScreenSize): Dp {
@@ -227,8 +253,8 @@ fun ResponsiveContent(
     val config = LocalResponsiveConfig.current
     val effectiveMaxWidth = maxWidth ?: when (config.screenSize) {
         ResponsiveUtils.ScreenSize.COMPACT -> Dp.Unspecified
-        ResponsiveUtils.ScreenSize.MEDIUM -> 960.dp
-        ResponsiveUtils.ScreenSize.EXPANDED -> 1200.dp
+        ResponsiveUtils.ScreenSize.MEDIUM -> ResponsiveUtils.MaxWidths.STANDARD
+        ResponsiveUtils.ScreenSize.EXPANDED -> ResponsiveUtils.MaxWidths.FULL
     }
 
     Box(
@@ -265,8 +291,8 @@ fun ResponsiveNarrowContent(
     val config = LocalResponsiveConfig.current
     val maxWidth = when (config.screenSize) {
         ResponsiveUtils.ScreenSize.COMPACT -> Dp.Unspecified
-        ResponsiveUtils.ScreenSize.MEDIUM -> 520.dp
-        ResponsiveUtils.ScreenSize.EXPANDED -> 480.dp
+        ResponsiveUtils.ScreenSize.MEDIUM -> 560.dp
+        ResponsiveUtils.ScreenSize.EXPANDED -> ResponsiveUtils.MaxWidths.FORM
     }
 
     ResponsiveContent(
@@ -275,6 +301,70 @@ fun ResponsiveNarrowContent(
         content = content
     )
 }
+
+/**
+ * 桌面端双栏布局（主从/列表+详情）
+ * 在桌面端显示左右两栏，在移动端显示单栏
+ *
+ * @param master 左侧/主栏内容
+ * @param detail 右侧/详情栏内容
+ * @param masterWeight 主栏权重
+ * @param detailWeight 详情栏权重
+ * @param modifier 修饰符
+ */
+@Composable
+fun DesktopTwoPaneLayout(
+    master: @Composable () -> Unit,
+    detail: @Composable () -> Unit,
+    masterWeight: Float = 1f,
+    detailWeight: Float = 1.4f,
+    modifier: Modifier = Modifier
+) {
+    val config = LocalResponsiveConfig.current
+    if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+        Row(
+            modifier = modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing * 2)
+        ) {
+            Box(modifier = Modifier.weight(masterWeight)) { master() }
+            Box(modifier = Modifier.weight(detailWeight)) { detail() }
+        }
+    } else {
+        Column(modifier = modifier.fillMaxSize()) {
+            master()
+        }
+    }
+}
+
+/**
+ * 桌面端数据表格行
+ * 在桌面端显示为横向排列的表格行，在移动端保持纵向卡片
+ *
+ * @param modifier 修饰符
+ * @param columns 列内容，每个 Pair 为 (权重, @Composable 内容)
+ */
+@Composable
+fun DesktopDataTableRow(
+    modifier: Modifier = Modifier,
+    vararg columns: Pair<Float, @Composable () -> Unit>
+) {
+    val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
+
+    if (isDesktop) {
+        Row(
+            modifier = modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+        ) {
+            columns.forEach { (weight, content) ->
+                Box(modifier = Modifier.weight(weight)) { content() }
+            }
+        }
+    }
+}
+
+
 
 /**
  * 响应式懒加载网格

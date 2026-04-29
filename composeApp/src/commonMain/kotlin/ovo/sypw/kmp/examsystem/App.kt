@@ -155,10 +155,11 @@ private fun AuthenticatedContent(authState: AuthState.Authenticated) {
 
     val config = LocalResponsiveConfig.current
 
-    if (isInExamMode && currentExamId != null) {
+    val examId = currentExamId
+    if (isInExamMode && examId != null) {
         // 考试模式：全屏显示，隐藏所有导航
         ExamTakingScreen(
-            examId = currentExamId!!,
+            examId = examId,
             navigationManager = navigationManager,
             onExitExam = {
                 // 退出考试后返回考试列表

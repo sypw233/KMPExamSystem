@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -90,7 +91,7 @@ private fun getDialogIcon(type: DialogType): ImageVector {
         DialogType.WARNING -> Icons.Default.Warning
         DialogType.ERROR -> Icons.Default.Error
         DialogType.SUCCESS -> Icons.Default.CheckCircle
-        DialogType.CONFIRM -> Icons.Default.HelpOutline
+        DialogType.CONFIRM -> Icons.AutoMirrored.Filled.HelpOutline
     }
 }
 

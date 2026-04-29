@@ -70,7 +70,8 @@ fun GradeDetailScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        if (submission == null) {
+        val currentSubmission = submission
+        if (currentSubmission == null) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -78,9 +79,9 @@ fun GradeDetailScreen(
         }
 
         // 解析学生答案 (JSON 字符串 -> Map)
-        val userAnswers: Map<String, String> = remember(submission?.answers) {
+        val userAnswers: Map<String, String> = remember(currentSubmission.answers) {
             try {
-                val jsonStr = submission?.answers ?: return@remember emptyMap()
+                val jsonStr = currentSubmission.answers ?: return@remember emptyMap()
                 if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyMap()
             } catch (e: Exception) {
                 emptyMap()
@@ -88,9 +89,9 @@ fun GradeDetailScreen(
         }
 
         // 解析批改详情 (JSON 字符串 -> List)
-        val submitDetailList: List<SubjectiveGradeDetail> = remember(submission?.submitDetail) {
+        val submitDetailList: List<SubjectiveGradeDetail> = remember(currentSubmission.submitDetail) {
             try {
-                val jsonStr = submission?.submitDetail ?: return@remember emptyList()
+                val jsonStr = currentSubmission.submitDetail ?: return@remember emptyList()
                 if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyList()
             } catch (e: Exception) {
                 emptyList()
@@ -105,7 +106,7 @@ fun GradeDetailScreen(
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Row(modifier = Modifier.padding(16.dp)) {
-                    Text("考试总得分: ${submission!!.totalScore ?: "批改中"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("考试总得分: ${currentSubmission.totalScore ?: "批改中"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
             }
 

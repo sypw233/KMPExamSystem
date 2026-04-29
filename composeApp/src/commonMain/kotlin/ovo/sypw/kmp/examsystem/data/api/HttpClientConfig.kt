@@ -12,6 +12,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import ovo.sypw.kmp.examsystem.utils.Logger as AppLogger
 
 /**
  * HTTP客户端配置类
@@ -90,7 +91,7 @@ object HttpClientConfig {
                 logger = object : Logger {
                     override fun log(message: String) {
                         if (DEBUG) {
-                            println("HTTP: $message")
+                            AppLogger.d("HTTP", message)
                         }
                     }
                 }

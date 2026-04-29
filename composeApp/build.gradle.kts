@@ -96,7 +96,7 @@ kotlin {
 
 android {
     namespace = "ovo.sypw.kmp.examsystem"
-    compileSdk = 35
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
     //noinspection GradleDependency
 
     defaultConfig {

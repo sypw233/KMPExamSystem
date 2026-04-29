@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.decodeFromJsonElement
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
  * SaResult响应数据类
@@ -72,10 +73,8 @@ fun SaResult.getErrorMessage(): String {
 inline fun <reified T> SaResult.parseData(): T? {
     return try {
         if (data == null) {
-//            println("[SaResult.parseData] data字段为null")
             return null
         }
-//        println("[SaResult.parseData] 原始data: $data")
 
         // 创建宽松的Json配置，允许非标准JSON格式
         val lenientJson = Json {
@@ -85,12 +84,10 @@ inline fun <reified T> SaResult.parseData(): T? {
         }
 
         val result = lenientJson.decodeFromJsonElement<T>(data)
-//        println("[SaResult.parseData] 反序列化成功: $result")
         result
     } catch (e: Exception) {
-        println("[SaResult.parseData] 反序列化失败: ${e.message}")
-        println("[SaResult.parseData] 异常详情: $e")
-        println("[SaResult.parseData] 目标类型: ${T::class.simpleName}")
+        Logger.e("SaResult", "反序列化失败: ${e.message}", e)
+        Logger.e("SaResult", "目标类型: ${T::class.simpleName}")
         null
     }
 }

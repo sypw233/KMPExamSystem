@@ -16,21 +16,16 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -49,15 +44,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
-import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
-import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserListState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserManageViewModel
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 /**
  * 管理员用户管理界面
@@ -73,18 +67,15 @@ fun UserManageScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val config = LocalResponsiveConfig.current
 
-    // 弹窗状态
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<UserResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<UserResponse?>(null) }
     var showResetPwdDialog by remember { mutableStateOf<UserResponse?>(null) }
 
-    // 批量删除模式
     var isBatchMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
-    // 监听 actionState 变化显示 Snackbar
     LaunchedEffect(actionState) {
         when (val state = actionState) {
             is UserActionState.Success -> {
@@ -172,7 +163,6 @@ fun UserManageScreen() {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // 搜索和筛选栏
             FilterBar(
                 params = queryParams,
                 onParamsChange = { viewModel.loadUsers(it) }
@@ -201,8 +191,7 @@ fun UserManageScreen() {
                     }
                     is UserListState.Success -> {
                         val page = state.page
-                        Column(modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier).fillMaxSize()) {
-                            // 统计行
+                        Column(modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier).fillMaxSize()) {
                             Text(
                                 "共 ${page.totalElements} 位用户，第 ${page.number + 1}/${page.totalPages} 页",
                                 style = MaterialTheme.typography.bodySmall,
@@ -234,7 +223,6 @@ fun UserManageScreen() {
                                     }
                                 )
                             }
-                            // 分页控制
                             if (page.totalPages > 1) {
                                 PaginationBar(
                                     currentPage = page.number,
@@ -251,149 +239,23 @@ fun UserManageScreen() {
         }
     }
 
-    // 新建用户弹窗
-    if (showCreateDialog) {
-        CreateUserDialog(
-            onConfirm = { req ->
-                viewModel.createUser(req)
-                showCreateDialog = false
-            },
-            onDismiss = { showCreateDialog = false }
-        )
-    }
-
-    // 编辑用户弹窗
-    showEditDialog?.let { user ->
-        EditUserDialog(
-            user = user,
-            onConfirm = { req ->
-                viewModel.updateUser(user.id, req)
-                showEditDialog = null
-            },
-            onDismiss = { showEditDialog = null }
-        )
-    }
-
-    // 删除确认
-    showDeleteConfirm?.let { user ->
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = null },
-            title = { Text("删除用户") },
-            text = { Text("确定要删除用户「${user.realName ?: user.username}」吗？此操作不可撤销。") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.deleteUser(user.id)
-                        showDeleteConfirm = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("删除") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = null }) { Text("取消") }
-            }
-        )
-    }
-
-    // 重置密码弹窗
-    showResetPwdDialog?.let { user ->
-        ResetPasswordDialog(
-            username = user.realName ?: user.username,
-            onConfirm = { pwd ->
-                viewModel.resetPassword(user.id, pwd)
-                showResetPwdDialog = null
-            },
-            onDismiss = { showResetPwdDialog = null }
-        )
-    }
-
-    // 批量删除确认
-    if (showBatchDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showBatchDeleteConfirm = false },
-            title = { Text("批量删除用户") },
-            text = { Text("确定要删除选中的 ${selectedIds.size} 位用户吗？此操作不可撤销。") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.batchDeleteUsers(selectedIds.toList())
-                        showBatchDeleteConfirm = false
-                        isBatchMode = false
-                        selectedIds = emptySet()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("删除") }
-            },
-            dismissButton = { TextButton(onClick = { showBatchDeleteConfirm = false }) { Text("取消") } }
-        )
-    }
-}
-
-// ── 筛选栏 ────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams) -> Unit) {
-    var keyword by remember(params.keyword) { mutableStateOf(params.keyword ?: "") }
-
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        OutlinedTextField(
-            value = keyword,
-            onValueChange = { keyword = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("搜索用户名/姓名/邮箱") },
-            leadingIcon = { Icon(Icons.Default.Search, null) },
-            trailingIcon = {
-                if (keyword.isNotEmpty()) {
-                    IconButton(onClick = {
-                        keyword = ""
-                        onParamsChange(params.copy(keyword = null, page = 0))
-                    }) { Icon(Icons.Default.Close, null) }
-                }
-            },
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(null to "全部", "student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (role, label) ->
-                FilterChip(
-                    selected = params.role == role,
-                    onClick = { onParamsChange(params.copy(role = role, page = 0)) },
-                    label = { Text(label) }
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { onParamsChange(params.copy(keyword = keyword.takeIf { it.isNotBlank() }, page = 0)) }
-            ) { Text("搜索") }
+    UserManageDialogHost(
+        viewModel = viewModel,
+        showCreateDialog = showCreateDialog,
+        showEditDialog = showEditDialog,
+        showDeleteConfirm = showDeleteConfirm,
+        showResetPwdDialog = showResetPwdDialog,
+        showBatchDeleteConfirm = showBatchDeleteConfirm,
+        selectedIds = selectedIds,
+        onDismissCreate = { showCreateDialog = false },
+        onDismissEdit = { showEditDialog = null },
+        onDismissDelete = { showDeleteConfirm = null },
+        onDismissResetPassword = { showResetPwdDialog = null },
+        onDismissBatchDelete = { showBatchDeleteConfirm = false },
+        onBatchDeleteFinished = {
+            showBatchDeleteConfirm = false
+            isBatchMode = false
+            selectedIds = emptySet()
         }
-    }
-}
-
-// ── 分页控制 ─────────────────────────────────────────────────────────────────
-
-@Composable
-private fun PaginationBar(
-    currentPage: Int,
-    totalPages: Int,
-    hasFirst: Boolean,
-    hasLast: Boolean,
-    onPageChange: (Int) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TextButton(onClick = { onPageChange(currentPage - 1) }, enabled = hasFirst) {
-            Text("上一页")
-        }
-        Text(
-            "${currentPage + 1} / $totalPages",
-            modifier = Modifier.padding(horizontal = 16.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
-        TextButton(onClick = { onPageChange(currentPage + 1) }, enabled = hasLast) {
-            Text("下一页")
-        }
-    }
+    )
 }

@@ -1,36 +1,9 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,21 +12,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import ovo.sypw.kmp.examsystem.data.dto.UserInfo
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.FileRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.screens.admin.SystemSettingsScreen
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
-import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
 @Composable
@@ -168,114 +135,5 @@ fun ProfileScreen() {
 
     if (showHelpDialog) {
         HelpDialog(onDismiss = { showHelpDialog = false })
-    }
-}
-
-@Composable
-private fun ProfileMainScreen(
-    modifier: Modifier = Modifier,
-    user: UserInfo?,
-    unreadCount: Long,
-    isTeacherOrAdmin: Boolean,
-    isAdmin: Boolean,
-    onNavigateToGrades: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onNavigateToSystemSettings: () -> Unit,
-    onOpenChangePassword: () -> Unit,
-    onLogout: () -> Unit,
-    onOpenEditProfile: () -> Unit,
-    onOpenHelp: () -> Unit
-) {
-    val isStudent = user?.role?.uppercase() == "STUDENT"
-    val config = LocalResponsiveConfig.current
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 680.dp) else Modifier)
-            .verticalScroll(rememberScrollState())
-            .padding(config.screenPadding),
-        verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        UserInfoCard(user = user, onClick = onOpenEditProfile)
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column {
-                if (isStudent) {
-                    MenuItem(
-                        icon = Icons.Default.DateRange,
-                        title = "考试历史",
-                        subtitle = "查看我的成绩记录",
-                        onClick = onNavigateToGrades
-                    )
-                }
-                MenuItem(
-                    icon = Icons.Default.Notifications,
-                    title = "通知中心",
-                    subtitle = if (unreadCount > 0) "未读 ${unreadCount}" else "查看全部通知",
-                    badge = if (unreadCount > 0) unreadCount.toString() else null,
-                    onClick = onNavigateToNotifications
-                )
-                MenuItem(
-                    icon = Icons.Default.Lock,
-                    title = "密码管理",
-                    subtitle = "修改登录密码",
-                    onClick = onOpenChangePassword
-                )
-            }
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-        ) {
-            Column {
-                if (isAdmin) {
-                    MenuItem(
-                        icon = Icons.Default.Settings,
-                        title = "系统设置",
-                        subtitle = "AI 配置与系统参数",
-                        onClick = onNavigateToSystemSettings
-                    )
-                }
-                MenuItem(
-                    icon = Icons.Default.Info,
-                    title = if (isTeacherOrAdmin) "帮助中心" else "帮助与反馈",
-                    subtitle = "功能使用说明",
-                    onClick = onOpenHelp
-                )
-            }
-        }
-
-        OutlinedActionButton(
-            text = "退出登录",
-            onClick = onLogout,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
-
-@Composable
-private fun OutlinedActionButton(
-    text: String,
-    onClick: () -> Unit,
-    color: Color
-) {
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
-        modifier = Modifier.fillMaxWidth().height(50.dp),
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, color)
-    ) {
-        Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text)
     }
 }

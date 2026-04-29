@@ -129,7 +129,10 @@ class ExamViewModel(
                 _examDetail.value = ExamDetailUiState.Error(e.message ?: "加载考试详情失败")
                 return@launch
             }
-            val exam = examResult.getOrNull()!!
+            val exam = examResult.getOrElse { e ->
+                _examDetail.value = ExamDetailUiState.Error(e.message ?: "加载考试详情失败")
+                return@launch
+            }
             val questions = examRepository.getExamQuestions(examId).getOrDefault(emptyList())
             _examDetail.value = ExamDetailUiState.Success(exam, questions)
         }

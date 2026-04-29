@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -49,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
@@ -59,14 +59,12 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
-import org.koin.compose.koinInject
 
 /**
  * 考试管理界面（教师/管理员共用）
  * Tab 0: 未开始(草稿 status=0)
  * Tab 1: 进行中(已发布 status=1)
  * Tab 2: 已结束(status=2)
- * 支持：新建、编辑、删除(仅草稿)、发布(仅草稿)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -100,7 +98,6 @@ fun TeacherExamManageScreen(
     var randomComposeExam by remember { mutableStateOf<ExamResponse?>(null) }
     var viewSubmissionsExam by remember { mutableStateOf<ExamResponse?>(null) }
 
-    // 批量删除模式状态
     var isBatchMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
@@ -224,8 +221,12 @@ fun TeacherExamManageScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
+        val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            PrimaryTabRow(selectedTabIndex = selectedTab) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab,
+                modifier = if (isDesktop) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD).fillMaxWidth() else Modifier.fillMaxWidth()
+            ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
@@ -274,7 +275,7 @@ fun TeacherExamManageScreen(
                             }
                         } else {
                             LazyColumn(
-                                modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier).fillMaxSize(),
+                                modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier).fillMaxSize(),
                                 contentPadding = PaddingValues(config.screenPadding),
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
@@ -305,67 +306,22 @@ fun TeacherExamManageScreen(
         }
     }
 
-    // 新建对话框
-    if (showCreateDialog) {
-        ExamFormDialog(
-            title = "新建考试",
-            courses = courses,
-            onConfirm = { req ->
-                viewModel.createExam(req)
-                showCreateDialog = false
-            },
-            onDismiss = { showCreateDialog = false }
-        )
-    }
-
-    // 编辑对话框
-    showEditDialog?.let { exam ->
-        ExamFormDialog(
-            title = "编辑考试",
-            initial = exam,
-            courses = courses,
-            onConfirm = { req ->
-                viewModel.updateExam(exam.id, req)
-                showEditDialog = null
-            },
-            onDismiss = { showEditDialog = null }
-        )
-    }
-
-    // 删除确认
-    showDeleteConfirm?.let { exam ->
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = null },
-            title = { Text("删除考试") },
-            text = { Text("确定要删除考试「${exam.title}」吗？此操作不可撤销。") },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.deleteExam(exam.id); showDeleteConfirm = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("删除") }
-            },
-            dismissButton = { TextButton(onClick = { showDeleteConfirm = null }) { Text("取消") } }
-        )
-    }
-
-    // 批量删除确认
-    if (showBatchDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showBatchDeleteConfirm = false },
-            title = { Text("批量删除考试") },
-            text = { Text("确定要删除选中的 ${selectedIds.size} 项草稿考试吗？此操作不可撤销。") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        viewModel.batchDeleteExams(selectedIds.toList())
-                        showBatchDeleteConfirm = false
-                        isBatchMode = false
-                        selectedIds = emptySet()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) { Text("删除") }
-            },
-            dismissButton = { TextButton(onClick = { showBatchDeleteConfirm = false }) { Text("取消") } }
-        )
-    }
+    TeacherExamManageDialogHost(
+        viewModel = viewModel,
+        courses = courses,
+        showCreateDialog = showCreateDialog,
+        showEditDialog = showEditDialog,
+        showDeleteConfirm = showDeleteConfirm,
+        showBatchDeleteConfirm = showBatchDeleteConfirm,
+        selectedIds = selectedIds,
+        onDismissCreate = { showCreateDialog = false },
+        onDismissEdit = { showEditDialog = null },
+        onDismissDelete = { showDeleteConfirm = null },
+        onDismissBatchDelete = { showBatchDeleteConfirm = false },
+        onBatchDeleteFinished = {
+            showBatchDeleteConfirm = false
+            isBatchMode = false
+            selectedIds = emptySet()
+        }
+    )
 }
