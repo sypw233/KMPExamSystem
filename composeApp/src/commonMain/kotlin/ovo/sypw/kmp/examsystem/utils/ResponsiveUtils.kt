@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.utils
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -137,8 +138,21 @@ object ResponsiveUtils {
         /**
          * 根据可用宽度动态计算列数（比固定断点更灵活）
          */
-        fun getAdaptiveColumnCount(availableWidth: Dp, minItemWidth: Dp = 300.dp): Int {
-            return (availableWidth / minItemWidth).toInt().coerceAtLeast(1)
+        fun getAdaptiveColumnCount(
+            availableWidth: Dp,
+            minItemWidth: Dp = 320.dp,
+            maxColumns: Int = Int.MAX_VALUE
+        ): Int {
+            val widthBasedColumns = (availableWidth / minItemWidth).toInt().coerceAtLeast(1)
+            return widthBasedColumns.coerceAtMost(maxColumns.coerceAtLeast(1))
+        }
+
+        fun getMaxColumnCount(screenSize: ScreenSize): Int {
+            return when (screenSize) {
+                ScreenSize.COMPACT -> 1
+                ScreenSize.MEDIUM -> 2
+                ScreenSize.EXPANDED -> 4
+            }
         }
 
         fun getMaxCardWidth(screenSize: ScreenSize): Dp {
@@ -366,7 +380,7 @@ fun DesktopDataTableRow(
 
 /**
  * 响应式懒加载网格
- * 根据屏幕尺寸自动调整列数：COMPACT=1, MEDIUM=2, EXPANDED=3
+ * 根据容器宽度自动调整列数，并按屏幕类型限制最大列数
  *
  * @param items 数据列表
  * @param key 项的唯一键
@@ -375,6 +389,7 @@ fun DesktopDataTableRow(
  * @param verticalArrangement 垂直间距
  * @param horizontalArrangement 水平间距（多列时有效）
  * @param columnCountOverride 指定列数，null 时使用全局响应式列数
+ * @param minItemWidth 自适应列宽下限
  * @param itemContent 单项内容渲染
  */
 @Composable
@@ -386,37 +401,48 @@ fun <T> ResponsiveLazyVerticalGrid(
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
     columnCountOverride: Int? = null,
+    minItemWidth: Dp = 320.dp,
     itemContent: @Composable (T) -> Unit
 ) {
     val config = LocalResponsiveConfig.current
-    val columns = (columnCountOverride ?: config.columnCount).coerceAtLeast(1)
 
-    if (columns == 1 || items.isEmpty()) {
-        LazyColumn(
-            modifier = modifier,
-            contentPadding = contentPadding,
-            verticalArrangement = verticalArrangement
-        ) {
-            items(items, key = key) { itemContent(it) }
-        }
-    } else {
-        LazyColumn(
-            modifier = modifier,
-            contentPadding = contentPadding,
-            verticalArrangement = verticalArrangement
-        ) {
-            items(items.chunked(columns).withIndex().toList(), key = { it.index }) { (_, rowItems) ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = horizontalArrangement
-                ) {
-                    rowItems.forEach { item ->
-                        Box(modifier = Modifier.weight(1f)) {
-                            itemContent(item)
+    BoxWithConstraints(modifier = modifier) {
+        val columns = (
+            columnCountOverride
+                ?: ResponsiveUtils.Grid.getAdaptiveColumnCount(
+                    availableWidth = maxWidth,
+                    minItemWidth = minItemWidth,
+                    maxColumns = ResponsiveUtils.Grid.getMaxColumnCount(config.screenSize)
+                )
+            ).coerceAtLeast(1)
+
+        if (columns == 1 || items.isEmpty()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+                verticalArrangement = verticalArrangement
+            ) {
+                items(items, key = key) { itemContent(it) }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = contentPadding,
+                verticalArrangement = verticalArrangement
+            ) {
+                items(items.chunked(columns).withIndex().toList(), key = { it.index }) { (_, rowItems) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = horizontalArrangement
+                    ) {
+                        rowItems.forEach { item ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                itemContent(item)
+                            }
                         }
-                    }
-                    repeat(columns - rowItems.size) {
-                        Box(modifier = Modifier.weight(1f))
+                        repeat(columns - rowItems.size) {
+                            Box(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
