@@ -44,13 +44,18 @@ class UserManageApi : BaseApiService() {
 
     /**
      * 按角色查询全部用户（后端 /by-role/{role} 未实现，复用分页查询取全量）
-     * GET /api/admin/users?role={role}&page=0&size=999
+     * GET /api/admin/users?role={role}&page=&size=
      */
-    suspend fun getUsersByRole(token: String, role: String): ApiResponse<PageUserResponse> {
+    suspend fun getUsersByRole(
+        token: String,
+        role: String,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageUserResponse> {
         val result = getWithToken(
             endpoint = USER_ENDPOINT,
             token = token,
-            parameters = mapOf("role" to role, "page" to 0, "size" to 999)
+            parameters = mapOf("role" to role, "page" to page, "size" to size)
         )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())

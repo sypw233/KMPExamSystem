@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.UserManageApi
+import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.PageUserResponse
@@ -35,12 +36,9 @@ class UserManageRepository(
 
     /** 按角色查全量用户（复用分页接口取全量） */
     suspend fun loadUsersByRole(role: String): Result<List<UserResponse>> = runWithToken { token ->
-        val r = userManageApi.getUsersByRole(token, role)
-        if (r.code == 200 && r.data != null) {
-            val list = r.data.content
-            _usersByRole.value = list
-            list
-        } else throw Exception(r.message)
+        fetchUserPages { page, size -> userManageApi.getUsersByRole(token, role, page, size) }.also {
+            _usersByRole.value = it
+        }
     }
 
     /** 查单个用户详情 */
@@ -105,6 +103,26 @@ class UserManageRepository(
         _userPage.value = _userPage.value?.let { page ->
             page.copy(content = page.content.map { if (it.id == updated.id) updated else it })
         }
+    }
+
+    private suspend fun fetchUserPages(
+        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageUserResponse>
+    ): List<UserResponse> {
+        val users = mutableListOf<UserResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+
+        do {
+            val response = requestPage(page, size)
+            if (response.code != 200) throw Exception(response.message)
+            val data = response.data ?: break
+            users += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        return users.distinctBy { it.id }
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
