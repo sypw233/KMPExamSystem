@@ -130,11 +130,26 @@ private fun DetailQuestionItem(
     gradeDetail: SubjectiveGradeDetail?
 ) {
     val q = examQuestion.question ?: return
-    
-    // 客观题的对错判断: 对于非主观题，如果完全匹配即正确 (简化逻辑，多选可能有半对的情况)
-    val isObjective = q.type != "short_answer"
-    val isCorrect = isObjective && studentAnswer == q.answer
+
+    // 客观题的对错判断
+    val isObjective = q.type in listOf("single", "multiple", "true_false")
     val hasAnswered = studentAnswer.isNotBlank()
+
+    // 多选题区分"全对""部分正确""全错"
+    val isCorrect: Boolean
+    val isPartial: Boolean
+    if (!isObjective || !hasAnswered) {
+        isCorrect = false
+        isPartial = false
+    } else if (q.type == "multiple") {
+        val correctSet = (q.answer ?: "").split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
+        val studentSet = studentAnswer.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
+        isCorrect = studentSet == correctSet
+        isPartial = !isCorrect && studentSet.all { it in correctSet }
+    } else {
+        isCorrect = studentAnswer == q.answer
+        isPartial = false
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -153,11 +168,13 @@ private fun DetailQuestionItem(
             Spacer(modifier = Modifier.height(16.dp))
 
             // 学生回答
-            val answerColor = if (isObjective) {
-                if (!hasAnswered) MaterialTheme.colorScheme.onSurfaceVariant
-                else if (isCorrect) androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                else MaterialTheme.colorScheme.error
-            } else MaterialTheme.colorScheme.onSurfaceVariant
+            val answerColor = when {
+                !isObjective -> MaterialTheme.colorScheme.onSurfaceVariant
+                !hasAnswered -> MaterialTheme.colorScheme.onSurfaceVariant
+                isCorrect -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                isPartial -> MaterialTheme.colorScheme.tertiary
+                else -> MaterialTheme.colorScheme.error
+            }
 
             Surface(
                 color = answerColor.copy(alpha = 0.1f),
@@ -183,7 +200,7 @@ private fun DetailQuestionItem(
                     Text("正确答案", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(q.answer ?: "略", style = MaterialTheme.typography.bodyMedium)
-                    
+
                     if (!q.analysis.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("解析: ${q.analysis}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

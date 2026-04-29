@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
@@ -71,8 +71,8 @@ fun ExamSubmissionsScreen(
         GradeSubmissionScreen(
             submissionId = id,
             viewModel = viewModel,
-            onBack = { 
-                selectedSubmissionId = null 
+            onBack = {
+                selectedSubmissionId = null
                 viewModel.loadSubmissions(examId) // reload list
             }
         )
@@ -147,7 +147,7 @@ private fun SubmissionCard(submission: SubmissionResponse, onClick: () -> Unit) 
             modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
+            Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(40.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text("学生: ${submission.userName}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

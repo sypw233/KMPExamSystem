@@ -114,7 +114,6 @@ internal fun ProfileMainScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .then(if (isDesktop) Modifier.widthIn(max = 680.dp) else Modifier)
                 .verticalScroll(rememberScrollState())
                 .padding(config.screenPadding),
             verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),

@@ -147,6 +147,23 @@ fun GradeSubmissionScreen(
                     }
                     Button(
                         onClick = {
+                            val missingItems = subjectiveQuestions.filter { question ->
+                                scoreMap[question.questionId].isNullOrBlank()
+                            }
+                            if (missingItems.isNotEmpty()) {
+                                scope.launch { snackbarHostState.showSnackbar("请为所有主观题评分后再保存") }
+                                return@Button
+                            }
+
+                            val invalidItems = scoreMap.mapNotNull { (qId, strScore) ->
+                                val score = strScore.toIntOrNull() ?: return@mapNotNull null
+                                val maxScore = subjectiveQuestions.find { it.questionId == qId }?.score ?: Int.MAX_VALUE
+                                if (score < 0 || score > maxScore) qId else null
+                            }
+                            if (invalidItems.isNotEmpty()) {
+                                scope.launch { snackbarHostState.showSnackbar("存在超出分数范围的评分，请检查") }
+                                return@Button
+                            }
                             val scoreMapData = scoreMap.mapNotNull { (qId, strScore) ->
                                 val score = strScore.toIntOrNull() ?: return@mapNotNull null
                                 qId to score
@@ -155,6 +172,14 @@ fun GradeSubmissionScreen(
                         },
                         enabled = actionState !is GradeActionState.Loading
                     ) {
+                        if (actionState is GradeActionState.Loading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
                         Text("保存批改")
                     }
                 }
@@ -239,7 +264,7 @@ private fun GradeQuestionItem(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // 学生回答
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -259,10 +284,19 @@ private fun GradeQuestionItem(
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
                 OutlinedTextField(
                     value = currentScore,
-                    onValueChange = { if (it.isEmpty() || it.toIntOrNull() != null) onScoreChange(it) },
-                    label = { Text("得分") },
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty()) {
+                            onScoreChange(newValue)
+                        } else {
+                            val intVal = newValue.toIntOrNull()
+                            if (intVal != null && intVal in 0..examQuestion.score) {
+                                onScoreChange(newValue)
+                            }
+                        }
+                    },
+                    label = { Text("得分 (0-${examQuestion.score})") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(80.dp)
+                    modifier = Modifier.width(100.dp)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 OutlinedTextField(

@@ -295,10 +295,10 @@ private fun ExamContent(
         }
     }
 
-    // 【UX-01】交卷确认弹窗：当未答题数较多时显示明显警告
     if (showExitDialog) {
-        val answered = answers.size
-        val total = exam.questions.size
+        val questionIds = exam.questions.map { it.question?.id ?: it.questionId }
+        val answered = questionIds.count { questionId -> !answers[questionId].isNullOrBlank() }
+        val total = questionIds.size
         val unanswered = total - answered
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -309,7 +309,7 @@ private fun ExamContent(
                     if (unanswered > 0) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "⚠️ 还有 $unanswered 道题未作答！",
+                            text = "还有 $unanswered 道题未作答。",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium
                         )

@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -142,7 +142,7 @@ private fun DashboardExamCard(exam: ExamResponse, onStartExam: () -> Unit, confi
             Row(verticalAlignment = Alignment.CenterVertically) {
                 DashboardIconText(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
                 Spacer(modifier = Modifier.width(config.horizontalSpacing * 2))
-                DashboardIconText(Icons.Default.Assignment, "满分 ${exam.totalScore}")
+                DashboardIconText(Icons.AutoMirrored.Filled.Assignment, "满分 ${exam.totalScore}")
             }
 
             Spacer(modifier = Modifier.height(config.verticalSpacing))
@@ -151,8 +151,8 @@ private fun DashboardExamCard(exam: ExamResponse, onStartExam: () -> Unit, confi
                 onClick = onStartExam,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.inverseSurface,
-                    contentColor = MaterialTheme.colorScheme.inverseOnSurface
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = MaterialTheme.shapes.medium
             ) { Text("查看考试") }

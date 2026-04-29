@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Announcement
-import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Notifications
@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
+import ovo.sypw.kmp.examsystem.utils.StringUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -232,7 +233,7 @@ private fun NotificationListItem(
                 notification.createTime?.let { t ->
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        t.take(16).replace("T", " "),
+                        StringUtils.formatDateTime(t),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -252,7 +253,7 @@ private fun notificationTypeColor(type: String) = when (type) {
 }
 
 private fun notificationTypeIcon(type: String): ImageVector = when (type) {
-    "EXAM_PUBLISHED" -> Icons.Default.Assignment
+    "EXAM_PUBLISHED" -> Icons.AutoMirrored.Filled.Assignment
     "EXAM_REMINDER" -> Icons.Default.Notifications
     "GRADE_RELEASED" -> Icons.Default.Grade
     "COURSE_UPDATE" -> Icons.Default.Announcement

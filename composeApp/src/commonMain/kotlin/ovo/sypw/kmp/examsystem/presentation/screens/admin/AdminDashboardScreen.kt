@@ -171,7 +171,7 @@ private fun CourseStatBar(
                 val scoreRatio = (averageScore / 100.0).coerceIn(0.0, 1.0).toFloat()
                 Box(
                     modifier = Modifier.fillMaxWidth(scoreRatio).height(10.dp)
-                        .background(Color(0xFF2E7D32))
+                        .background(MaterialTheme.colorScheme.primary)
                 )
             }
         }

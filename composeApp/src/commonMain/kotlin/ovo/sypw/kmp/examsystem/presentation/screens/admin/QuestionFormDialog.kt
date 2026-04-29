@@ -39,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
-import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,7 +48,6 @@ fun QuestionFormDialog(
     onConfirm: (QuestionRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val config = LocalResponsiveConfig.current
     var content by remember { mutableStateOf(initial?.content ?: "") }
     var typeExpanded by remember { mutableStateOf(false) }
     var selectedType by remember { mutableStateOf(initial?.type ?: "single") }
@@ -65,6 +63,13 @@ fun QuestionFormDialog(
     var analysis by remember { mutableStateOf(initial?.analysis ?: "") }
 
     val showOptions = selectedType == "single" || selectedType == "multiple"
+    val isFormValid = isQuestionFormValid(
+        content = content,
+        type = selectedType,
+        options = options,
+        answer = answer,
+        score = score
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -155,13 +160,7 @@ fun QuestionFormDialog(
                             )
                             IconButton(onClick = {
                                 options = options.toMutableList().also { it.removeAt(index) }
-                                val letter = ('A' + index).toString()
-                                if (selectedType == "single" && answer == letter) answer = ""
-                                if (selectedType == "multiple") {
-                                    val sel = answer.split(",").map { it.trim() }.filter { it.isNotBlank() }.toMutableSet()
-                                    sel.remove(letter)
-                                    answer = sel.sorted().joinToString(",")
-                                }
+                                answer = remapAnswerAfterOptionRemoval(answer, index, selectedType == "multiple")
                             }) {
                                 Icon(Icons.Default.Close, contentDescription = "删除选项", modifier = Modifier.size(18.dp))
                             }
@@ -260,7 +259,11 @@ fun QuestionFormDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val optionsJson = QuestionUtils.buildOptionsJson(options).takeIf { it.isNotBlank() }
+                    val optionsJson = if (showOptions) {
+                        QuestionUtils.buildOptionsJson(options).takeIf { it.isNotBlank() }
+                    } else {
+                        null
+                    }
 
                     onConfirm(
                         QuestionRequest(
@@ -271,15 +274,70 @@ fun QuestionFormDialog(
                             analysis = analysis.trim().ifBlank { null },
                             difficulty = selectedDifficulty,
                             category = category.trim().ifBlank { null },
-                            score = score.toIntOrNull() ?: 5
+                            score = score.toIntOrNull()?.coerceAtLeast(1) ?: 5
                         )
                     )
                 },
-                enabled = content.isNotBlank() && answer.isNotBlank()
+                enabled = isFormValid
             ) {
                 Text(if (initial == null) "创建" else "保存")
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
+}
+
+private fun isQuestionFormValid(
+    content: String,
+    type: String,
+    options: List<String>,
+    answer: String,
+    score: String
+): Boolean {
+    val scoreValue = score.toIntOrNull()
+    if (content.isBlank() || scoreValue == null || scoreValue <= 0) return false
+
+    return when (type) {
+        "single", "multiple" -> {
+            val validLetters = options.mapIndexedNotNull { index, option ->
+                if (option.isBlank()) null else ('A' + index).toString()
+            }.toSet()
+            val answerLetters = answer.split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .toSet()
+
+            val answerCountValid = if (type == "single") answerLetters.size == 1 else answerLetters.isNotEmpty()
+            validLetters.size >= 2 &&
+                answerCountValid &&
+                answerLetters.all { it in validLetters }
+        }
+
+        "true_false" -> answer == "true" || answer == "false"
+        else -> answer.isNotBlank()
+    }
+}
+
+private fun remapAnswerAfterOptionRemoval(
+    answer: String,
+    removedIndex: Int,
+    multiple: Boolean
+): String {
+    val selectedIndexes = answer.split(",")
+        .mapNotNull { part -> part.trim().firstOrNull()?.uppercaseChar()?.minus('A') }
+        .filter { it >= 0 }
+
+    val remapped = selectedIndexes.mapNotNull { index ->
+        when {
+            index == removedIndex -> null
+            index > removedIndex -> ('A' + index - 1).toString()
+            else -> ('A' + index).toString()
+        }
+    }.distinct().sorted()
+
+    return if (multiple) {
+        remapped.joinToString(",")
+    } else {
+        remapped.firstOrNull().orEmpty()
+    }
 }

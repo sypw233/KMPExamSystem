@@ -53,9 +53,8 @@ class ExamTakingViewModel(
     val submitErrorMessage: StateFlow<String?> = _submitErrorMessage.asStateFlow()
 
     /**
-     * 进入考试：开始考试 + 加载题目
-     * 【修复 BUG-02】若当前已在相同考试的 Ready/Loading 状态，直接忽略，
-     * 防止 recompose 或热重启重复触发 startExam() 创建多个 submission 记录。
+     * 进入考试：开始考试 + 加载试卷
+     * 相同考试在加载或已就绪时直接忽略；若开始考试已成功但后续加载失败，重试时复用已有提交记录。
      */
     fun enterExam(examId: Long) {
         val current = _uiState.value
@@ -68,32 +67,41 @@ class ExamTakingViewModel(
 
         viewModelScope.launch {
             _uiState.value = ExamTakingUiState.Loading
-            currentExamId = examId
-
-            // 开始考试（创建答题记录）
-            val startResult = submissionRepository.startExam(examId)
-            val submission = startResult.getOrNull()
-            if (submission == null) {
-                _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
-                return@launch
+            if (currentExamId != examId) {
+                currentExamId = examId
+                currentSubmissionId = -1
+                _answers.value = emptyMap()
             }
-            currentSubmissionId = submission.id
+
+            if (currentSubmissionId <= 0) {
+                val startResult = submissionRepository.startExam(examId)
+                val submission = startResult.getOrNull()
+                if (submission == null) {
+                    _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
+                    return@launch
+                }
+                currentSubmissionId = submission.id
+            }
 
             // 加载考试详情
             val examResult = examRepository.getExamDetail(examId)
             val exam = examResult.getOrNull()
             if (exam == null) {
-                // 【修复 BUG-03】加载失败进入 Error 状态，提示用户可点击重试
-                // submission 已创建，应保留 currentExamId 以便重试时不重复创建
                 _uiState.value = ExamTakingUiState.Error(
                     examResult.exceptionOrNull()?.message ?: "加载考试信息失败，请重试"
                 )
                 return@launch
             }
 
-            // 加载题目列表（失败时用空列表降级，不中断流程）
-            val questionsResult = examRepository.getExamQuestions(examId)
-            val questions = questionsResult.getOrDefault(emptyList())
+            // 使用学生试卷接口，确保答题端不会拿到标准答案和解析
+            val questionsResult = examRepository.getExamPaperQuestions(examId)
+            val questions = questionsResult.getOrNull()
+            if (questions == null) {
+                _uiState.value = ExamTakingUiState.Error(
+                    questionsResult.exceptionOrNull()?.message ?: "加载试题失败，请重试"
+                )
+                return@launch
+            }
 
             _answers.value = emptyMap()
             _uiState.value = ExamTakingUiState.Ready(exam, questions, currentSubmissionId)
@@ -107,7 +115,11 @@ class ExamTakingViewModel(
      */
     fun updateAnswer(questionId: Long, answer: String) {
         _answers.value = _answers.value.toMutableMap().apply {
-            put(questionId, answer)
+            if (answer.isBlank()) {
+                remove(questionId)
+            } else {
+                put(questionId, answer)
+            }
         }
     }
 
@@ -119,8 +131,14 @@ class ExamTakingViewModel(
      */
     fun toggleMultipleChoice(questionId: Long, option: String) {
         val currentAnswer = _answers.value[questionId] ?: ""
-        val selectedOptions = if (currentAnswer.isBlank()) mutableSetOf()
-        else currentAnswer.split(",").toMutableSet()
+        val selectedOptions = if (currentAnswer.isBlank()) {
+            mutableSetOf()
+        } else {
+            currentAnswer.split(",")
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .toMutableSet()
+        }
 
         if (selectedOptions.contains(option)) {
             selectedOptions.remove(option)
@@ -145,7 +163,8 @@ class ExamTakingViewModel(
             _isSubmitting.value = true
             _submitErrorMessage.value = null
 
-            val result = submissionRepository.submitExam(currentExamId, _answers.value)
+            val answers = _answers.value.filterValues { it.isNotBlank() }
+            val result = submissionRepository.submitExam(currentExamId, answers)
             result.onSuccess { submission ->
                 _uiState.value = ExamTakingUiState.Submitted(submission)
             }.onFailure { e ->

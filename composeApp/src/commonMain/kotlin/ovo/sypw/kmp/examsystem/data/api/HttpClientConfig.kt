@@ -10,6 +10,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import ovo.sypw.kmp.examsystem.utils.Logger as AppLogger
@@ -25,7 +26,7 @@ object HttpClientConfig {
      * true: 打印详细的请求和响应信息
      * false: 只打印基本信息
      */
-    const val DEBUG = true
+    const val DEBUG = false
 
     /**
      * API基础URL
@@ -81,8 +82,8 @@ object HttpClientConfig {
                     allowStructuredMapKeys = true
                     // 美化输出（仅调试时使用）
                     prettyPrint = DEBUG
-                    // 使用默认值
-                    useAlternativeNames = false
+                    // 兼容后端返回 msg 或 message 等别名字段
+                    useAlternativeNames = true
                 })
             }
 
@@ -95,10 +96,11 @@ object HttpClientConfig {
                         }
                     }
                 }
-                
+
                 // Debug 模式下打印所有信息，否则只打印基本信息
                 level = if (DEBUG) LogLevel.ALL else LogLevel.INFO
-                
+                sanitizeHeader { header -> header == HttpHeaders.Authorization }
+
                 // Debug 模式下不过滤，否则只记录包含 "api" 的请求
                 if (!DEBUG) {
                     filter { request ->

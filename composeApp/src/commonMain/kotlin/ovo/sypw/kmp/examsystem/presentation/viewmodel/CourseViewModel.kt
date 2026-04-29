@@ -84,6 +84,8 @@ class CourseViewModel(
 
     /** 学生选课 */
     fun enrollCourse(courseId: Long) {
+        // 防止重复点击
+        if (_enrollState.value is EnrollState.Loading) return
         viewModelScope.launch {
             _enrollState.value = EnrollState.Loading
             courseRepository.enrollCourse(courseId)

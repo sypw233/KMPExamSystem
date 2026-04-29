@@ -1,9 +1,11 @@
 package ovo.sypw.kmp.examsystem.data.dto.result
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNames
 import kotlinx.serialization.json.decodeFromJsonElement
 import ovo.sypw.kmp.examsystem.utils.Logger
 
@@ -24,7 +26,9 @@ data class SaResult(
     /**
      * 响应消息 (支持 msg 或 message 字段)
      */
+    @OptIn(ExperimentalSerializationApi::class)
     @SerialName("message")
+    @JsonNames("msg")
     val msg: String = "",
 
     /**

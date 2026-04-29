@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
@@ -90,7 +90,7 @@ internal fun ExamCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 InfoChip(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
-                InfoChip(Icons.Default.Assignment, "满分 ${exam.totalScore}")
+                InfoChip(Icons.AutoMirrored.Filled.Assignment, "满分 ${exam.totalScore}")
                 if (exam.questionCount > 0) {
                     InfoChip(Icons.Default.Schedule, "${exam.questionCount} 题")
                 }
@@ -166,7 +166,7 @@ internal fun ExamPreviewCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 InfoRow(Icons.Default.Timer, "考试时长", "${exam.duration ?: "-"} 分钟")
-                InfoRow(Icons.Default.Assignment, "满分", "${exam.totalScore} 分")
+                InfoRow(Icons.AutoMirrored.Filled.Assignment, "满分", "${exam.totalScore} 分")
                 InfoRow(Icons.Default.Schedule, "题目数量", "${exam.questionCount} 题")
                 if (!exam.startTime.isNullOrBlank()) {
                     InfoRow(Icons.Default.Schedule, "开始时间", StringUtils.formatDateTime(exam.startTime))

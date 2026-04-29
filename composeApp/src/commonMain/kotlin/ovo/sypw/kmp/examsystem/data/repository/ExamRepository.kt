@@ -146,6 +146,19 @@ class ExamRepository(
     }
 
     /**
+     * 学生答题用试卷题目。
+     * 使用不含标准答案和解析的 paper 接口，避免学生端拿到答案数据。
+     */
+    suspend fun getExamPaperQuestions(examId: Long): Result<List<ExamQuestionResponse>> = runWithToken { token ->
+        val r = examApi.getExamPaper(token, examId)
+        if (r.code == 200) {
+            (r.data ?: emptyList()).map { normalizeExamPaperQuestion(it) }
+        } else {
+            throw Exception(r.message)
+        }
+    }
+
+    /**
      * 智能随机组卷
      * @param examId 考试ID
      * @param request 组卷请求
@@ -172,6 +185,28 @@ class ExamRepository(
             )
         )
     }
+
+    private fun normalizeExamPaperQuestion(question: ExamPaperQuestionResponse): ExamQuestionResponse =
+        ExamQuestionResponse(
+            examId = question.examId,
+            questionId = question.questionId,
+            score = question.score,
+            questionContent = question.questionContent,
+            questionType = question.questionType,
+            questionDifficulty = question.questionDifficulty,
+            sequence = question.sequence,
+            orderNum = question.sequence,
+            question = QuestionResponse(
+                id = question.questionId,
+                content = question.questionContent,
+                type = question.questionType,
+                options = question.options,
+                answer = null,
+                analysis = null,
+                difficulty = question.questionDifficulty,
+                score = question.score
+            )
+        )
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
         return try {

@@ -20,7 +20,7 @@ class AuthRepository(
     private val authApi: AuthApi,
     private val tokenStorage: TokenStorage
 ) {
-    
+
     private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
@@ -32,9 +32,9 @@ class AuthRepository(
     suspend fun login(request: LoginRequest): Result<UserInfo> {
         return try {
             _authState.value = AuthState.Loading
-            
+
             val response = authApi.login(request)
-            
+
             if (response.code == 200 && response.data != null) {
                 // 先获取用户信息（验证 Token 确实可用），成功后再持久化保存
                 val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
@@ -65,9 +65,9 @@ class AuthRepository(
     suspend fun register(request: RegisterRequest): Result<UserInfo> {
         return try {
             _authState.value = AuthState.Loading
-            
+
             val response = authApi.register(request)
-            
+
             if (response.code == 200 && response.data != null) {
                 // 先获取用户信息（验证 Token 确实可用），成功后再持久化保存
                 val userInfoResponse = authApi.getCurrentUser(response.data.accessToken)
@@ -102,28 +102,21 @@ class AuthRepository(
      * 检查并初始化认证状态
      */
     suspend fun checkAuthState() {
-        if (tokenStorage.hasValidToken()) {
-            try {
-                val token = tokenStorage.getAccessToken()
-                if (token != null) {
-                    val response = authApi.getCurrentUser(token)
-                    if (response.code == 200 && response.data != null) {
-                        _authState.value = AuthState.Authenticated(response.data)
-                    } else {
-                        // Token 无效，清除
-                        tokenStorage.clearTokens()
-                        _authState.value = AuthState.Unauthenticated
-                    }
-                } else {
-                    _authState.value = AuthState.Unauthenticated
-                }
-            } catch (e: Exception) {
-                tokenStorage.clearTokens()
-                _authState.value = AuthState.Unauthenticated
-            }
-        } else {
+        val accessToken = tokenStorage.getAccessToken()
+        val storedRefreshToken = tokenStorage.getRefreshToken()
+        if (accessToken.isNullOrBlank() && storedRefreshToken.isNullOrBlank()) {
             _authState.value = AuthState.Unauthenticated
+            return
         }
+
+        _authState.value = AuthState.Loading
+
+        if (!accessToken.isNullOrBlank() && authenticateWithToken(accessToken)) return
+
+        if (refreshToken() && authenticateWithToken(tokenStorage.getAccessToken())) return
+
+        tokenStorage.clearTokens()
+        _authState.value = AuthState.Unauthenticated
     }
 
     /**
@@ -134,7 +127,7 @@ class AuthRepository(
         return try {
             val refreshToken = tokenStorage.getRefreshToken() ?: return false
             val response = authApi.refreshToken(refreshToken)
-            
+
             if (response.code == 200 && response.data != null) {
                 tokenStorage.saveAccessToken(response.data.accessToken)
                 tokenStorage.saveRefreshToken(response.data.refreshToken)
@@ -154,6 +147,21 @@ class AuthRepository(
         return when (val state = _authState.value) {
             is AuthState.Authenticated -> state.user
             else -> null
+        }
+    }
+
+    private suspend fun authenticateWithToken(token: String?): Boolean {
+        if (token.isNullOrBlank()) return false
+        return try {
+            val response = authApi.getCurrentUser(token)
+            if (response.code == 200 && response.data != null) {
+                _authState.value = AuthState.Authenticated(response.data)
+                true
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
         }
     }
 

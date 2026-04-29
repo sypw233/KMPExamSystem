@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.utils
 
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -68,9 +69,9 @@ object QuestionUtils {
             val trimmed = text.trim()
             if (trimmed.isNotBlank()) {
                 val letter = ('A' + index).toString()
-                "\"$letter. $trimmed\""
+                "$letter. $trimmed"
             } else null
         }
-        return "[${valid.joinToString(",")}]"
+        return if (valid.isEmpty()) "" else jsonParser.encodeToString(valid)
     }
 }
