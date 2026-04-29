@@ -29,11 +29,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 internal fun formatDateTimeForDisplay(isoDateTime: String): String {
@@ -138,8 +138,8 @@ internal fun DateTimePickerDialog(
                             .toLocalDateTime(TimeZone.UTC).date
                         val result = formatDateTime(
                             selectedDate.year,
-                            selectedDate.monthNumber,
-                            selectedDate.dayOfMonth,
+                            selectedDate.month.ordinal + 1,
+                            selectedDate.day,
                             timePickerState.hour,
                             timePickerState.minute
                         )
