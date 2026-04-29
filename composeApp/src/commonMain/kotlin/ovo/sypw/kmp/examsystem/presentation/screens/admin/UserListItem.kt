@@ -44,6 +44,10 @@ fun UserCard(
 ) {
     val config = LocalResponsiveConfig.current
     val isEnabled = user.status == 1
+    val subtitle = listOfNotNull(
+        "@${user.username}",
+        user.email?.takeIf { it.isNotBlank() }
+    ).joinToString("  ")
     val cardModifier = if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
         Modifier.fillMaxWidth()
     } else {
@@ -80,15 +84,11 @@ fun UserCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     RoleBadge(role = user.role)
-                    if (!isEnabled) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Badge(containerColor = MaterialTheme.colorScheme.errorContainer) {
-                            Text("禁用", color = MaterialTheme.colorScheme.onErrorContainer)
-                        }
-                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    StatusBadge(enabled = isEnabled)
                 }
                 Text(
-                    "@${user.username}  ${user.email ?: ""}",
+                    subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -132,5 +132,26 @@ fun RoleBadge(role: String) {
     }
     Badge(containerColor = color.copy(alpha = 0.15f)) {
         Text(label, color = color, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+private fun StatusBadge(enabled: Boolean) {
+    val containerColor = if (enabled) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.errorContainer
+    }
+    val contentColor = if (enabled) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onErrorContainer
+    }
+    Badge(containerColor = containerColor) {
+        Text(
+            text = if (enabled) "启用" else "禁用",
+            color = contentColor,
+            style = MaterialTheme.typography.labelSmall
+        )
     }
 }

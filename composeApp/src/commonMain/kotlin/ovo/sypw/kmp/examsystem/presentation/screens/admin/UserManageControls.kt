@@ -3,6 +3,8 @@ package ovo.sypw.kmp.examsystem.presentation.screens.admin
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +34,11 @@ import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
+internal fun UserQueryParams.withUserStatusFilter(status: Int?): UserQueryParams {
+    return copy(status = status, page = 0)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams) -> Unit) {
     var keyword by remember(params.keyword) { mutableStateOf(params.keyword ?: "") }
@@ -70,7 +77,10 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf(null to "全部", "student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (role, label) ->
                     FilterChip(
                         selected = params.role == role,
@@ -78,7 +88,25 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                         label = { Text(label) }
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(null to "全部状态", 1 to "启用", 0 to "禁用").forEach { (status, label) ->
+                        FilterChip(
+                            selected = params.status == status,
+                            onClick = { onParamsChange(params.withUserStatusFilter(status)) },
+                            label = { Text(label) }
+                        )
+                    }
+                }
                 Button(
                     onClick = { onParamsChange(params.copy(keyword = keyword.takeIf { it.isNotBlank() }, page = 0)) }
                 ) { Text("搜索") }
