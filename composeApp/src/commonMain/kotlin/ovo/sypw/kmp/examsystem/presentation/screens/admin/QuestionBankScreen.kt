@@ -171,14 +171,21 @@ fun QuestionBankScreen() {
                     Button(onClick = { viewModel.refreshBanks() }) { Text("重试") }
                 }
                 is QuestionBankUiState.Success -> {
-                    val panelModifier = Modifier.fillMaxSize().then(
-                        if (isDesktop) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier
-                    ).padding(config.screenPadding)
+                    val panelModifier = Modifier
+                        .then(
+                            if (isDesktop) {
+                                Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .fillMaxSize()
+                        .padding(config.screenPadding)
 
                     if (isDesktop) {
                         Row(
                             modifier = panelModifier,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
                         ) {
                             BankListPanel(
                                 banks = state.banks,
@@ -186,7 +193,7 @@ fun QuestionBankScreen() {
                                 onSelectBank = { viewModel.selectBank(it) },
                                 onEditBank = { editDialog = it },
                                 onDeleteBank = { deleteDialog = it },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(0.9f)
                             )
                             QuestionListPanel(
                                 selectedBank = selectedBank,
@@ -199,7 +206,7 @@ fun QuestionBankScreen() {
                                         viewModel.removeQuestionFromBank(bank.id, question.id)
                                     }
                                 },
-                                modifier = Modifier.weight(1.4f)
+                                modifier = Modifier.weight(1.1f)
                             )
                         }
                     } else if (!mobileShowQuestions) {

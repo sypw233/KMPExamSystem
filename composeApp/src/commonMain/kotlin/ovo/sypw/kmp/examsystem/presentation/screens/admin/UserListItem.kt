@@ -44,8 +44,13 @@ fun UserCard(
 ) {
     val config = LocalResponsiveConfig.current
     val isEnabled = user.status == 1
+    val cardModifier = if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+        Modifier.fillMaxWidth()
+    } else {
+        Modifier.fillMaxWidth().padding(horizontal = config.cardPadding)
+    }
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = config.cardPadding),
+        modifier = cardModifier,
         colors = CardDefaults.cardColors(
             containerColor = when {
                 isSelected -> MaterialTheme.colorScheme.secondaryContainer
@@ -53,7 +58,7 @@ fun UserCard(
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(config.contentPadding),

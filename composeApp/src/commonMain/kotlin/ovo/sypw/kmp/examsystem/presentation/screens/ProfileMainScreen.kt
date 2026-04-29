@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -59,55 +60,59 @@ internal fun ProfileMainScreen(
     val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     if (isDesktop) {
-        Row(
+        Box(
             modifier = modifier
                 .fillMaxSize()
-                .padding(config.screenPadding)
+                .padding(config.screenPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .weight(0.9f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .widthIn(max = ResponsiveUtils.MaxWidths.STANDARD)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(config.screenPadding)
             ) {
-                UserInfoCard(user = user, onClick = onOpenEditProfile)
-                Spacer(modifier = Modifier.weight(1f))
-                OutlinedActionButton(
-                    text = "退出登录",
-                    onClick = onLogout,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+                Column(
+                    modifier = Modifier
+                        .weight(0.85f)
+                        .widthIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    UserInfoCard(user = user, onClick = onOpenEditProfile)
+                    OutlinedActionButton(
+                        text = "退出登录",
+                        onClick = onLogout,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
-            Spacer(modifier = Modifier.width(config.screenPadding * 2))
-
-            Column(
-                modifier = Modifier
-                    .weight(1.1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
-            ) {
-                Text(
-                    text = "设置",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = config.verticalSpacing)
-                )
-                ProfileMenuCards(
-                    isStudent = isStudent,
-                    isTeacherOrAdmin = isTeacherOrAdmin,
-                    isAdmin = isAdmin,
-                    unreadCount = unreadCount,
-                    onNavigateToGrades = onNavigateToGrades,
-                    onNavigateToNotifications = onNavigateToNotifications,
-                    onNavigateToSystemSettings = onNavigateToSystemSettings,
-                    onOpenChangePassword = onOpenChangePassword,
-                    onOpenHelp = onOpenHelp
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1.15f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
+                ) {
+                    Text(
+                        text = "设置",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = config.verticalSpacing)
+                    )
+                    ProfileMenuCards(
+                        isStudent = isStudent,
+                        isTeacherOrAdmin = isTeacherOrAdmin,
+                        isAdmin = isAdmin,
+                        unreadCount = unreadCount,
+                        onNavigateToGrades = onNavigateToGrades,
+                        onNavigateToNotifications = onNavigateToNotifications,
+                        onNavigateToSystemSettings = onNavigateToSystemSettings,
+                        onOpenChangePassword = onOpenChangePassword,
+                        onOpenHelp = onOpenHelp
+                    )
+                }
             }
         }
     } else {

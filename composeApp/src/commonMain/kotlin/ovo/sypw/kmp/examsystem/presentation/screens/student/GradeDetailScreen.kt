@@ -110,7 +110,11 @@ fun GradeDetailScreen(
                 }
             }
 
-            LazyColumn(modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier)) {
+            LazyColumn(
+                modifier = Modifier
+                    .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
+                    .fillMaxSize()
+            ) {
                 items(questions.sortedBy { it.orderNum }, key = { it.questionId }) { eq ->
                     DetailQuestionItem(
                         examQuestion = eq,

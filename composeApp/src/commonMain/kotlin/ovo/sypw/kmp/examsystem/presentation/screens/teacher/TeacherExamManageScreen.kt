@@ -223,16 +223,25 @@ fun TeacherExamManageScreen(
     ) { padding ->
         val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            PrimaryTabRow(
-                selectedTabIndex = selectedTab,
-                modifier = if (isDesktop) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD).fillMaxWidth() else Modifier.fillMaxWidth()
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.TopCenter
             ) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTab,
+                    modifier = if (isDesktop) {
+                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD).fillMaxWidth()
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
                 }
             }
 

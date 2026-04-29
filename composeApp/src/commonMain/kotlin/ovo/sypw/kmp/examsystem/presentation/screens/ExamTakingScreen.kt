@@ -274,9 +274,9 @@ private fun ExamContent(
             contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().then(
+                modifier = Modifier.then(
                     if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier
-                ),
+                ).fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {

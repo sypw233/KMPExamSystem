@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -227,10 +228,11 @@ private fun DesktopLayout(
         )
 
         // 主要内容区域
-        Box(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
+                .weight(1f),
+            color = MaterialTheme.colorScheme.background
         ) {
             MainContent(
                 navigationManager = navigationManager,
@@ -252,5 +254,7 @@ private fun MainContent(
     modifier: Modifier = Modifier
 ) {
     val route = navigationManager.currentScreen.value
-    NavigationScreen(route, navigationManager)
+    Box(modifier = modifier) {
+        NavigationScreen(route, navigationManager)
+    }
 }

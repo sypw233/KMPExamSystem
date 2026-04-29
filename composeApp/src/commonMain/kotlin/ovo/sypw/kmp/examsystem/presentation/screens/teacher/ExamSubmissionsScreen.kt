@@ -117,7 +117,9 @@ fun ExamSubmissionsScreen(
                             contentPadding = PaddingValues(config.screenPadding),
                             verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                             horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
-                            modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier)
+                            modifier = Modifier
+                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
+                                .fillMaxSize()
                         ) { submission ->
                             SubmissionCard(
                                 submission = submission,

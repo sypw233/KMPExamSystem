@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.admin
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,41 +37,52 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
     var keyword by remember(params.keyword) { mutableStateOf(params.keyword ?: "") }
     val config = LocalResponsiveConfig.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.TopCenter
     ) {
-        OutlinedTextField(
-            value = keyword,
-            onValueChange = { keyword = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("搜索用户名/姓名/邮箱") },
-            leadingIcon = { Icon(Icons.Default.Search, null) },
-            trailingIcon = {
-                if (keyword.isNotEmpty()) {
-                    IconButton(onClick = {
-                        keyword = ""
-                        onParamsChange(params.copy(keyword = null, page = 0))
-                    }) { Icon(Icons.Default.Close, null) }
-                }
-            },
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(null to "全部", "student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (role, label) ->
-                FilterChip(
-                    selected = params.role == role,
-                    onClick = { onParamsChange(params.copy(role = role, page = 0)) },
-                    label = { Text(label) }
+        Column(
+            modifier = Modifier
+                .then(
+                    if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
+                    } else {
+                        Modifier
+                    }
                 )
+                .fillMaxWidth()
+                .padding(horizontal = config.screenPadding, vertical = 8.dp)
+        ) {
+            OutlinedTextField(
+                value = keyword,
+                onValueChange = { keyword = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("搜索用户名/姓名/邮箱") },
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                trailingIcon = {
+                    if (keyword.isNotEmpty()) {
+                        IconButton(onClick = {
+                            keyword = ""
+                            onParamsChange(params.copy(keyword = null, page = 0))
+                        }) { Icon(Icons.Default.Close, null) }
+                    }
+                },
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(null to "全部", "student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (role, label) ->
+                    FilterChip(
+                        selected = params.role == role,
+                        onClick = { onParamsChange(params.copy(role = role, page = 0)) },
+                        label = { Text(label) }
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                Button(
+                    onClick = { onParamsChange(params.copy(keyword = keyword.takeIf { it.isNotBlank() }, page = 0)) }
+                ) { Text("搜索") }
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = { onParamsChange(params.copy(keyword = keyword.takeIf { it.isNotBlank() }, page = 0)) }
-            ) { Text("搜索") }
         }
     }
 }

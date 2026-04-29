@@ -116,7 +116,15 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                         ResponsiveLazyVerticalGrid(
                             items = s.courses,
                             key = { it.id },
-                            modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier),
+                            modifier = Modifier
+                                .then(
+                                    if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+                                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .fillMaxSize(),
                             contentPadding = PaddingValues(
                                 start = config.screenPadding,
                                 end = config.screenPadding,

@@ -50,9 +50,9 @@ object ResponsiveUtils {
      * 避免各屏幕随意使用不同数值
      */
     object MaxWidths {
-        val FULL = 1200.dp      // 全宽内容（仪表盘、管理页）
-        val STANDARD = 960.dp   // 标准内容（列表页）
-        val NARROW = 800.dp     // 窄内容（考试、通知）
+        val FULL = 1480.dp      // 全宽内容（仪表盘、管理页）
+        val STANDARD = 1120.dp  // 标准内容（列表页）
+        val NARROW = 880.dp     // 窄内容（考试、通知）
         val FORM = 480.dp       // 表单内容（登录、注册、设置）
     }
 
@@ -82,23 +82,21 @@ object ResponsiveUtils {
             return when (screenSize) {
                 ScreenSize.COMPACT -> 16.dp
                 ScreenSize.MEDIUM -> 24.dp
-                ScreenSize.EXPANDED -> 32.dp
+                ScreenSize.EXPANDED -> 24.dp
             }
         }
-
         fun getContentPadding(screenSize: ScreenSize): Dp {
             return when (screenSize) {
                 ScreenSize.COMPACT -> 12.dp
                 ScreenSize.MEDIUM -> 16.dp
-                ScreenSize.EXPANDED -> 20.dp
+                ScreenSize.EXPANDED -> 16.dp
             }
         }
-
         fun getCardPadding(screenSize: ScreenSize): Dp {
             return when (screenSize) {
                 ScreenSize.COMPACT -> 16.dp
                 ScreenSize.MEDIUM -> 20.dp
-                ScreenSize.EXPANDED -> 24.dp
+                ScreenSize.EXPANDED -> 20.dp
             }
         }
     }
@@ -111,7 +109,7 @@ object ResponsiveUtils {
             return when (screenSize) {
                 ScreenSize.COMPACT -> 12.dp
                 ScreenSize.MEDIUM -> 16.dp
-                ScreenSize.EXPANDED -> 20.dp
+                ScreenSize.EXPANDED -> 16.dp
             }
         }
 
@@ -265,12 +263,12 @@ fun ResponsiveContent(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .then(
                     if (effectiveMaxWidth != Dp.Unspecified) {
                         Modifier.widthIn(max = effectiveMaxWidth)
                     } else Modifier
                 )
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = horizontalAlignment,
             verticalArrangement = verticalArrangement
@@ -376,6 +374,7 @@ fun DesktopDataTableRow(
  * @param contentPadding 内容内边距
  * @param verticalArrangement 垂直间距
  * @param horizontalArrangement 水平间距（多列时有效）
+ * @param columnCountOverride 指定列数，null 时使用全局响应式列数
  * @param itemContent 单项内容渲染
  */
 @Composable
@@ -386,10 +385,11 @@ fun <T> ResponsiveLazyVerticalGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
+    columnCountOverride: Int? = null,
     itemContent: @Composable (T) -> Unit
 ) {
     val config = LocalResponsiveConfig.current
-    val columns = config.columnCount
+    val columns = (columnCountOverride ?: config.columnCount).coerceAtLeast(1)
 
     if (columns == 1 || items.isEmpty()) {
         LazyColumn(

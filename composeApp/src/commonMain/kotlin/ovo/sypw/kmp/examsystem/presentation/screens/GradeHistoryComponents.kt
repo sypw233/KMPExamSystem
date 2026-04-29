@@ -40,8 +40,8 @@ internal fun GradeHistoryContent(statistics: StudentStatisticsResponse, onRecord
     val config = LocalResponsiveConfig.current
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 800.dp) else Modifier),
+            .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW) else Modifier)
+            .fillMaxSize(),
         contentPadding = PaddingValues(config.screenPadding),
         verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
     ) {

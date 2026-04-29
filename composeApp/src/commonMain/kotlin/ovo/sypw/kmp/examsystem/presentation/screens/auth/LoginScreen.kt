@@ -75,9 +75,9 @@ fun LoginScreen(
             // 登录卡片容器 - 限制最大宽度以适配桌面端
             Card(
                 modifier = Modifier
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
                     .fillMaxWidth()
-                    .padding(config.screenPadding)
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier), // 桌面端适配关键：限制最大宽度
+                    .padding(config.screenPadding), // 桌面端适配关键：限制最大宽度
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),

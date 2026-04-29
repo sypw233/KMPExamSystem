@@ -160,9 +160,9 @@ fun ExamComposeScreen(
                     val screenConfig = LocalResponsiveConfig.current
 
                     Column(
-                        modifier = Modifier.fillMaxSize().then(
+                        modifier = Modifier.then(
                             if (screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 900.dp) else Modifier
-                        )
+                        ).fillMaxSize()
                     ) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),

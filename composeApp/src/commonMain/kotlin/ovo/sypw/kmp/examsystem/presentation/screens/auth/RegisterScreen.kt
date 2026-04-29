@@ -96,9 +96,9 @@ fun RegisterScreen(
             // 注册卡片容器 - 限制最大宽度适配桌面端
             Card(
                 modifier = Modifier
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
                     .fillMaxWidth()
                     .padding(config.screenPadding)
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 400.dp) else Modifier)
                     .verticalScroll(rememberScrollState()),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface,

@@ -60,7 +60,8 @@ fun AdminDashboardScreen() {
                     }
                 }
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -93,11 +94,21 @@ fun AdminDashboardScreen() {
                         "题目" to data.overview.totalQuestions.toString(),
                         "提交" to data.overview.totalSubmissions.toString()
                     )
-                    val rowCount = (statPairs.size + config.columnCount - 1) / config.columnCount
-                    val estimatedCardHeight = config.cardPadding * 2 + 100.dp
+                    val statColumns = if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) 4 else config.columnCount
+                    val rowCount = (statPairs.size + statColumns - 1) / statColumns
+                    val estimatedCardHeight = 96.dp
                     val gridHeight = estimatedCardHeight * rowCount + config.verticalSpacing * (rowCount - 1)
                     Box(
-                        modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 1000.dp) else Modifier).padding(config.screenPadding)
+                        modifier = Modifier
+                            .then(
+                                if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+                                    Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .fillMaxSize()
+                            .padding(config.screenPadding)
                     ) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -108,9 +119,10 @@ fun AdminDashboardScreen() {
                                     items = statPairs,
                                     modifier = Modifier.fillMaxWidth().height(gridHeight),
                                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                                    columnCountOverride = statColumns
                                 ) { (title, value) ->
-                                    StatCard(title, value, Modifier.fillMaxWidth(), config.cardPadding)
+                                    StatCard(title, value, Modifier.fillMaxWidth().height(96.dp), config.cardPadding)
                                 }
                             }
                             item {
@@ -141,9 +153,13 @@ fun AdminDashboardScreen() {
 private fun StatCard(title: String, value: String, modifier: Modifier = Modifier, cardPadding: Dp = 16.dp) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(cardPadding)) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(cardPadding),
+            verticalArrangement = Arrangement.Center
+        ) {
             Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         }

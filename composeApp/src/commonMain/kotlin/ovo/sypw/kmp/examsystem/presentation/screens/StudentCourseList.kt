@@ -58,7 +58,9 @@ internal fun StudentCourseList(
                 ResponsiveLazyVerticalGrid(
                     items = state.courses,
                     key = { it.id },
-                    modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier),
+                    modifier = Modifier
+                        .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
+                        .fillMaxSize(),
                     contentPadding = PaddingValues(config.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                     horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)

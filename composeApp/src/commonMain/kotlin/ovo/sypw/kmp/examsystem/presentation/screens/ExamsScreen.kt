@@ -103,7 +103,7 @@ fun ExamsScreen(
                     config = config
                 )
             } else {
-                Column(modifier = Modifier.fillMaxSize().then(Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW))) {
+                Column(modifier = Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW).fillMaxSize()) {
                     PrimaryTabRow(selectedTabIndex = selectedTab) {
                         tabs.forEachIndexed { index, title ->
                             Tab(

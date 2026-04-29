@@ -174,8 +174,8 @@ fun NotificationScreen(onBack: () -> Unit) {
                                 }
                             },
                             modifier = Modifier
-                                .fillMaxSize()
-                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW) else Modifier),
+                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW) else Modifier)
+                                .fillMaxSize(),
                             contentPadding = PaddingValues(
                                 horizontal = config.screenPadding,
                                 vertical = config.verticalSpacing

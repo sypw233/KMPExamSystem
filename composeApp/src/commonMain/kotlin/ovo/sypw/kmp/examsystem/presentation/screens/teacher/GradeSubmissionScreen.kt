@@ -190,7 +190,11 @@ fun GradeSubmissionScreen(
                     Text("该试卷没有需要手动批改的主观题", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize().then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 960.dp) else Modifier)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
+                        .fillMaxSize()
+                ) {
                     items(subjectiveQuestions, key = { it.questionId }) { eq ->
                         GradeQuestionItem(
                             examQuestion = eq,

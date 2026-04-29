@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.admin
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,12 @@ internal fun BankListPanel(
     onDeleteBank: (QuestionBankResponse) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
         if (banks.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -88,6 +94,7 @@ internal fun BankListPanel(
                             else
                                 MaterialTheme.colorScheme.surface
                         ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                         onClick = { onSelectBank(bank) },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
@@ -141,7 +148,12 @@ internal fun QuestionListPanel(
 ) {
     val config = LocalResponsiveConfig.current
 
-    Card(modifier = modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
         Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -110,7 +110,10 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
                 }
                 is SystemSettingsUiState.Success -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 760.dp) else Modifier).padding(config.screenPadding),
+                        modifier = Modifier
+                            .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 760.dp) else Modifier)
+                            .fillMaxSize()
+                            .padding(config.screenPadding),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(state.configs, key = { it.configKey }) { config ->
