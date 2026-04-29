@@ -13,6 +13,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SectionRule
+import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
 import ovo.sypw.kmp.examsystem.data.repository.QuestionRepository
@@ -81,11 +82,20 @@ class ExamComposeViewModel(
                 return@launch
             }
             // 2. Load questions currently in exam
-            val examQuestions = examRepository.getExamQuestions(examId).getOrDefault(emptyList())
+            val examQuestions = examRepository.getExamQuestions(examId).getOrElse {
+                Logger.w("ExamComposeViewModel", "加载考试题目失败: ${it.message}")
+                emptyList()
+            }
             // 3. Load my questions for exam composition
-            val courseQuestions = questionRepository.loadMyQuestions().getOrDefault(emptyList())
+            val courseQuestions = questionRepository.loadMyQuestions().getOrElse {
+                Logger.w("ExamComposeViewModel", "加载课程题目失败: ${it.message}")
+                emptyList()
+            }
             // 4. Load my banks for random compose
-            val banks = questionBankRepository.loadMyBanks().getOrDefault(emptyList())
+            val banks = questionBankRepository.loadMyBanks().getOrElse {
+                Logger.w("ExamComposeViewModel", "加载题库失败: ${it.message}")
+                emptyList()
+            }
 
             _uiState.value = ExamComposeUiState.Success(
                 exam = exam,

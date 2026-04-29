@@ -10,6 +10,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /** 考试列表 UI 状态 */
 sealed interface ExamListUiState {
@@ -132,7 +133,10 @@ class ExamViewModel(
                 _examDetail.value = ExamDetailUiState.Error(e.message ?: "加载考试详情失败")
                 return@launch
             }
-            val questions = examRepository.getExamQuestions(examId).getOrDefault(emptyList())
+            val questions = examRepository.getExamQuestions(examId).getOrElse {
+                Logger.w("ExamViewModel", "加载考试题目失败: ${it.message}")
+                emptyList()
+            }
             _examDetail.value = ExamDetailUiState.Success(exam, questions)
         }
     }

@@ -52,6 +52,7 @@ import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.EnrollState
+import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,7 +132,10 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                         examDetailCourse = course
                         loadingCourseExams = true
                         scope.launch {
-                            courseExams = courseRepository.getCourseExams(course.id).getOrDefault(emptyList())
+                            courseExams = courseRepository.getCourseExams(course.id).getOrElse {
+                                Logger.w("StudentCourseScreen", "加载课程考试失败: ${it.message}")
+                                emptyList()
+                            }
                             loadingCourseExams = false
                         }
                     }
