@@ -104,9 +104,9 @@ object HttpClientConfig {
                 level = if (DEBUG) LogLevel.ALL else LogLevel.INFO
                 sanitizeHeader { header -> header == HttpHeaders.Authorization }
 
-                // 非 Debug 模式下过滤静态资源请求，只记录 API 调用
+                // 非 Debug 模式下过滤所有请求，只记录错误级别
                 if (!DEBUG) {
-                    filter { true }
+                    filter { false }
                 }
             }
 

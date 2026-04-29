@@ -162,7 +162,8 @@ class AuthRepository(
             } else {
                 false
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Logger.e("AuthRepository", "Token认证失败: ${e.message}")
             false
         }
     }
