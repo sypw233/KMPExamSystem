@@ -9,6 +9,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -90,7 +91,9 @@ fun CreateUserDialog(
                         readOnly = true,
                         label = { Text("角色 *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
                         listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->
@@ -166,7 +169,9 @@ fun EditUserDialog(
                         readOnly = true,
                         label = { Text("角色") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
                         listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->

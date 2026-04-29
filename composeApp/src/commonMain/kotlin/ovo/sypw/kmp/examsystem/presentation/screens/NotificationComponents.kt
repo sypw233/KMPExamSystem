@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Announcement
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.Announcement
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Notifications
@@ -256,6 +256,6 @@ private fun notificationTypeIcon(type: String): ImageVector = when (type) {
     "EXAM_PUBLISHED" -> Icons.AutoMirrored.Filled.Assignment
     "EXAM_REMINDER" -> Icons.Default.Notifications
     "GRADE_RELEASED" -> Icons.Default.Grade
-    "COURSE_UPDATE" -> Icons.Default.Announcement
+    "COURSE_UPDATE" -> Icons.AutoMirrored.Filled.Announcement
     else -> Icons.Default.Notifications
 }
