@@ -4,11 +4,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.QuestionApi
-import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteRequest
 import ovo.sypw.kmp.examsystem.data.dto.BatchDeleteResult
 import ovo.sypw.kmp.examsystem.data.dto.ImportResultResponse
-import ovo.sypw.kmp.examsystem.data.dto.PageQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -29,7 +27,13 @@ class QuestionRepository(
 
     /** 加载所有题目（管理员，分页） */
     suspend fun loadAllQuestions(): Result<List<QuestionResponse>> = runWithToken { token ->
-        fetchQuestionPages { page, size -> questionApi.getAllQuestions(token, page, size) }.also {
+        fetchAllPages(
+            requestPage = { page, size -> questionApi.getAllQuestions(token, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        ).also {
             _allQuestions.value = it
         }
     }
@@ -94,37 +98,35 @@ class QuestionRepository(
 
     /** 按类型筛选题目 */
     suspend fun getQuestionsByType(type: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        fetchQuestionPages { page, size -> questionApi.getAllQuestions(token, page, size, type = type) }
+        fetchAllPages(
+            requestPage = { page, size -> questionApi.getAllQuestions(token, page, size, type = type) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     /** 按难度筛选题目 */
     suspend fun getQuestionsByDifficulty(difficulty: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        fetchQuestionPages { page, size -> questionApi.getAllQuestions(token, page, size, difficulty = difficulty) }
+        fetchAllPages(
+            requestPage = { page, size -> questionApi.getAllQuestions(token, page, size, difficulty = difficulty) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     /** 按分类筛选题目 */
     suspend fun getQuestionsByCategory(category: String): Result<List<QuestionResponse>> = runWithToken { token ->
-        fetchQuestionPages { page, size -> questionApi.getAllQuestions(token, page, size, category = category) }
-    }
-
-    private suspend fun fetchQuestionPages(
-        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageQuestionResponse>
-    ): List<QuestionResponse> {
-        val questions = mutableListOf<QuestionResponse>()
-        var page = 0
-        val size = 100
-        var hasNextPage: Boolean
-
-        do {
-            val response = requestPage(page, size)
-            if (response.code != 200) throw Exception(response.message)
-            val data = response.data ?: break
-            questions += data.content
-            page += 1
-            hasNextPage = !data.last && page < data.totalPages
-        } while (hasNextPage)
-
-        return questions.distinctBy { it.id }
+        fetchAllPages(
+            requestPage = { page, size -> questionApi.getAllQuestions(token, page, size, category = category) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {

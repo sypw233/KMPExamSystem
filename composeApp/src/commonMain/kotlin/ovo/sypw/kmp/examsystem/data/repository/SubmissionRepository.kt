@@ -1,7 +1,6 @@
 package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.SubmissionApi
-import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
@@ -66,7 +65,13 @@ class SubmissionRepository(
      * 获取某场考试的所有提交记录（教师/管理员）
      */
     suspend fun getExamSubmissions(examId: Long): Result<List<SubmissionResponse>> = runWithToken { token ->
-        fetchSubmissionPages { page, size -> submissionApi.querySubmissions(token, examId = examId, page = page, size = size) }
+        fetchAllPages(
+            requestPage = { page, size -> submissionApi.querySubmissions(token, examId = examId, page = page, size = size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     /**
@@ -88,26 +93,6 @@ class SubmissionRepository(
     ): Result<PageSubmissionResponse> = runWithToken { token ->
         val r = submissionApi.querySubmissions(token, examId, userId, page, size)
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
-    }
-
-    private suspend fun fetchSubmissionPages(
-        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageSubmissionResponse>
-    ): List<SubmissionResponse> {
-        val submissions = mutableListOf<SubmissionResponse>()
-        var page = 0
-        val size = 100
-        var hasNextPage: Boolean
-
-        do {
-            val response = requestPage(page, size)
-            if (response.code != 200) throw Exception(response.message)
-            val data = response.data ?: break
-            submissions += data.content
-            page += 1
-            hasNextPage = !data.last && page < data.totalPages
-        } while (hasNextPage)
-
-        return submissions.distinctBy { it.id }
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {

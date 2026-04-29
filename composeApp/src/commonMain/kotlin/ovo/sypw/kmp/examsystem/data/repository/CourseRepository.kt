@@ -7,6 +7,7 @@ import ovo.sypw.kmp.examsystem.data.api.CourseApi
 import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
+import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 /**
@@ -31,20 +32,13 @@ class CourseRepository(
      * 获取所有活跃课程列表（分页）
      */
     suspend fun loadAllCourses(): Result<List<CourseResponse>> = runWithToken { token ->
-        val courses = mutableListOf<CourseResponse>()
-        var page = 0
-        val size = 100
-        var hasNextPage: Boolean
-        do {
-            val response = courseApi.getAllActiveCourses(token, page, size)
-            if (response.code != 200) throw Exception(response.message)
-            val data = response.data ?: break
-            courses += data.content
-            page += 1
-            hasNextPage = !data.last && page < data.totalPages
-        } while (hasNextPage)
-
-        courses.distinctBy { it.id }.also {
+        fetchAllPages(
+            requestPage = { page, size -> courseApi.getAllActiveCourses(token, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        ).also {
             _allCourses.value = it
         }
     }
@@ -121,21 +115,14 @@ class CourseRepository(
     }
 
     /** 获取课程下的考试列表 */
-    suspend fun getCourseExams(courseId: Long): Result<List<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>> = runWithToken { token ->
-        val exams = mutableListOf<ovo.sypw.kmp.examsystem.data.dto.ExamResponse>()
-        var page = 0
-        val size = 100
-        var hasNextPage: Boolean
-        do {
-            val r = courseApi.getCourseExams(token, courseId, page, size)
-            if (r.code != 200) throw Exception(r.message)
-            val data = r.data ?: break
-            exams += data.content
-            page += 1
-            hasNextPage = !data.last && page < data.totalPages
-        } while (hasNextPage)
-
-        exams.distinctBy { it.id }
+    suspend fun getCourseExams(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->
+        fetchAllPages(
+            requestPage = { page, size -> courseApi.getCourseExams(token, courseId, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     /** 获取选课学生 */
