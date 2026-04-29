@@ -19,7 +19,7 @@ sealed class NetworkResult<out T> {
      */
     data class Error(
         val exception: Throwable,
-        val message: String = exception.message ?: "Unknown error"
+        val message: String = exception.message ?: "未知错误"
     ) : NetworkResult<Nothing>()
 
     /**

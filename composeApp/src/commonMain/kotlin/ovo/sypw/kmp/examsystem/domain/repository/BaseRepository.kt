@@ -25,7 +25,7 @@ interface BaseRepository {
     }.onStart {
         emit(NetworkResult.Loading)
     }.catch { exception ->
-        emit(NetworkResult.Error(exception, exception.message ?: "Unknown error"))
+        emit(NetworkResult.Error(exception, exception.message ?: "未知错误"))
     }
 
     /**
@@ -72,7 +72,7 @@ interface BaseRepository {
             }
         }
     }.catch { exception ->
-        emit(NetworkResult.Error(exception, exception.message ?: "Unknown error"))
+        emit(NetworkResult.Error(exception, exception.message ?: "未知错误"))
     }
 
     /**
@@ -86,6 +86,6 @@ interface BaseRepository {
         val result = apiCall()
         emit(result)
     }.catch { exception ->
-        emit(NetworkResult.Error(exception, exception.message ?: "Unknown error"))
+        emit(NetworkResult.Error(exception, exception.message ?: "未知错误"))
     }
 }

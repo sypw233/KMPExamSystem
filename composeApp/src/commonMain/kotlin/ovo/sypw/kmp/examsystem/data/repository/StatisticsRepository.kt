@@ -66,7 +66,7 @@ class StatisticsRepository(
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
         return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("Not logged in")
+            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
             Result.success(block(token))
         } catch (e: Exception) {
             Result.failure(e)
