@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import ovo.sypw.kmp.examsystem.data.api.QuestionBankApi
+import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
+import ovo.sypw.kmp.examsystem.data.dto.PageQuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
@@ -23,12 +25,9 @@ class QuestionBankRepository(
     val bankQuestions: StateFlow<List<QuestionResponse>> = _bankQuestions.asStateFlow()
 
     suspend fun loadMyBanks(): Result<List<QuestionBankResponse>> = runWithToken { token ->
-        val r = questionBankApi.getMyBanks(token)
-        if (r.code == 200 && r.data != null) {
-            val list = r.data.content
-            _myBanks.value = list
-            list
-        } else throw Exception(r.message)
+        fetchBankPages { page, size -> questionBankApi.getMyBanks(token, page, size) }.also {
+            _myBanks.value = it
+        }
     }
 
     /** 获取题库详情 */
@@ -70,6 +69,26 @@ class QuestionBankRepository(
         val r = questionBankApi.removeQuestionFromBank(token, bankId, questionId)
         if (r.code == 200) { _bankQuestions.value = _bankQuestions.value.filter { it.id != questionId }; Unit }
         else throw Exception(r.message)
+    }
+
+    private suspend fun fetchBankPages(
+        requestPage: suspend (page: Int, size: Int) -> ApiResponse<PageQuestionBankResponse>
+    ): List<QuestionBankResponse> {
+        val banks = mutableListOf<QuestionBankResponse>()
+        var page = 0
+        val size = 100
+        var hasNextPage: Boolean
+
+        do {
+            val response = requestPage(page, size)
+            if (response.code != 200) throw Exception(response.message)
+            val data = response.data ?: break
+            banks += data.content
+            page += 1
+            hasNextPage = !data.last && page < data.totalPages
+        } while (hasNextPage)
+
+        return banks.distinctBy { it.id }
     }
 
     private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
