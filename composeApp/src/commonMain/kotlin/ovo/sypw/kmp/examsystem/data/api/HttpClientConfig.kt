@@ -15,6 +15,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import ovo.sypw.kmp.examsystem.utils.Logger as AppLogger
 
+internal expect fun defaultApiBaseUrl(): String
+
 /**
  * HTTP客户端配置类
  * 提供统一的Ktor客户端配置和网络配置常量
@@ -31,7 +33,8 @@ object HttpClientConfig {
     /**
      * API基础URL
      */
-    const val BASE_URL = "http://localhost:8080"
+    val BASE_URL: String
+        get() = defaultApiBaseUrl()
 
     /**
      * 连接超时时间（毫秒）
