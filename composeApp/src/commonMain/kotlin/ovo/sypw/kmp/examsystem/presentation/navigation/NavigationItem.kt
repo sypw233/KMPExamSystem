@@ -42,11 +42,23 @@ enum class UserRole {
 
 /**
  * 导航项描述
+ * @param priority 优先级（数值越小优先级越高，用于移动端底部导航排序）
  */
 data class NavigationItem(
     val route: String,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val priority: Int = 5  // 默认优先级为5
+)
+
+/**
+ * 底部导航展示模型
+ *
+ * M3 NavigationBar 适合展示 5 个以内目的地。超过时保留 4 个主入口，其余放入“更多”菜单。
+ */
+data class BottomNavigationItems(
+    val primaryItems: List<NavigationItem>,
+    val overflowItems: List<NavigationItem>
 )
 
 /**
@@ -58,29 +70,40 @@ data class NavigationItem(
  */
 fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role) {
     UserRole.STUDENT -> listOf(
-        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home),
-        NavigationItem(AppRoutes.COURSES,   "课程",     Icons.Default.Book),
-        NavigationItem(AppRoutes.EXAMS,     "考试",     Icons.AutoMirrored.Filled.Assignment),
-        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
+        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home, priority = 1),
+        NavigationItem(AppRoutes.COURSES,   "课程",     Icons.Default.Book, priority = 2),
+        NavigationItem(AppRoutes.EXAMS,     "考试",     Icons.AutoMirrored.Filled.Assignment, priority = 3),
+        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person, priority = 1)
     )
     UserRole.TEACHER -> listOf(
-        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home),
-        NavigationItem(AppRoutes.COURSES,   "课程管理", Icons.Default.Book),
-        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz),
-        NavigationItem(AppRoutes.EXAMS,     "考试管理", Icons.AutoMirrored.Filled.Assignment),
-        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
+        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Home, priority = 1),
+        NavigationItem(AppRoutes.COURSES,   "课程管理", Icons.Default.Book, priority = 2),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz, priority = 4),
+        NavigationItem(AppRoutes.EXAMS,     "考试管理", Icons.AutoMirrored.Filled.Assignment, priority = 3),
+        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person, priority = 1)
     )
     UserRole.ADMIN -> listOf(
-        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Dashboard),
-        NavigationItem(AppRoutes.USERS,     "用户管理",     Icons.Default.ManageAccounts),
-        NavigationItem(AppRoutes.COURSES,   "课程管理",     Icons.Default.Book),
-        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz),
-        NavigationItem(AppRoutes.EXAMS,     "考试管理",     Icons.AutoMirrored.Filled.Assignment),
-        NavigationItem(AppRoutes.SYSTEM_SETTINGS, "系统", Icons.Default.SettingsApplications),
-        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person)
+        NavigationItem(AppRoutes.HOME,      "首页",     Icons.Default.Dashboard, priority = 1),
+        NavigationItem(AppRoutes.USERS,     "用户管理",     Icons.Default.ManageAccounts, priority = 2),
+        NavigationItem(AppRoutes.COURSES,   "课程管理",     Icons.Default.Book, priority = 3),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题目管理", Icons.Default.Quiz, priority = 5),
+        NavigationItem(AppRoutes.EXAMS,     "考试管理",     Icons.AutoMirrored.Filled.Assignment, priority = 4),
+        NavigationItem(AppRoutes.SYSTEM_SETTINGS, "系统", Icons.Default.SettingsApplications, priority = 10),
+        NavigationItem(AppRoutes.PROFILE,   "我的",     Icons.Default.Person, priority = 1)
     )
     UserRole.UNKNOWN -> listOf(
-        NavigationItem(AppRoutes.HOME,    "首页", Icons.Default.Home),
-        NavigationItem(AppRoutes.PROFILE, "我的", Icons.Default.Person)
+        NavigationItem(AppRoutes.HOME,    "首页", Icons.Default.Home, priority = 1),
+        NavigationItem(AppRoutes.PROFILE, "我的", Icons.Default.Person, priority = 1)
     )
+}
+
+fun getBottomNavigationItemsForRole(role: UserRole): BottomNavigationItems {
+    val items = getNavigationItemsForRole(role)
+    // 按优先级排序（数值越小优先级越高），取前4个为主导航项
+    val sortedItems = items.sortedBy { it.priority }
+    return if (sortedItems.size <= 5) {
+        BottomNavigationItems(primaryItems = sortedItems, overflowItems = emptyList())
+    } else {
+        BottomNavigationItems(primaryItems = sortedItems.take(4), overflowItems = sortedItems.drop(4))
+    }
 }

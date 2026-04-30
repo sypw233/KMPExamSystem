@@ -122,9 +122,9 @@ data class CourseStatisticsResponse(
     val courseName: String,
     val totalStudents: Int = 0,
     val totalExams: Int = 0,
-    val averageScore: Double = 0.0,
-    val highestScore: Int = 0,
-    val lowestScore: Int = 0
+    val averageScore: Double? = null,
+    val highestScore: Int? = null,
+    val lowestScore: Int? = null
 )
 
 /**

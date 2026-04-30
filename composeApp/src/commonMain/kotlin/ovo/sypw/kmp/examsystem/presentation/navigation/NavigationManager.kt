@@ -55,11 +55,16 @@ class NavigationManager {
     fun navigationItems(): List<NavigationItem> =
         getNavigationItemsForRole(_userRole.value)
 
+    /** 检查路由是否允许当前角色访问 */
+    fun canNavigateTo(route: String): Boolean =
+        getNavigationItemsForRole(_userRole.value).any { it.route == route }
+
     // ─── 路由 ─────────────────────────────────────────────────────────────
 
     /** 导航到指定路由（考试模式中不允许切换） */
     fun navigateTo(route: String) {
         if (_isInExamMode.value) return
+        if (!canNavigateTo(route)) return
         if (route != _currentScreen.value) {
             _navigationHistory.add(_currentScreen.value)
         }

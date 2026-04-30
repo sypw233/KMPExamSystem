@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
@@ -80,6 +82,7 @@ fun TeacherExamManageScreen(
     val courseUiState by courseViewModel.allCoursesState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     val courses = availableCourses.takeIf { it.isNotEmpty() }
         ?: (courseUiState as? CourseUiState.Success)?.courses ?: emptyList()
@@ -149,7 +152,9 @@ fun TeacherExamManageScreen(
 
     Scaffold(
         topBar = {
-            if (isBatchMode) {
+            if (isDesktop) {
+                Unit
+            } else if (isBatchMode) {
                 TopAppBar(
                     title = { Text("已选择 ${selectedIds.size} 项") },
                     navigationIcon = {
@@ -186,7 +191,7 @@ fun TeacherExamManageScreen(
             }
         },
         floatingActionButton = {
-            if (selectedTab == 0 && !isBatchMode) {
+            if (!isDesktop && selectedTab == 0 && !isBatchMode) {
                 ExtendedFloatingActionButton(
                     onClick = { showCreateDialog = true },
                     icon = { Icon(Icons.Default.Add, null) },
@@ -221,31 +226,72 @@ fun TeacherExamManageScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
-        val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter
-            ) {
-                PrimaryTabRow(
-                    selectedTabIndex = selectedTab,
-                    modifier = if (isDesktop) {
-                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD).fillMaxWidth()
-                    } else {
-                        Modifier.fillMaxWidth()
-                    }
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .then(if (isDesktop) Modifier.padding(config.screenPadding) else Modifier),
+            verticalArrangement = if (isDesktop) Arrangement.spacedBy(16.dp) else Arrangement.Top
+        ) {
+            if (isDesktop) {
+                ManagementPageHeader(
+                    title = if (userRole == UserRole.ADMIN) "考试管理" else "我的考试",
+                    subtitle = "按考试状态组织草稿、进行中和已结束考试，桌面端支持批量处理与快速进入组卷/批阅。"
                 ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = { Text(title) }
-                        )
+                    if (isBatchMode) {
+                        TextButton(onClick = { isBatchMode = false; selectedIds = emptySet() }) {
+                            Text("退出批量")
+                        }
+                        TextButton(
+                            onClick = {
+                                val currentIds = (allExamsState as? ExamListUiState.Success)?.exams
+                                    ?.filter { it.status == 0 }
+                                    ?.map { it.id }
+                                    ?.toSet() ?: emptySet()
+                                selectedIds = if (selectedIds == currentIds) emptySet() else currentIds
+                            }
+                        ) { Text("全选") }
+                    } else {
+                        if (selectedTab == 0) {
+                            TextButton(onClick = { isBatchMode = true }) { Text("批量") }
+                            Button(onClick = { showCreateDialog = true }) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("新建考试")
+                            }
+                        }
+                        IconButton(onClick = { viewModel.loadManagerExams() }) {
+                            Icon(Icons.Default.Refresh, "刷新")
+                        }
                     }
                 }
             }
 
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            ManagementPanel(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        PrimaryTabRow(
+                            selectedTabIndex = selectedTab,
+                            modifier = if (isDesktop) {
+                                Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD).fillMaxWidth()
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    text = { Text(title) }
+                                )
+                            }
+                        }
+                    }
+
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
                 when (val state = allExamsState) {
                     is ExamListUiState.Loading -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -309,6 +355,8 @@ fun TeacherExamManageScreen(
                                 item { Spacer(modifier = Modifier.height(80.dp)) }
                             }
                         }
+                    }
+                }
                     }
                 }
             }

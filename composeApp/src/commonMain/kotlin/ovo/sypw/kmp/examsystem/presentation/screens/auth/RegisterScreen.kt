@@ -7,7 +7,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
@@ -23,7 +22,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
@@ -102,17 +100,17 @@ fun RegisterScreen(
             contentAlignment = Alignment.Center
         ) {
             // 注册卡片容器 - 限制最大宽度适配桌面端
-            Card(
+            ElevatedCard(
                 modifier = Modifier
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FORM) else Modifier)
+                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = 560.dp) else Modifier)
                     .fillMaxWidth()
                     .padding(config.screenPadding)
                     .verticalScroll(rememberScrollState()),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = MaterialTheme.shapes.large
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+                shape = MaterialTheme.shapes.extraLarge
             ) {
                 Column(
                     modifier = Modifier
@@ -122,9 +120,9 @@ fun RegisterScreen(
                 ) {
                     Text(
                         text = "创建新账号",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Text(
@@ -142,7 +140,6 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                             .onFocusChanged { if (!it.isFocused) usernameInteracted = true },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         isError = usernameInteracted && username.length < 3,
                         supportingText = if (usernameInteracted && username.length < 3) {
                             { Text("用户名至少需要3个字符") }
@@ -166,7 +163,6 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                             .onFocusChanged { if (!it.isFocused) passwordInteracted = true },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         isError = passwordInteracted && password.length < 6,
                         supportingText = if (passwordInteracted && password.length < 6) {
                             { Text("密码至少需要6个字符") }
@@ -180,7 +176,7 @@ fun RegisterScreen(
                             imeAction = ImeAction.Next
                         ),
                         trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            FilledIconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
@@ -199,7 +195,6 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                             .onFocusChanged { if (!it.isFocused) confirmPasswordInteracted = true },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         isError = confirmPasswordInteracted && confirmPassword != password,
                         supportingText = if (confirmPasswordInteracted && confirmPassword != password) {
                             { Text("两次输入的密码不一致") }
@@ -213,7 +208,7 @@ fun RegisterScreen(
                             imeAction = ImeAction.Next
                         ),
                         trailingIcon = {
-                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            FilledIconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                 Icon(
                                     imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (confirmPasswordVisible) "隐藏密码" else "显示密码"
@@ -232,7 +227,6 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                             .onFocusChanged { if (!it.isFocused) realNameInteracted = true },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         isError = realNameInteracted && realName.isBlank(),
                         supportingText = if (realNameInteracted && realName.isBlank()) {
                             { Text("请输入真实姓名") }
@@ -256,7 +250,6 @@ fun RegisterScreen(
                         modifier = Modifier.fillMaxWidth()
                             .onFocusChanged { if (!it.isFocused) emailInteracted = true },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         isError = emailInteracted && email.isNotBlank() && !email.contains("@"),
                         supportingText = if (emailInteracted && email.isNotBlank() && !email.contains("@")) {
                             { Text("请输入有效的邮箱地址") }
@@ -288,28 +281,27 @@ fun RegisterScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
         
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        SingleChoiceSegmentedButtonRow(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            FilterChip(
+                            SegmentedButton(
                                 selected = role == "student",
                                 onClick = { viewModel.updateRole("student") },
-                                label = { Text("学生") },
-                                modifier = Modifier.weight(1f),
-                                leadingIcon = if (role == "student") {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
+                                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                                icon = {
+                                    SegmentedButtonDefaults.Icon(active = role == "student")
+                                },
+                                label = { Text("学生") }
                             )
-        
-                            FilterChip(
+
+                            SegmentedButton(
                                 selected = role == "teacher",
                                 onClick = { viewModel.updateRole("teacher") },
-                                label = { Text("教师") },
-                                modifier = Modifier.weight(1f),
-                                leadingIcon = if (role == "teacher") {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
+                                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                                icon = {
+                                    SegmentedButtonDefaults.Icon(active = role == "teacher")
+                                },
+                                label = { Text("教师") }
                             )
                         }
                     }
@@ -328,9 +320,9 @@ fun RegisterScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(56.dp),
                         enabled = uiState !is RegisterUiState.Loading,
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.extraLarge
                     ) {
                         if (uiState is RegisterUiState.Loading) {
                             CircularProgressIndicator(

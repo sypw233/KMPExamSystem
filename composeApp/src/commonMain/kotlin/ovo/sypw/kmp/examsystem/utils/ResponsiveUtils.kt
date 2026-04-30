@@ -217,7 +217,29 @@ data class ResponsiveLayoutConfig(
     val columnCount: Int,
     val useFullWidthButtons: Boolean,
     val useScrollableTabs: Boolean
-)
+) {
+    /**
+     * 是否为桌面端（扩展型屏幕）
+     */
+    val isDesktop: Boolean
+        get() = screenSize == ResponsiveUtils.ScreenSize.EXPANDED
+
+    /**
+     * 是否使用桌面端管理系统布局
+     * 桌面端使用标题栏、筛选工具条、主从布局等
+     */
+    val useDesktopAdminLayout: Boolean
+        get() = isDesktop
+
+    /**
+     * 桌面端主从布局权重配置
+     */
+    val desktopMasterWeight: Float
+        get() = 1f
+
+    val desktopDetailWeight: Float
+        get() = 1.4f
+}
 
 /**
  * 获取当前屏幕的响应式布局配置

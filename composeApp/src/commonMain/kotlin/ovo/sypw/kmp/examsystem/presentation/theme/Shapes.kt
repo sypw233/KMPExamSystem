@@ -9,9 +9,9 @@ import androidx.compose.ui.unit.dp
  * 统一的圆角半径令牌
  */
 val AppShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
+    extraSmall = RoundedCornerShape(20.dp),  // OutlinedTextField default shape
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(28.dp)
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(32.dp)
 )

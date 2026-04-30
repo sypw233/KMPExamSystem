@@ -136,7 +136,7 @@ fun RoleBadge(role: String) {
 }
 
 @Composable
-private fun StatusBadge(enabled: Boolean) {
+internal fun StatusBadge(enabled: Boolean) {
     val containerColor = if (enabled) {
         MaterialTheme.colorScheme.primaryContainer
     } else {

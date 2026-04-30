@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -18,7 +19,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
@@ -75,18 +75,134 @@ fun LoginScreen(
                 .padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            // 登录卡片容器 - 限制最大宽度以适配桌面端
-            Card(
-                modifier = Modifier
-                    .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FORM) else Modifier)
-                    .fillMaxWidth()
-                    .padding(config.screenPadding), // 桌面端适配关键：限制最大宽度
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                shape = MaterialTheme.shapes.large
+            if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+                Row(
+                    modifier = Modifier
+                        .widthIn(max = 1040.dp)
+                        .fillMaxWidth()
+                        .padding(config.screenPadding),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AuthHeroPanel(modifier = Modifier.weight(1f))
+                    LoginFormCard(
+                        modifier = Modifier.weight(0.82f),
+                        username = username,
+                        password = password,
+                        passwordVisible = passwordVisible,
+                        usernameInteracted = usernameInteracted,
+                        passwordInteracted = passwordInteracted,
+                        uiState = uiState,
+                        onUsernameChange = viewModel::updateUsername,
+                        onPasswordChange = viewModel::updatePassword,
+                        onUsernameInteracted = { usernameInteracted = true },
+                        onPasswordInteracted = { passwordInteracted = true },
+                        onPasswordVisibleChange = { passwordVisible = it },
+                        onLogin = {
+                            usernameInteracted = true
+                            passwordInteracted = true
+                            viewModel.login()
+                        },
+                        onNavigateToRegister = onNavigateToRegister
+                    )
+                }
+            } else {
+                LoginFormCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(config.screenPadding),
+                    username = username,
+                    password = password,
+                    passwordVisible = passwordVisible,
+                    usernameInteracted = usernameInteracted,
+                    passwordInteracted = passwordInteracted,
+                    uiState = uiState,
+                    onUsernameChange = viewModel::updateUsername,
+                    onPasswordChange = viewModel::updatePassword,
+                    onUsernameInteracted = { usernameInteracted = true },
+                    onPasswordInteracted = { passwordInteracted = true },
+                    onPasswordVisibleChange = { passwordVisible = it },
+                    onLogin = {
+                        usernameInteracted = true
+                        passwordInteracted = true
+                        viewModel.login()
+                    },
+                    onNavigateToRegister = onNavigateToRegister
+                )
+            }
+        }
+}
+}
+
+@Composable
+private fun AuthHeroPanel(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.heightIn(min = 520.dp),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        tonalElevation = 4.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(40.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(72.dp)
             ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.VerifiedUser,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "在线考试系统",
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "统一管理课程、考试、题库与成绩，保持桌面和移动端一致体验。",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.82f)
+                )
+            }
+        }
+}
+}
+
+@Composable
+private fun LoginFormCard(
+    modifier: Modifier,
+    username: String,
+    password: String,
+    passwordVisible: Boolean,
+    usernameInteracted: Boolean,
+    passwordInteracted: Boolean,
+    uiState: LoginUiState,
+    onUsernameChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onUsernameInteracted: () -> Unit,
+    onPasswordInteracted: () -> Unit,
+    onPasswordVisibleChange: (Boolean) -> Unit,
+    onLogin: () -> Unit,
+    onNavigateToRegister: () -> Unit
+) {
+    ElevatedCard(
+        modifier = modifier.widthIn(max = ResponsiveUtils.MaxWidths.FORM),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -97,9 +213,9 @@ fun LoginScreen(
                     // 标题
                     Text(
                         text = "欢迎回来",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     
                     Text(
@@ -112,12 +228,11 @@ fun LoginScreen(
                     // 用户名输入框
                     OutlinedTextField(
                         value = username,
-                        onValueChange = { viewModel.updateUsername(it) },
+                        onValueChange = onUsernameChange,
                         label = { Text("用户名") },
                         modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) usernameInteracted = true },
+                            .onFocusChanged { if (!it.isFocused) onUsernameInteracted() },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         enabled = uiState !is LoginUiState.Loading,
                         isError = usernameInteracted && username.isBlank(),
                         supportingText = if (usernameInteracted && username.isBlank()) {
@@ -137,12 +252,11 @@ fun LoginScreen(
                     // 密码输入框
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { viewModel.updatePassword(it) },
+                        onValueChange = onPasswordChange,
                         label = { Text("密码") },
                         modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) passwordInteracted = true },
+                            .onFocusChanged { if (!it.isFocused) onPasswordInteracted() },
                         singleLine = true,
-                        shape = MaterialTheme.shapes.medium,
                         enabled = uiState !is LoginUiState.Loading,
                         isError = passwordInteracted && password.isBlank(),
                         supportingText = if (passwordInteracted && password.isBlank()) {
@@ -157,10 +271,10 @@ fun LoginScreen(
                             imeAction = ImeAction.Done
                         ),
                         keyboardActions = KeyboardActions(
-                            onDone = { viewModel.login() }
+                            onDone = { onLogin() }
                         ),
                         trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            FilledIconButton(onClick = { onPasswordVisibleChange(!passwordVisible) }) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
@@ -173,16 +287,12 @@ fun LoginScreen(
 
                     // 登录按钮
                     Button(
-                        onClick = {
-                            usernameInteracted = true
-                            passwordInteracted = true
-                            viewModel.login()
-                        },
+                        onClick = onLogin,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(56.dp),
                         enabled = uiState !is LoginUiState.Loading,
-                        shape = MaterialTheme.shapes.medium
+                        shape = MaterialTheme.shapes.extraLarge
                     ) {
                         if (uiState is LoginUiState.Loading) {
                             CircularProgressIndicator(
@@ -208,6 +318,4 @@ fun LoginScreen(
                     }
                 }
             }
-        }
-    }
 }

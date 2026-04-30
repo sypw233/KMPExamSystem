@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +30,7 @@ import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
 import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
+import ovo.sypw.kmp.examsystem.presentation.navigation.AppPermanentDrawerSheet
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationScreen
 import ovo.sypw.kmp.examsystem.presentation.navigation.SideNavigationRail
@@ -172,13 +174,18 @@ private fun AuthenticatedContent(authState: AuthState.Authenticated) {
     } else {
         // 正常模式：根据屏幕尺寸显示不同的导航布局
         when (config.screenSize) {
-            ResponsiveUtils.ScreenSize.COMPACT, ResponsiveUtils.ScreenSize.MEDIUM -> {
+            ResponsiveUtils.ScreenSize.COMPACT -> {
                 // 移动端：底部导航布局
                 MobileLayout(navigationManager)
             }
 
+            ResponsiveUtils.ScreenSize.MEDIUM -> {
+                // 中等宽度：M3 NavigationRail 布局
+                RailLayout(navigationManager)
+            }
+
             ResponsiveUtils.ScreenSize.EXPANDED -> {
-                // 桌面端：侧边导航布局
+                // 桌面端：M3 PermanentNavigationDrawer 布局
                 DesktopLayout(navigationManager)
             }
         }
@@ -215,25 +222,47 @@ private fun MobileLayout(
 }
 
 /**
- * 桌面端布局（侧边导航）
+ * 中等屏布局（导航栏）
  */
 @Composable
-private fun DesktopLayout(
+private fun RailLayout(
     navigationManager: NavigationManager
 ) {
     Row(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 侧边导航栏
         SideNavigationRail(
             navigationManager = navigationManager
         )
 
-        // 主要内容区域
         Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            MainContent(
+                navigationManager = navigationManager,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
+ * 桌面端布局（永久导航抽屉）
+ */
+@Composable
+private fun DesktopLayout(
+    navigationManager: NavigationManager
+) {
+    PermanentNavigationDrawer(
+        drawerContent = {
+            AppPermanentDrawerSheet(navigationManager = navigationManager)
+        }
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
             MainContent(

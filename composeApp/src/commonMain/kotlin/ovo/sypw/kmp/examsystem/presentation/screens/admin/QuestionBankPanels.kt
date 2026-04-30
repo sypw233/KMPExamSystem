@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -22,9 +23,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -41,8 +45,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import ovo.sypw.kmp.examsystem.utils.DesktopDataTableRow
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @Composable
 internal fun BankListPanel(
@@ -231,9 +238,136 @@ internal fun QuestionListPanel(
                     }
                 }
 
+                val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
+
                 if (filteredQuestions.isEmpty()) {
                     Text("无匹配题目。", modifier = Modifier.padding(16.dp))
+                } else if (isDesktop) {
+                    // Desktop table layout
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Table header
+                        DesktopDataTableRow(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            *arrayOf(
+                                0.3f to @Composable {
+                                    Text(
+                                        "",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                0.4f to @Composable {
+                                    Text(
+                                        "序号",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                1.5f to @Composable {
+                                    Text(
+                                        "题目内容",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                0.6f to @Composable {
+                                    Text(
+                                        "题型",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                0.5f to @Composable {
+                                    Text(
+                                        "难度",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                0.5f to @Composable {
+                                    Text(
+                                        "操作",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            )
+                        )
+                        HorizontalDivider()
+
+                        // Table data rows
+                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            itemsIndexed(filteredQuestions, key = { _, q -> q.id }) { index, question ->
+                                DesktopDataTableRow(
+                                    modifier = Modifier,
+                                    0.3f to @Composable {
+                                        Checkbox(
+                                            checked = false,
+                                            onCheckedChange = null
+                                        )
+                                    },
+                                    0.4f to @Composable {
+                                        Text(
+                                            "${index + 1}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    },
+                                    1.5f to @Composable {
+                                        Text(
+                                            question.content,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    0.6f to @Composable {
+                                        Text(
+                                            QuestionUtils.questionTypeLabel(question.type),
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    },
+                                    0.5f to @Composable {
+                                        val diffLabel = QuestionUtils.difficultyOptions
+                                            .find { it.first == question.difficulty }?.second
+                                            ?: question.difficulty ?: "-"
+                                        Text(
+                                            diffLabel,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    0.5f to @Composable {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            IconButton(
+                                                onClick = { onEditQuestion(question) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Edit,
+                                                    contentDescription = "编辑",
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = { onDeleteQuestion(question) },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "移除",
+                                                    modifier = Modifier.size(18.dp),
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                                HorizontalDivider()
+                            }
+                        }
+                    }
                 } else {
+                    // Mobile card layout
                     ResponsiveLazyVerticalGrid(
                         items = filteredQuestions,
                         key = { it.id },

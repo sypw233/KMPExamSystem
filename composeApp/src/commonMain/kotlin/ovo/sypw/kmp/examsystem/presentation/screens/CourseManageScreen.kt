@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
@@ -56,6 +59,7 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
     val actionState by courseViewModel.actionState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
@@ -80,37 +84,65 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(if (userRole == UserRole.ADMIN) "全部课程" else "我的授课") },
-                scrollBehavior = scrollBehavior,
-                actions = {
-                    IconButton(onClick = {
-                        if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                    }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
+            if (!isDesktop) {
+                TopAppBar(
+                    title = { Text(if (userRole == UserRole.ADMIN) "全部课程" else "我的授课") },
+                    scrollBehavior = scrollBehavior,
+                    actions = {
+                        IconButton(onClick = {
+                            if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
+                        }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                )
+            }
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            if (!isDesktop) {
+                ExtendedFloatingActionButton(
                 onClick = { showCreateDialog = true },
                 icon = { Icon(Icons.Default.Add, null) },
                 text = { Text("新建课程") }
-            )
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         LaunchedEffect(allCoursesState, myCoursesState) {
             isRefreshing = false
         }
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true
-                if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-            },
-            modifier = Modifier.fillMaxSize().padding(padding)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .then(if (isDesktop) Modifier.padding(config.screenPadding) else Modifier),
+            verticalArrangement = if (isDesktop) Arrangement.spacedBy(16.dp) else Arrangement.Top
         ) {
+            if (isDesktop) {
+                ManagementPageHeader(
+                    title = if (userRole == UserRole.ADMIN) "课程管理" else "授课管理",
+                    subtitle = "集中维护课程信息、教师归属和选课名单，适合桌面端批量浏览与快速维护。"
+                ) {
+                    IconButton(onClick = {
+                        if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
+                    }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
+                    Button(onClick = { showCreateDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.widthIn(min = 8.dp))
+                        Text("新建课程")
+                    }
+                }
+            }
+
+            ManagementPanel(modifier = Modifier.fillMaxSize()) {
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = {
+                        isRefreshing = true
+                        if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
+                    },
+                    modifier = Modifier.fillMaxSize()
+                ) {
         val state = if (userRole == UserRole.ADMIN) allCoursesState else myCoursesState
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             when (val s = state) {
@@ -160,6 +192,8 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                 }
             }
         }
+        }
+            }
         }
     }
 

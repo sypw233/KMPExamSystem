@@ -31,7 +31,9 @@ import org.koin.compose.koinInject
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onNavigateToExams: () -> Unit = {}
+    onNavigateToExams: () -> Unit = {},
+    onNavigateToCourses: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {}
 ) {
     val authRepository: AuthRepository = koinInject()
     val examViewModel: ExamViewModel = koinInject()
@@ -77,7 +79,10 @@ fun DashboardScreen(
                         GreetingSection(
                             userName = user?.realName ?: "同学",
                             unreadCount = unreadCount,
-                            config = config
+                            config = config,
+                            onNavigateToExams = onNavigateToExams,
+                            onNavigateToCourses = onNavigateToCourses,
+                            onNavigateToNotifications = onNavigateToNotifications
                         )
                     }
 

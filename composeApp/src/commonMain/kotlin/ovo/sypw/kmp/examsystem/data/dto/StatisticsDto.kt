@@ -22,9 +22,9 @@ data class StudentStatisticsResponse(
     val studentId: Long,
     val studentName: String,
     val totalExams: Int = 0,
-    val averageScore: Double = 0.0,
-    val highestScore: Int = 0,
-    val lowestScore: Int = 0,
+    val averageScore: Double? = null,
+    val highestScore: Int? = null,
+    val lowestScore: Int? = null,
     val scores: List<StudentScoreRecord> = emptyList()
 )
 
@@ -38,9 +38,9 @@ data class ExamStatisticsResponse(
     val totalStudents: Int = 0,
     val submittedCount: Int = 0,
     val completionRate: Double = 0.0,
-    val averageScore: Double = 0.0,
-    val highestScore: Int = 0,
-    val lowestScore: Int = 0,
+    val averageScore: Double? = null,
+    val highestScore: Int? = null,
+    val lowestScore: Int? = null,
     val passCount: Int = 0,
     val passRate: Double = 0.0,
     val scoreDistribution: Map<String, Int> = emptyMap()

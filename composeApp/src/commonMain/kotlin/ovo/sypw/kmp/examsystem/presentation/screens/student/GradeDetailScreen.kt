@@ -34,8 +34,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
+import androidx.compose.foundation.layout.Arrangement
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
@@ -51,76 +54,143 @@ fun GradeDetailScreen(
 ) {
     val submission by viewModel.currentSubmission.collectAsState()
     val questions by viewModel.currentQuestions.collectAsState()
+    val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     LaunchedEffect(submissionId) {
         viewModel.loadSubmissionDetail(submissionId)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("答卷解析详情") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { padding ->
-        val currentSubmission = submission
-        if (currentSubmission == null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+    val currentSubmission = submission
+    if (currentSubmission == null) {
+        if (isDesktop) {
+            Box(modifier = Modifier.fillMaxSize().padding(config.screenPadding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            return@Scaffold
-        }
-
-        // 解析学生答案 (JSON 字符串 -> Map)
-        val userAnswers: Map<String, String> = remember(currentSubmission.answers) {
-            try {
-                val jsonStr = currentSubmission.answers ?: return@remember emptyMap()
-                if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyMap()
-            } catch (e: Exception) {
-                emptyMap()
+        } else {
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text("答卷解析详情") },
+                        navigationIcon = {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                    )
+                },
+                containerColor = MaterialTheme.colorScheme.background
+            ) { padding ->
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
+        return
+    }
 
-        // 解析批改详情 (JSON 字符串 -> List)
-        val submitDetailList: List<SubjectiveGradeDetail> = remember(currentSubmission.submitDetail) {
-            try {
-                val jsonStr = currentSubmission.submitDetail ?: return@remember emptyList()
-                if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyList()
-            } catch (e: Exception) {
-                emptyList()
-            }
+    // 解析学生答案 (JSON 字符串 -> Map)
+    val userAnswers: Map<String, String> = remember(currentSubmission.answers) {
+        try {
+            val jsonStr = currentSubmission.answers ?: return@remember emptyMap()
+            if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
         }
-        val detailMap = submitDetailList.associateBy { it.questionId }
+    }
 
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Header Info
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.secondaryContainer
+    // 解析批改详情 (JSON 字符串 -> List)
+    val submitDetailList: List<SubjectiveGradeDetail> = remember(currentSubmission.submitDetail) {
+        try {
+            val jsonStr = currentSubmission.submitDetail ?: return@remember emptyList()
+            if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    val detailMap = submitDetailList.associateBy { it.questionId }
+
+    if (isDesktop) {
+        // 桌面端布局
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(config.screenPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            ManagementPageHeader(
+                title = "答卷解析详情",
+                subtitle = "查看考试答卷的详细解析和得分情况"
             ) {
-                Row(modifier = Modifier.padding(16.dp)) {
-                    Text("考试总得分: ${currentSubmission.totalScore ?: "批改中"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                 }
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .then(if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
-                    .fillMaxSize()
-            ) {
-                items(questions.sortedBy { it.orderNum }, key = { it.questionId }) { eq ->
-                    DetailQuestionItem(
-                        examQuestion = eq,
-                        studentAnswer = userAnswers[eq.questionId.toString()] ?: "",
-                        gradeDetail = detailMap[eq.questionId]
-                    )
+            ManagementPanel(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Header Info
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp)) {
+                            Text("考试总得分: ${currentSubmission.totalScore ?: "批改中"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(questions.sortedBy { it.orderNum }, key = { it.questionId }) { eq ->
+                            DetailQuestionItem(
+                                examQuestion = eq,
+                                studentAnswer = userAnswers[eq.questionId.toString()] ?: "",
+                                gradeDetail = detailMap[eq.questionId]
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // 移动端布局
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("答卷解析详情") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+                )
+            },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { padding ->
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                // Header Info
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Row(modifier = Modifier.padding(16.dp)) {
+                        Text("考试总得分: ${currentSubmission.totalScore ?: "批改中"}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(questions.sortedBy { it.orderNum }, key = { it.questionId }) { eq ->
+                        DetailQuestionItem(
+                            examQuestion = eq,
+                            studentAnswer = userAnswers[eq.questionId.toString()] ?: "",
+                            gradeDetail = detailMap[eq.questionId]
+                        )
+                    }
                 }
             }
         }

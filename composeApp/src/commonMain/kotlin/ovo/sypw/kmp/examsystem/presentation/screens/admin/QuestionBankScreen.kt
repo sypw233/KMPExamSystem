@@ -43,6 +43,8 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankViewModel
@@ -103,7 +105,8 @@ fun QuestionBankScreen() {
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (!isDesktop) {
+                TopAppBar(
                 title = {
                     if (!isDesktop && mobileShowQuestions) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -143,11 +146,12 @@ fun QuestionBankScreen() {
                         Icon(Icons.Default.Refresh, contentDescription = "刷新")
                     }
                 }
-            )
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
         floatingActionButton = {
-            if (isDesktop || !mobileShowQuestions) {
+            if (!isDesktop && !mobileShowQuestions) {
                 Button(onClick = { createDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
@@ -156,10 +160,56 @@ fun QuestionBankScreen() {
             }
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .then(if (isDesktop) Modifier.padding(config.screenPadding) else Modifier),
+            verticalArrangement = if (isDesktop) Arrangement.spacedBy(16.dp) else Arrangement.Top
         ) {
+            if (isDesktop) {
+                ManagementPageHeader(
+                    title = "题库管理",
+                    subtitle = "左侧维护题库，右侧管理题目、筛选题型难度并支持模板下载和批量导入。"
+                ) {
+                    Button(onClick = { createDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("新建题库")
+                    }
+                    IconButton(onClick = {
+                        viewModel.downloadTemplate(
+                            onSuccess = { bytes ->
+                                scope.launch {
+                                    fileUtils.saveFile(bytes, "question_template.xlsx", "xlsx")
+                                }
+                            },
+                            onError = { scope.launch { snackbar.showSnackbar(it) } }
+                        )
+                    }) {
+                        Icon(Icons.Default.Share, contentDescription = "下载模板")
+                    }
+                    IconButton(onClick = {
+                        val bankId = selectedBank?.id
+                        if (bankId == null) {
+                            scope.launch { snackbar.showSnackbar("请先选择一个题库") }
+                            return@IconButton
+                        }
+                        importQuestionsFromFile(bankId)
+                    }) {
+                        Icon(Icons.Default.Done, contentDescription = "导入")
+                    }
+                    IconButton(onClick = { viewModel.refreshBanks() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    }
+                }
+            }
+
+            ManagementPanel(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
             when (val state = uiState) {
                 is QuestionBankUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
                 is QuestionBankUiState.Error -> Column(
@@ -180,7 +230,7 @@ fun QuestionBankScreen() {
                             }
                         )
                         .fillMaxSize()
-                        .padding(config.screenPadding)
+                        .padding(if (isDesktop) 16.dp else config.screenPadding)
 
                     if (isDesktop) {
                         Row(
@@ -236,6 +286,8 @@ fun QuestionBankScreen() {
                             modifier = panelModifier
                         )
                     }
+                }
+            }
                 }
             }
         }

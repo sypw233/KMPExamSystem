@@ -20,6 +20,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +45,8 @@ import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigResponse
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsViewModel
@@ -56,6 +59,7 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
     val actionState by viewModel.actionState.collectAsState()
     val snackbar = remember { SnackbarHostState() }
     val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     LaunchedEffect(actionState) {
         when (val state = actionState) {
@@ -73,26 +77,47 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("AI 配置管理") },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "返回"
-                            )
+            if (!isDesktop) {
+                TopAppBar(
+                    title = { Text("AI 配置管理") },
+                    navigationIcon = {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "返回"
+                                )
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .then(if (isDesktop) Modifier.padding(config.screenPadding) else Modifier),
+            verticalArrangement = if (isDesktop) Arrangement.spacedBy(16.dp) else Arrangement.Top
         ) {
+            if (isDesktop) {
+                ManagementPageHeader(
+                    title = "系统设置",
+                    subtitle = "集中维护 AI 服务配置和系统级参数，桌面端采用后台设置列表形式。"
+                ) {
+                    IconButton(onClick = { viewModel.refresh() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "刷新")
+                    }
+                }
+            }
+
+            ManagementPanel(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopCenter
+                ) {
             when (val state = uiState) {
                 is SystemSettingsUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
                 is SystemSettingsUiState.Error -> Column(
@@ -125,6 +150,8 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
                     }
                 }
             }
+                }
+            }
         }
     }
 }
@@ -135,38 +162,78 @@ private fun ConfigItem(
     onSave: (String, String) -> Unit
 ) {
     var value by remember(config.configKey) { mutableStateOf(config.configValue) }
+    val screenConfig = LocalResponsiveConfig.current
+    val isDesktop = screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = MaterialTheme.shapes.large
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = config.configKey,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            config.description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        if (isDesktop) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(0.9f)) {
+                    Text(
+                        text = config.configKey,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    config.description?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    modifier = Modifier.weight(1.2f),
+                    singleLine = value.length <= 60,
+                    minLines = if (value.length > 60) 3 else 1
                 )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = value,
-                onValueChange = { value = it },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = if (value.length > 60) 3 else 1
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Button(
+                FilledTonalButton(
                     onClick = { onSave(config.configKey, value) },
                     enabled = value.isNotBlank()
                 ) {
                     Text("保存")
+                }
+            }
+        } else {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = config.configKey,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                config.description?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = if (value.length > 60) 3 else 1
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    Button(
+                        onClick = { onSave(config.configKey, value) },
+                        enabled = value.isNotBlank()
+                    ) {
+                        Text("保存")
+                    }
                 }
             }
         }
