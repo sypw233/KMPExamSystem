@@ -75,7 +75,7 @@ internal fun DashboardNotificationSection(
                     )
                 } else {
                     ResponsiveLazyVerticalGrid(
-                        items = notifications.take(4),
+                        items = notifications.take(6),  // 显示最多6条通知
                         key = { it.id },
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),

@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.AssistChip
@@ -84,11 +84,12 @@ internal fun GreetingSection(
                 ) {
                     if (onNavigateToExams != null) {
                         FilterChip(
+                            selected = false,
                             onClick = onNavigateToExams,
                             label = { Text("考试") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Assignment,
+                                    imageVector = Icons.AutoMirrored.Filled.Assignment,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -97,6 +98,7 @@ internal fun GreetingSection(
                     }
                     if (onNavigateToCourses != null) {
                         FilterChip(
+                            selected = false,
                             onClick = onNavigateToCourses,
                             label = { Text("课程") },
                             leadingIcon = {
@@ -110,6 +112,7 @@ internal fun GreetingSection(
                     }
                     if (onNavigateToNotifications != null) {
                         FilterChip(
+                            selected = false,
                             onClick = onNavigateToNotifications,
                             label = { Text("通知") },
                             leadingIcon = {

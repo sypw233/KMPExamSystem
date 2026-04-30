@@ -41,12 +41,6 @@ class CourseViewModel(
     private val courseRepository: CourseRepository
 ) : ViewModel() {
 
-    init {
-        // 自动加载课程列表（教师加载自己的，管理员加载全部）
-        loadAllCourses()
-        loadMyCourses()
-    }
-
     private val _allCoursesState = MutableStateFlow<CourseUiState>(CourseUiState.Loading)
     val allCoursesState: StateFlow<CourseUiState> = _allCoursesState.asStateFlow()
 
@@ -62,6 +56,12 @@ class CourseViewModel(
     // 当前正在编辑/查看的课程学生列表
     private val _courseStudents = MutableStateFlow<List<EnrollmentResponse>>(emptyList())
     val courseStudents: StateFlow<List<EnrollmentResponse>> = _courseStudents.asStateFlow()
+
+    init {
+        // 自动加载课程列表（教师加载自己的，管理员加载全部）
+        loadAllCourses()
+        loadMyCourses()
+    }
 
     /** 加载所有活跃课程 */
     fun loadAllCourses() {

@@ -12,6 +12,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,6 +47,11 @@ fun DashboardScreen(
     val notificationState by notificationViewModel.uiState.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val config = LocalResponsiveConfig.current
+
+    // 初始加载考试数据
+    LaunchedEffect(Unit) {
+        examViewModel.loadPublishedExams()
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,

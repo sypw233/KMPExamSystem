@@ -42,7 +42,7 @@ object ResponsiveUtils {
      */
     object Breakpoints {
         val COMPACT_MAX = 600.dp
-        val MEDIUM_MAX = 840.dp
+        val MEDIUM_MAX = 900.dp    // 增加到900dp，让更多设备使用桌面布局
         val EXPANDED_LARGE = 1200.dp  // 大屏桌面断点
     }
 
@@ -56,7 +56,7 @@ object ResponsiveUtils {
         val NARROW = 880.dp     // 窄内容（考试、通知）
         val FORM = 480.dp       // 表单内容（登录、注册、设置）
         val EXAM_TAKING = 800.dp     // 考试答题页
-        val SYSTEM_SETTINGS = 760.dp // 系统设置页
+        val SYSTEM_SETTINGS = 960.dp // 系统设置页（增加宽度）
         val EXAM_COMPOSE = 900.dp    // 组卷页
         val PROFILE_FORM = 420.dp    // 个人资料表单
     }

@@ -58,6 +58,12 @@ fun ExamsScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
+    // 初始加载考试数据
+    LaunchedEffect(Unit) {
+        examViewModel.loadPublishedExams()
+        examViewModel.loadEndedExams()
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
