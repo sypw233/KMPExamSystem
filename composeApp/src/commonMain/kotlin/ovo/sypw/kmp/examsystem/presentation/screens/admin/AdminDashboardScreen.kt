@@ -293,7 +293,7 @@ private fun CourseStatBar(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "均: ${averageScore?.let { "%.0f".format(it) } ?: "-"}",
+                    "均: ${averageScore?.let { String.format("%.0f", it) } ?: "-"}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
