@@ -56,9 +56,13 @@ class QuestionApi(httpClient: HttpClient) : BaseApiService(httpClient) {
         }
     }
 
-    /** 获取我创建的题目 */
-    suspend fun getMyQuestions(token: String): ApiResponse<List<QuestionResponse>> {
-        val result = getWithToken(endpoint = "$QUESTION_ENDPOINT/my", token = token)
+    /** 获取我创建的题目（分页） */
+    suspend fun getMyQuestions(token: String, page: Int = 0, size: Int = 100): ApiResponse<PageQuestionResponse> {
+        val result = getWithToken(
+            endpoint = "$QUESTION_ENDPOINT/my",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

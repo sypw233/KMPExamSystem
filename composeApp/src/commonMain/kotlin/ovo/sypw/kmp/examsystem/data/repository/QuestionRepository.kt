@@ -38,11 +38,17 @@ class QuestionRepository(
         }
     }
 
-    /** 加载我创建的题目 */
+    /** 加载我创建的题目（分页全量获取） */
     suspend fun loadMyQuestions(): Result<List<QuestionResponse>> = runWithToken { token ->
-        val r = questionApi.getMyQuestions(token)
-        if (r.code == 200 && r.data != null) { _myQuestions.value = r.data; r.data }
-        else throw Exception(r.message)
+        fetchAllPages(
+            requestPage = { page, size -> questionApi.getMyQuestions(token, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        ).also {
+            _myQuestions.value = it
+        }
     }
 
     /** 获取题目详情 */

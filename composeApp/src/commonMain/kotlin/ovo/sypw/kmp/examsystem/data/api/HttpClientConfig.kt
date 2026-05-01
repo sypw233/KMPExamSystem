@@ -79,14 +79,12 @@ object HttpClientConfig {
             // 安装内容协商插件，用于JSON序列化
             install(ContentNegotiation) {
                 json(Json {
-                    // 忽略未知字段
                     ignoreUnknownKeys = true
-                    // 允许结构化映射键
                     allowStructuredMapKeys = true
-                    // 美化输出（仅调试时使用）
                     prettyPrint = DEBUG
-                    // 兼容后端返回 msg 或 message 等别名字段
                     useAlternativeNames = true
+                    // 确保含默认值的字段也被序列化, 避免后端收到 null
+                    encodeDefaults = true
                 })
             }
 

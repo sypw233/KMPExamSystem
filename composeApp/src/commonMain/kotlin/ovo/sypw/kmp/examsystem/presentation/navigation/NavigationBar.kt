@@ -174,7 +174,6 @@ fun SideNavigationRail(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(vertical = 16.dp)
             ) {
-                AppMark(compact = true)
                 if (user != null) {
                     val displayName = user.realName ?: user.username
                     UserAvatar(displayName = displayName, size = 48)

@@ -29,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -159,22 +160,25 @@ private fun ConfigItem(
     onSave: (String, String) -> Unit
 ) {
     var value by remember(config.configKey) { mutableStateOf(config.configValue) }
+    var expanded by remember { mutableStateOf(false) }
     val screenConfig = LocalResponsiveConfig.current
     val isDesktop = screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     Card(
+        onClick = { if (!expanded) expanded = true },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = MaterialTheme.shapes.large
     ) {
-        if (isDesktop) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // 始终显示标题和描述
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(0.9f)) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = config.configKey,
                         style = MaterialTheme.typography.titleSmall,
@@ -188,48 +192,64 @@ private fun ConfigItem(
                         )
                     }
                 }
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it },
-                    modifier = Modifier.weight(1.2f),
-                    singleLine = value.length <= 60,
-                    minLines = if (value.length > 60) 3 else 1
-                )
-                FilledTonalButton(
-                    onClick = { onSave(config.configKey, value) },
-                    enabled = value.isNotBlank()
-                ) {
-                    Text("保存")
-                }
-            }
-        } else {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = config.configKey,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                config.description?.let {
+                if (!expanded) {
                     Text(
-                        text = it,
+                        text = value.take(30) + if (value.length > 30) "..." else "",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = if (value.length > 60) 3 else 1
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Button(
-                        onClick = { onSave(config.configKey, value) },
-                        enabled = value.isNotBlank()
+            }
+
+            // 展开后显示编辑区域
+            if (expanded) {
+                Spacer(modifier = Modifier.height(12.dp))
+                if (isDesktop) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("保存")
+                        OutlinedTextField(
+                            value = value,
+                            onValueChange = { value = it },
+                            modifier = Modifier.weight(1f),
+                            singleLine = value.length <= 60,
+                            minLines = if (value.length > 60) 3 else 1
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { expanded = false; value = config.configValue }) {
+                                Text("取消")
+                            }
+                            FilledTonalButton(
+                                onClick = { onSave(config.configKey, value); expanded = false },
+                                enabled = value.isNotBlank()
+                            ) {
+                                Text("保存")
+                            }
+                        }
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { value = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = if (value.length > 60) 3 else 1
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { expanded = false; value = config.configValue }) {
+                            Text("取消")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = { onSave(config.configKey, value); expanded = false },
+                            enabled = value.isNotBlank()
+                        ) {
+                            Text("保存")
+                        }
                     }
                 }
             }
