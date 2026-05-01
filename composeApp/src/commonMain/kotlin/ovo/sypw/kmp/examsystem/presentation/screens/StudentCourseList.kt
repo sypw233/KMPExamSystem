@@ -13,6 +13,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -36,18 +38,10 @@ internal fun StudentCourseList(
     val config = LocalResponsiveConfig.current
     when (state) {
         is CourseUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingContent(message = "加载课程列表...")
         }
         is CourseUiState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.message, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = onRetry) { Text("重试") }
-                }
-            }
+            ErrorContent(message = state.message, onRetry = onRetry)
         }
         is CourseUiState.Success -> {
             if (state.courses.isEmpty()) {

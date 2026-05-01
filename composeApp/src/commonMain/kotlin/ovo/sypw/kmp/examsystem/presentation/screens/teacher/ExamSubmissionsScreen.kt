@@ -49,6 +49,8 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionStatus
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.data.dto.submissionStatus
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SubmissionsUiState
@@ -98,14 +100,10 @@ fun ExamSubmissionsScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (val state = uiState) {
                 is SubmissionsUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingContent(message = "加载提交记录...")
                 }
                 is SubmissionsUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message, color = MaterialTheme.colorScheme.error)
-                    }
+                    ErrorContent(message = state.message, onRetry = { viewModel.loadSubmissions(examId) })
                 }
                 is SubmissionsUiState.Success -> {
                     if (state.submissions.isEmpty()) {
