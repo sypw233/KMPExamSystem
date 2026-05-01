@@ -102,17 +102,23 @@ fun NotificationScreen(onBack: () -> Unit) {
                 },
                 actions = {
                     if (isAdmin) {
-                        IconButton(onClick = { showSendDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = "发送通知")
+                        Button(onClick = { showSendDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("发送通知")
                         }
                     }
                     if (unreadCount > 0) {
-                        IconButton(onClick = { viewModel.markAllAsRead() }) {
-                            Icon(Icons.Default.DoneAll, contentDescription = "全部已读")
+                        TextButton(onClick = { viewModel.markAllAsRead() }) {
+                            Icon(Icons.Default.DoneAll, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("全部已读")
                         }
                     }
-                    IconButton(onClick = { viewModel.loadNotifications() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    TextButton(onClick = { viewModel.loadNotifications() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("刷新")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -122,7 +128,7 @@ fun NotificationScreen(onBack: () -> Unit) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        LaunchedEffect(uiState) {
+        LaunchedEffect(uiState !is NotificationUiState.Loading) {
             isRefreshing = false
         }
         PullToRefreshBox(
@@ -134,10 +140,6 @@ fun NotificationScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-        ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
         ) {
             when (val state = uiState) {
                 is NotificationUiState.Loading -> {
@@ -225,7 +227,6 @@ fun NotificationScreen(onBack: () -> Unit) {
                     }
                 }
             }
-        }
         }
     }
 

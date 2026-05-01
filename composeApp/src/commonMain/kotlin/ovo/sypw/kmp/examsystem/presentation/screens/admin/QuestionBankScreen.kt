@@ -26,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,9 +42,11 @@ import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.QuestionBankUiState
@@ -89,19 +92,14 @@ fun QuestionBankScreen() {
         }
     }
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is QuestionBankActionState.Success -> {
-                snackbar.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            is QuestionBankActionState.Error -> {
-                snackbar.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbar,
+        isSuccess = { it is QuestionBankActionState.Success },
+        isError = { it is QuestionBankActionState.Error },
+        getMessage = { when (it) { is QuestionBankActionState.Success -> it.message; is QuestionBankActionState.Error -> it.message; else -> "" } },
+        onConsumed = { viewModel.resetActionState() }
+    )
 
     Scaffold(
         topBar = {
@@ -120,7 +118,7 @@ fun QuestionBankScreen() {
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         viewModel.downloadTemplate(
                             onSuccess = { bytes ->
                                 scope.launch {
@@ -130,20 +128,26 @@ fun QuestionBankScreen() {
                             onError = { scope.launch { snackbar.showSnackbar(it) } }
                         )
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = "下载模板")
+                        Icon(Icons.Default.Share, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("下载模板")
                     }
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         val bankId = selectedBank?.id
                         if (bankId == null) {
                             scope.launch { snackbar.showSnackbar("请先选择一个题库") }
-                            return@IconButton
+                            return@TextButton
                         }
                         importQuestionsFromFile(bankId)
                     }) {
-                        Icon(Icons.Default.Done, contentDescription = "导入")
+                        Icon(Icons.Default.Done, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("导入")
                     }
-                    IconButton(onClick = { viewModel.refreshBanks() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    TextButton(onClick = { viewModel.refreshBanks() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("刷新")
                     }
                 }
                 )
@@ -177,7 +181,7 @@ fun QuestionBankScreen() {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("新建题库")
                     }
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         viewModel.downloadTemplate(
                             onSuccess = { bytes ->
                                 scope.launch {
@@ -187,20 +191,26 @@ fun QuestionBankScreen() {
                             onError = { scope.launch { snackbar.showSnackbar(it) } }
                         )
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = "下载模板")
+                        Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("下载模板")
                     }
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         val bankId = selectedBank?.id
                         if (bankId == null) {
                             scope.launch { snackbar.showSnackbar("请先选择一个题库") }
-                            return@IconButton
+                            return@TextButton
                         }
                         importQuestionsFromFile(bankId)
                     }) {
-                        Icon(Icons.Default.Done, contentDescription = "导入")
+                        Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("导入")
                     }
-                    IconButton(onClick = { viewModel.refreshBanks() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                    TextButton(onClick = { viewModel.refreshBanks() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("刷新")
                     }
                 }
             }
@@ -243,6 +253,7 @@ fun QuestionBankScreen() {
                                 onSelectBank = { viewModel.selectBank(it) },
                                 onEditBank = { editDialog = it },
                                 onDeleteBank = { deleteDialog = it },
+                                onSearch = { keyword -> viewModel.refreshBanks(keyword.takeIf { it.isNotBlank() }) },
                                 modifier = Modifier.weight(0.9f)
                             )
                             QuestionListPanel(
@@ -269,6 +280,7 @@ fun QuestionBankScreen() {
                             },
                             onEditBank = { editDialog = it },
                             onDeleteBank = { deleteDialog = it },
+                            onSearch = { keyword -> viewModel.refreshBanks(keyword.takeIf { it.isNotBlank() }) },
                             modifier = panelModifier
                         )
                     } else {

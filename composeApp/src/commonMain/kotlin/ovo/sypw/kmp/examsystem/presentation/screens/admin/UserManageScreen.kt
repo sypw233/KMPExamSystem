@@ -62,10 +62,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserEnabledStatus
 import ovo.sypw.kmp.examsystem.data.dto.enabledStatus
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementToolbar
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserActionState
@@ -101,19 +103,14 @@ fun UserManageScreen() {
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is UserActionState.Success -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            is UserActionState.Error -> {
-                snackbarHostState.showSnackbar("错误: ${state.message}")
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbarHostState,
+        isSuccess = { it is UserActionState.Success },
+        isError = { it is UserActionState.Error },
+        getMessage = { when (it) { is UserActionState.Success -> it.message; is UserActionState.Error -> "错误: ${it.message}"; else -> "" } },
+        onConsumed = { viewModel.resetActionState() }
+    )
 
     Scaffold(
         topBar = {

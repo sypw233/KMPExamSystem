@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import kotlinx.coroutines.launch
@@ -56,6 +57,7 @@ import kotlinx.serialization.json.Json
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionType
 import ovo.sypw.kmp.examsystem.data.dto.questionType
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 
@@ -82,20 +84,15 @@ fun GradeSubmissionScreen(
         viewModel.loadSubmissionDetail(submissionId)
     }
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is GradeActionState.Success -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetActionState()
-                onBack() // back on success
-            }
-            is GradeActionState.Error -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbarHostState,
+        isSuccess = { it is GradeActionState.Success },
+        isError = { it is GradeActionState.Error },
+        getMessage = { when (it) { is GradeActionState.Success -> it.message; is GradeActionState.Error -> it.message; else -> "" } },
+        onConsumed = { viewModel.resetActionState() },
+        onSuccess = { onBack() }
+    )
 
     // 解析学生答案 (JSON 字符串 -> Map)
     val userAnswers: Map<String, String> = remember(submission?.answers) {

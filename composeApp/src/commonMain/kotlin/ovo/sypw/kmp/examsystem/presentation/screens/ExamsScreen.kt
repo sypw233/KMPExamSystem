@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
@@ -84,7 +85,7 @@ fun ExamsScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        LaunchedEffect(notStartedState, endedState) {
+        LaunchedEffect(notStartedState is ExamListUiState.Loading, endedState is ExamListUiState.Loading) {
             isRefreshing = false
         }
         PullToRefreshBox(

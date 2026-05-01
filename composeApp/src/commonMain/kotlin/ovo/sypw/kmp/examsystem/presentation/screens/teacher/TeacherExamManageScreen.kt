@@ -49,11 +49,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamStatus
 import ovo.sypw.kmp.examsystem.data.dto.examStatus
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
@@ -111,19 +113,14 @@ fun TeacherExamManageScreen(
         viewModel.setRole(userRole)
     }
 
-    LaunchedEffect(actionState) {
-        when (val s = actionState) {
-            is ExamActionState.Success -> {
-                snackbarHostState.showSnackbar(s.message)
-                viewModel.resetActionState()
-            }
-            is ExamActionState.Error -> {
-                snackbarHostState.showSnackbar("错误: ${s.message}")
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbarHostState,
+        isSuccess = { it is ExamActionState.Success },
+        isError = { it is ExamActionState.Error },
+        getMessage = { when (it) { is ExamActionState.Success -> it.message; is ExamActionState.Error -> "错误: ${it.message}"; else -> "" } },
+        onConsumed = { viewModel.resetActionState() }
+    )
 
     composeExam?.let { exam ->
         ExamComposeScreen(

@@ -41,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel
@@ -73,19 +75,14 @@ fun ExamComposeScreen(
         }
     }
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is ExamActionState.Success -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            is ExamActionState.Error -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbarHostState,
+        isSuccess = { it is ExamActionState.Success },
+        isError = { it is ExamActionState.Error },
+        getMessage = { when (it) { is ExamActionState.Success -> it.message; is ExamActionState.Error -> it.message; else -> "" } },
+        onConsumed = { viewModel.resetActionState() }
+    )
 
     LaunchedEffect(randomComposeState) {
         when (val state = randomComposeState) {

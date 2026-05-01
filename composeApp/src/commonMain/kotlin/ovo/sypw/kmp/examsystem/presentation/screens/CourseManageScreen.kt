@@ -6,13 +6,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,6 +27,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -39,9 +45,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseActionState
@@ -63,24 +72,20 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    var searchKeyword by remember { mutableStateOf("") }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var showEditDialog by remember { mutableStateOf<CourseResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<CourseResponse?>(null) }
     var showEnrollmentDialog by remember { mutableStateOf<CourseResponse?>(null) }
 
-    LaunchedEffect(actionState) {
-        when (val s = actionState) {
-            is CourseActionState.Success -> {
-                snackbar.showSnackbar(s.message)
-                courseViewModel.resetActionState()
-            }
-            is CourseActionState.Error -> {
-                snackbar.showSnackbar(s.message)
-                courseViewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = courseViewModel.actionState.collectAsState(),
+        snackbarHostState = snackbar,
+        isSuccess = { it is CourseActionState.Success },
+        isError = { it is CourseActionState.Error },
+        getMessage = { when (it) { is CourseActionState.Success -> it.message; is CourseActionState.Error -> it.message; else -> "" } },
+        onConsumed = { courseViewModel.resetActionState() }
+    )
 
     Scaffold(
         topBar = {
@@ -135,64 +140,103 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
             }
 
             ManagementPanel(modifier = Modifier.fillMaxSize()) {
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = {
-                        isRefreshing = true
-                        if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                    },
-                    modifier = Modifier.fillMaxSize()
-                ) {
-        val state = if (userRole == UserRole.ADMIN) allCoursesState else myCoursesState
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            when (val s = state) {
-                is CourseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
-                is CourseUiState.Error -> {
-                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(s.message, color = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = {
-                            if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
-                        }) { Text("重试") }
-                    }
-                }
-                is CourseUiState.Success -> {
-                    if (s.courses.isEmpty()) {
-                        Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
-                    } else {
-                        ResponsiveLazyVerticalGrid(
-                            items = s.courses,
-                            key = { it.id },
-                            modifier = Modifier
-                                .then(
-                                    if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
-                                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
-                                    } else {
-                                        Modifier
-                                    }
-                                )
-                                .fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = config.screenPadding,
-                                end = config.screenPadding,
-                                top = config.screenPadding,
-                                bottom = config.screenPadding + 80.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
-                        ) { course ->
-                            ManageCourseCard(
-                                course = course,
-                                onEdit = { showEditDialog = course },
-                                onDelete = { showDeleteConfirm = course },
-                                onManageEnrollments = { showEnrollmentDialog = course }
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // 搜索框
+                    OutlinedTextField(
+                        value = searchKeyword,
+                        onValueChange = { searchKeyword = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .height(48.dp),
+                        placeholder = { Text("搜索课程名称", style = MaterialTheme.typography.bodySmall) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
+                        },
+                        trailingIcon = {
+                            if (searchKeyword.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        searchKeyword = ""
+                                        courseViewModel.searchCourses("")
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = {
+                            courseViewModel.searchCourses(searchKeyword)
+                        })
+                    )
+
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            isRefreshing = true
+                            if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses(keyword = searchKeyword.takeIf { it.isNotBlank() }) else courseViewModel.loadMyCourses()
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val state = if (userRole == UserRole.ADMIN) allCoursesState else myCoursesState
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                            when (val s = state) {
+                                is CourseUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
+                                is CourseUiState.Error -> {
+                                    Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(s.message, color = MaterialTheme.colorScheme.error)
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Button(onClick = {
+                                            if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses(keyword = searchKeyword.takeIf { it.isNotBlank() }) else courseViewModel.loadMyCourses()
+                                        }) { Text("重试") }
+                                    }
+                                }
+                                is CourseUiState.Success -> {
+                                    if (s.courses.isEmpty()) {
+                                        Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
+                                    } else {
+                                        ResponsiveLazyVerticalGrid(
+                                            items = s.courses,
+                                            key = { it.id },
+                                            modifier = Modifier
+                                                .then(
+                                                    if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) {
+                                                        Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL)
+                                                    } else {
+                                                        Modifier
+                                                    }
+                                                )
+                                                .fillMaxSize(),
+                                            contentPadding = PaddingValues(
+                                                start = config.screenPadding,
+                                                end = config.screenPadding,
+                                                top = config.screenPadding,
+                                                bottom = config.screenPadding + 80.dp
+                                            ),
+                                            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                                            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+                                        ) { course ->
+                                            ManageCourseCard(
+                                                course = course,
+                                                onEdit = { showEditDialog = course },
+                                                onDelete = { showDeleteConfirm = course },
+                                                onManageEnrollments = { showEnrollmentDialog = course }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-        }
             }
         }
     }

@@ -41,11 +41,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.AiConfigResponse
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsUiState
@@ -61,19 +63,14 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
     val config = LocalResponsiveConfig.current
     val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
-    LaunchedEffect(actionState) {
-        when (val state = actionState) {
-            is SystemSettingsActionState.Success -> {
-                snackbar.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            is SystemSettingsActionState.Error -> {
-                snackbar.showSnackbar(state.message)
-                viewModel.resetActionState()
-            }
-            else -> Unit
-        }
-    }
+    ActionEffect(
+        actionState = viewModel.actionState.collectAsState(),
+        snackbarHostState = snackbar,
+        isSuccess = { it is SystemSettingsActionState.Success },
+        isError = { it is SystemSettingsActionState.Error },
+        getMessage = { when (it) { is SystemSettingsActionState.Success -> it.message; is SystemSettingsActionState.Error -> it.message; else -> "" } },
+        onConsumed = { viewModel.resetActionState() }
+    )
 
     Scaffold(
         topBar = {
