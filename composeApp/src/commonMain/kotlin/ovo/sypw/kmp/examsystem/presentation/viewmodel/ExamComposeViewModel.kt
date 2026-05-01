@@ -39,7 +39,8 @@ sealed interface RandomComposeState {
         val expectedTotalScore: Int? = null,
         val sections: List<SectionRule> = emptyList(),
         val shuffleQuestions: Boolean = true,
-        val lenientMode: Boolean = false
+        val lenientMode: Boolean = false,
+        val errorMessage: String? = null
     ) : RandomComposeState
     data class Success(val message: String) : RandomComposeState
     data class Error(val message: String) : RandomComposeState
@@ -153,8 +154,14 @@ class ExamComposeViewModel(
                     _randomComposeState.value = RandomComposeState.Success("智能组卷成功，已生成 ${it.questionCount} 题")
                     refreshData()
                 }
-                .onFailure {
-                    _randomComposeState.value = RandomComposeState.Error(it.message ?: "智能组卷失败")
+                .onFailure { e ->
+                    // 失败时回到配置状态并显示错误, 不关闭弹窗
+                    val currentConfig = _randomComposeState.value
+                    _randomComposeState.value = if (currentConfig is RandomComposeState.Configuring) {
+                        currentConfig.copy(errorMessage = e.message ?: "智能组卷失败")
+                    } else {
+                        RandomComposeState.Error(e.message ?: "智能组卷失败")
+                    }
                 }
         }
     }

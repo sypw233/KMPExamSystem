@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +56,29 @@ fun ExamFormDialog(
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
+
+    // 根据开始时间和时长自动计算结束时间
+    LaunchedEffect(startTime, duration) {
+        if (startTime.isNotBlank() && duration.toIntOrNull() != null && duration.toInt() > 0) {
+            try {
+                val parts = startTime.replace('T', ' ').split(" ")
+                val dateParts = parts[0].split("-")
+                val timeParts = parts[1].split(":")
+                val startInstant = kotlinx.datetime.LocalDateTime(
+                    dateParts[0].toInt(), dateParts[1].toInt(), dateParts[2].toInt(),
+                    timeParts[0].toInt(), timeParts[1].toInt()
+                ).toInstant(kotlinx.datetime.TimeZone.currentSystemDefault())
+                val endInstant = startInstant.plus(duration.toInt(), kotlinx.datetime.DateTimeUnit.MINUTE)
+                val endLocal = endInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+                endTime = "%04d-%02d-%02dT%02d:%02d:00".format(
+                    endLocal.year, endLocal.monthNumber, endLocal.dayOfMonth,
+                    endLocal.hour, endLocal.minute
+                )
+            } catch (_: Exception) {
+                // 解析失败时不自动计算
+            }
+        }
+    }
 
     val isValid = examTitle.isNotBlank() && duration.toIntOrNull() != null
             && totalScore.toIntOrNull() != null && startTime.isNotBlank() && endTime.isNotBlank()

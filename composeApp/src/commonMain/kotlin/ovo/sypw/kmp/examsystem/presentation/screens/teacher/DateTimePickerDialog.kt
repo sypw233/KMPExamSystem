@@ -60,7 +60,10 @@ private fun parseDateTimeComponents(isoDateTime: String): List<Int> {
             timeParts[1].toInt()
         )
     } catch (_: Exception) {
-        listOf(2024, 1, 1, 9, 0)
+        // 默认使用当前时间
+        val now = kotlin.time.Clock.System.now()
+        val localDateTime = now.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        listOf(localDateTime.year, localDateTime.monthNumber, localDateTime.dayOfMonth, localDateTime.hour, localDateTime.minute)
     }
 }
 

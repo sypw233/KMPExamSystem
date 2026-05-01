@@ -100,12 +100,16 @@ class ExamViewModel(
         }
     }
 
-    /** 加载已发布的考试（状态=1），学生端使用 */
+    /** 加载已发布的考试（学生用可参加接口，教师/管理员用状态筛选） */
     fun loadPublishedExams() {
         viewModelScope.launch {
             _notStartedExams.value = ExamListUiState.Loading
-            examRepository.loadExamsByStatus(1)
-                .onSuccess { exams ->
+            val result = if (_userRole.value == UserRole.STUDENT) {
+                examRepository.getMyAvailableExams()
+            } else {
+                examRepository.loadExamsByStatus(1)
+            }
+            result.onSuccess { exams ->
                     _notStartedExams.value = ExamListUiState.Success(exams)
                     _upcomingExams.value = ExamListUiState.Success(exams.take(3))
                 }
@@ -115,12 +119,16 @@ class ExamViewModel(
         }
     }
 
-    /** 加载已结束的考试（状态=2） */
+    /** 加载已结束的考试（学生用已完成接口，教师/管理员用状态筛选） */
     fun loadEndedExams() {
         viewModelScope.launch {
             _endedExams.value = ExamListUiState.Loading
-            examRepository.loadExamsByStatus(2)
-                .onSuccess { _endedExams.value = ExamListUiState.Success(it) }
+            val result = if (_userRole.value == UserRole.STUDENT) {
+                examRepository.getMyCompletedExams()
+            } else {
+                examRepository.loadExamsByStatus(2)
+            }
+            result.onSuccess { _endedExams.value = ExamListUiState.Success(it) }
                 .onFailure { e -> _endedExams.value = ExamListUiState.Error(e.message ?: "加载历史考试失败") }
         }
     }

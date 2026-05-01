@@ -85,13 +85,10 @@ fun ExamComposeScreen(
         onConsumed = { viewModel.resetActionState() }
     )
 
+    // 只在成功时关闭组卷弹窗, 失败时弹窗内显示错误
     LaunchedEffect(randomComposeState) {
         when (val state = randomComposeState) {
             is RandomComposeState.Success -> {
-                snackbarHostState.showSnackbar(state.message)
-                viewModel.resetRandomComposeState()
-            }
-            is RandomComposeState.Error -> {
                 snackbarHostState.showSnackbar(state.message)
                 viewModel.resetRandomComposeState()
             }

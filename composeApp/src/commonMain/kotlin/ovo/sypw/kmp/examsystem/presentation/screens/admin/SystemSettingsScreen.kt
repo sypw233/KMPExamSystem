@@ -165,7 +165,7 @@ private fun ConfigItem(
     val isDesktop = screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     Card(
-        onClick = { if (!expanded) expanded = true },
+        onClick = { expanded = !expanded },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),

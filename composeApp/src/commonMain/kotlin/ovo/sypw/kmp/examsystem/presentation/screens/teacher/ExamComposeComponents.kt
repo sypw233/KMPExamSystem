@@ -68,6 +68,15 @@ internal fun RandomComposeDialog(
         title = { Text("智能随机组卷") },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp).verticalScroll(rememberScrollState())) {
+                // 显示错误信息（组卷失败时不关闭弹窗）
+                config.errorMessage?.let { error ->
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    )
+                }
                 if (config.banks.isEmpty()) {
                     Text("暂无可用题库，请先创建题库", color = MaterialTheme.colorScheme.error)
                 } else {
