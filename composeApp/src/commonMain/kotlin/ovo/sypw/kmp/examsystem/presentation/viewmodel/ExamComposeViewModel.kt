@@ -60,19 +60,19 @@ class ExamComposeViewModel(
     private val _randomComposeState = MutableStateFlow<RandomComposeState>(RandomComposeState.Idle)
     val randomComposeState: StateFlow<RandomComposeState> = _randomComposeState.asStateFlow()
 
-    // Keep track of current context to reload easily
-    private var currentExamId: Long? = null
-    private var currentCourseId: Long? = null
+    // 使用 StateFlow 保证并发可见性
+    private val _currentExamId = MutableStateFlow<Long?>(null)
+    private val _currentCourseId = MutableStateFlow<Long?>(null)
 
     fun loadComposeData(examId: Long, courseId: Long) {
-        currentExamId = examId
-        currentCourseId = courseId
+        _currentExamId.value = examId
+        _currentCourseId.value = courseId
         refreshData()
     }
 
     private fun refreshData() {
-        val examId = currentExamId ?: return
-        val courseId = currentCourseId ?: return
+        val examId = _currentExamId.value ?: return
+        val courseId = _currentCourseId.value ?: return
 
         _uiState.value = ExamComposeUiState.Loading
         viewModelScope.launch {
@@ -138,7 +138,7 @@ class ExamComposeViewModel(
         shuffleQuestions: Boolean = true,
         lenientMode: Boolean = false
     ) {
-        val examId = currentExamId ?: return
+        val examId = _currentExamId.value ?: return
         if (_randomComposeState.value is RandomComposeState.Loading) return
         _randomComposeState.value = RandomComposeState.Loading
         viewModelScope.launch {
@@ -164,7 +164,7 @@ class ExamComposeViewModel(
     }
 
     fun addQuestionToExam(questionId: Long, score: Int) {
-        val examId = currentExamId ?: return
+        val examId = _currentExamId.value ?: return
         if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
@@ -184,7 +184,7 @@ class ExamComposeViewModel(
     }
 
     fun removeQuestionFromExam(questionId: Long) {
-        val examId = currentExamId ?: return
+        val examId = _currentExamId.value ?: return
         if (_actionState.value is ExamActionState.Loading) return
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {

@@ -104,7 +104,7 @@ object StringUtils {
             (log10(sizeInBytes.toDouble()) / log10(1024.0)).toInt().coerceAtMost(units.size - 1)
 
         val size = sizeInBytes / 1024.0.pow(digitGroups.toDouble())
-        return String.format("%.1f %s", size, units[digitGroups])
+        return String.Companion.format("%.1f %s", size, units[digitGroups])
     }
 
     /**
