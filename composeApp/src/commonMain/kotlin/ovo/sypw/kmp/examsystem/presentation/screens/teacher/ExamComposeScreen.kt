@@ -42,7 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
-import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel
@@ -137,18 +138,13 @@ fun ExamComposeScreen(
         Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             when (val state = uiState) {
                 is ExamComposeUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingContent(message = "加载组卷数据...")
                 }
                 is ExamComposeUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(state.message, color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { viewModel.loadComposeData(examId, courseId) }) { Text("重试") }
-                        }
-                    }
+                    ErrorContent(
+                        message = state.message,
+                        onRetry = { viewModel.loadComposeData(examId, courseId) }
+                    )
                 }
                 is ExamComposeUiState.Success -> {
                     val currentScore = state.examQuestions.sumOf { it.score }

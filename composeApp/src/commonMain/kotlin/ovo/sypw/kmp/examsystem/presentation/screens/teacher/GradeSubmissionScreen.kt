@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import kotlinx.coroutines.launch
@@ -123,9 +124,7 @@ fun GradeSubmissionScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         if (submission == null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingContent(message = "加载答卷详情...")
             return@Scaffold
         }
 
