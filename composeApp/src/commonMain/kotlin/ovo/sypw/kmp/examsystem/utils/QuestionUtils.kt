@@ -2,6 +2,8 @@ package ovo.sypw.kmp.examsystem.utils
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import ovo.sypw.kmp.examsystem.data.dto.QuestionDifficulty
+import ovo.sypw.kmp.examsystem.data.dto.QuestionType
 
 /**
  * 题目相关工具函数
@@ -11,31 +13,34 @@ object QuestionUtils {
 
     private val jsonParser = Json { ignoreUnknownKeys = true }
 
-    /** 题目类型 → 中文标签 */
-    fun questionTypeLabel(type: String): String = when (type) {
-        "single" -> "单选"
-        "multiple" -> "多选"
-        "true_false" -> "判断"
-        "fill_blank" -> "填空"
-        "short_answer" -> "简答"
-        else -> type
+    /** 题目类型枚举 → 中文标签 */
+    fun questionTypeLabel(type: QuestionType): String = when (type) {
+        QuestionType.SINGLE -> "单选题"
+        QuestionType.MULTIPLE -> "多选题"
+        QuestionType.TRUE_FALSE -> "判断题"
+        QuestionType.FILL_BLANK -> "填空题"
+        QuestionType.SHORT_ANSWER -> "简答题"
     }
 
-    /** 题目类型选项列表（用于下拉菜单） */
-    val questionTypeOptions = listOf(
-        "single" to "单选",
-        "multiple" to "多选",
-        "true_false" to "判断",
-        "fill_blank" to "填空",
-        "short_answer" to "简答"
-    )
+    /** 题目类型字符串 → 中文标签 (向后兼容) */
+    fun questionTypeLabel(type: String): String = questionTypeLabel(QuestionType.fromValue(type))
 
-    /** 难度选项列表（用于下拉菜单） */
-    val difficultyOptions = listOf(
-        "easy" to "简单",
-        "medium" to "中等",
-        "hard" to "困难"
-    )
+    /** 题目类型选项列表（用于下拉菜单）, value -> label */
+    val questionTypeOptions: List<Pair<String, String>> = QuestionType.entries.map {
+        it.value to questionTypeLabel(it)
+    }
+
+    /** 难度枚举 → 中文标签 */
+    fun difficultyLabel(difficulty: QuestionDifficulty): String = when (difficulty) {
+        QuestionDifficulty.EASY -> "简单"
+        QuestionDifficulty.MEDIUM -> "中等"
+        QuestionDifficulty.HARD -> "困难"
+    }
+
+    /** 难度选项列表（用于下拉菜单）, value -> label */
+    val difficultyOptions: List<Pair<String, String>> = QuestionDifficulty.entries.map {
+        it.value to difficultyLabel(it)
+    }
 
     /**
      * 解析选项 JSON 字符串

@@ -106,7 +106,7 @@ private fun StatsSummaryCard(statistics: StudentStatisticsResponse) {
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatItem(label = "参加考试", value = "${statistics.totalExams}")
-                StatItem(label = "平均分", value = statistics.averageScore?.let { "%.1f".format(it) } ?: "-")
+                StatItem(label = "平均分", value = statistics.averageScore?.let { String.format("%.1f", it) } ?: "-")
                 StatItem(label = "最高分", value = statistics.highestScore?.toString() ?: "-")
             }
 

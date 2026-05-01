@@ -54,9 +54,9 @@ fun StudentSelector(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var searchKeyword by remember { mutableStateOf("") }
-    var retryTrigger by remember { mutableStateOf(0) }
+    var loadVersion by remember { mutableStateOf(0) }
 
-    LaunchedEffect(retryTrigger) {
+    LaunchedEffect(loadVersion) {
         isLoading = true
         errorMessage = null
         userManageRepository.loadUsersByRole("student")
@@ -64,6 +64,9 @@ fun StudentSelector(
             .onFailure { errorMessage = it.message ?: "加载学生列表失败" }
         isLoading = false
     }
+
+    // 重试加载
+    val retryLoad: () -> Unit = { loadVersion++ }
 
     val filteredStudents = remember(students, searchKeyword) {
         if (searchKeyword.isBlank()) {
@@ -85,17 +88,33 @@ fun StudentSelector(
                 OutlinedTextField(
                     value = searchKeyword,
                     onValueChange = { searchKeyword = it },
-                    label = { Text("搜索学生") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    placeholder = { Text("搜索学生", style = MaterialTheme.typography.bodySmall) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
                     trailingIcon = {
                         if (searchKeyword.isNotEmpty()) {
-                            IconButton(onClick = { searchKeyword = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "清除")
+                            IconButton(
+                                onClick = { searchKeyword = "" },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "清除",
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall
                 )
 
                 Row(
@@ -137,7 +156,7 @@ fun StudentSelector(
                                 Text(loadError, color = MaterialTheme.colorScheme.error)
                                 Spacer(modifier = Modifier.height(8.dp))
                                 TextButton(onClick = {
-                                    retryTrigger++
+                                    retryLoad()
                                 }) {
                                     Text("重试")
                                 }

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SectionRule
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RandomComposeState
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -206,14 +207,7 @@ internal fun ComposeQuestionCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val typeText = when (question.type) {
-                        "single" -> "单选题"
-                        "multiple" -> "多选题"
-                        "true_false" -> "判断题"
-                        "fill_blank" -> "填空题"
-                        "short_answer" -> "简答题"
-                        else -> question.type
-                    }
+                    val typeText = QuestionUtils.questionTypeLabel(question.type)
                     Text("[$typeText]", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     Text("${question.score} 分", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                 }
@@ -239,13 +233,7 @@ private fun SectionRuleItem(
     onUpdate: (SectionRule) -> Unit,
     onDelete: () -> Unit
 ) {
-    val typeOptions = listOf(
-        "single" to "单选题",
-        "multiple" to "多选题",
-        "true_false" to "判断题",
-        "fill_blank" to "填空题",
-        "short_answer" to "简答题"
-    )
+    val typeOptions = QuestionUtils.questionTypeOptions
     var typeExpanded by remember { mutableStateOf(false) }
     val typeLabel = typeOptions.find { it.first == rule.type }?.second ?: rule.type
 

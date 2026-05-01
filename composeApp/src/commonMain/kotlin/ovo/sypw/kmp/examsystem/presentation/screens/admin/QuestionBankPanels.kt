@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
@@ -41,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
@@ -58,80 +62,124 @@ internal fun BankListPanel(
     onSelectBank: (QuestionBankResponse) -> Unit,
     onEditBank: (QuestionBankResponse) -> Unit,
     onDeleteBank: (QuestionBankResponse) -> Unit,
+    onSearch: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var searchKeyword by remember { mutableStateOf("") }
+
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        if (banks.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(24.dp)
-                ) {
-                    Text(
-                        "暂无题库",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        "点击右下角按钮创建新题库",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 搜索框
+            if (onSearch != null) {
+                OutlinedTextField(
+                    value = searchKeyword,
+                    onValueChange = { searchKeyword = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .height(48.dp),
+                    placeholder = { Text("搜索题库", style = MaterialTheme.typography.bodySmall) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchKeyword.isNotEmpty()) {
+                            IconButton(
+                                onClick = {
+                                    searchKeyword = ""
+                                    onSearch("")
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = {
+                        onSearch(searchKeyword)
+                    })
+                )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(banks, key = { it.id }) { bank ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (selectedBank?.id == bank.id)
-                                MaterialTheme.colorScheme.secondaryContainer
-                            else
-                                MaterialTheme.colorScheme.surface
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        onClick = { onSelectBank(bank) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
+
+            if (banks.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(24.dp)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                bank.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                bank.description.orEmpty().ifBlank { "暂无描述" },
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "暂无题库",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "点击右下角按钮创建新题库",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(banks, key = { it.id }) { bank ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selectedBank?.id == bank.id)
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                else
+                                    MaterialTheme.colorScheme.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            onClick = { onSelectBank(bank) },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    "题目数: ${bank.questionCount}",
-                                    style = MaterialTheme.typography.labelSmall
+                                    bank.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
                                 )
-                                TextButton(onClick = { onEditBank(bank) }) {
-                                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text("编辑")
-                                }
-                                TextButton(onClick = { onDeleteBank(bank) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(3.dp))
-                                    Text("删除")
+                                Text(
+                                    bank.description.orEmpty().ifBlank { "暂无描述" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "题目数: ${bank.questionCount}",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                    TextButton(onClick = { onEditBank(bank) }) {
+                                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("编辑")
+                                    }
+                                    TextButton(onClick = { onDeleteBank(bank) }) {
+                                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text("删除")
+                                    }
                                 }
                             }
                         }
@@ -194,14 +242,8 @@ internal fun QuestionListPanel(
                 var filterType by remember { mutableStateOf<String?>(null) }
                 var filterDifficulty by remember { mutableStateOf<String?>(null) }
 
-                val typeChips = listOf(
-                    "single" to "单选",
-                    "multiple" to "多选",
-                    "true_false" to "判断",
-                    "fill_blank" to "填空",
-                    "short_answer" to "简答"
-                )
-                val diffChips = listOf("easy" to "简单", "medium" to "中等", "hard" to "困难")
+                val typeChips = QuestionUtils.questionTypeOptions
+                val diffChips = QuestionUtils.difficultyOptions
 
                 val filteredQuestions = bankQuestions.filter { q ->
                     val matchSearch = searchText.isBlank() || q.content.contains(searchText, ignoreCase = true)
@@ -213,10 +255,20 @@ internal fun QuestionListPanel(
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
-                    label = { Text("搜索题目内容") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .padding(bottom = 8.dp),
+                    placeholder = { Text("搜索题目内容", style = MaterialTheme.typography.bodySmall) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                    textStyle = MaterialTheme.typography.bodySmall
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 4.dp)) {
