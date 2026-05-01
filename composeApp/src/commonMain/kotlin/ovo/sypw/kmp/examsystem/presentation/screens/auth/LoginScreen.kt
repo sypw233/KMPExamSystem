@@ -47,22 +47,23 @@ fun LoginScreen(
     var passwordInteracted by remember { mutableStateOf(false) }
     val config = LocalResponsiveConfig.current
 
-    // 监听登录成功
-    LaunchedEffect(uiState) {
-        when (val state = uiState) {
-            is LoginUiState.Success -> {
-                onLoginSuccess()
-                viewModel.resetState()
+    // 监听登录结果 (仅响应 Success/Error, 避免 resetState 触发的无用重组)
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState }.collect { state ->
+            when (state) {
+                is LoginUiState.Success -> {
+                    onLoginSuccess()
+                    viewModel.resetState()
+                }
+                is LoginUiState.Error -> {
+                    dialogManager.showError(
+                        title = "登录失败",
+                        message = state.message
+                    )
+                    viewModel.resetState()
+                }
+                else -> {}
             }
-            is LoginUiState.Error -> {
-                // 显示错误弹窗
-                dialogManager.showError(
-                    title = "登录失败",
-                    message = state.message
-                )
-                viewModel.resetState()
-            }
-            else -> {}
         }
     }
 

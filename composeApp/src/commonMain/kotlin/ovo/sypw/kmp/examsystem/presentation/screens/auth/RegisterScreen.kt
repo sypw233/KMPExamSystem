@@ -58,35 +58,36 @@ fun RegisterScreen(
     var emailInteracted by remember { mutableStateOf(false) }
     val config = LocalResponsiveConfig.current
 
-    // 监听注册成功和错误
-    LaunchedEffect(uiState) {
-        when (val state = uiState) {
-            is RegisterUiState.Success -> {
-                dialogManager.showSuccess(
-                    title = "注册成功",
-                    message = "欢迎加入在线考试系统！",
-                    onConfirm = {
-                        onRegisterSuccess()
-                        viewModel.resetState()
-                    }
-                )
-            }
-            is RegisterUiState.Error -> {
-                // 根据错误类型显示不同的弹窗
-                if (state.message.contains("已存在") || state.message.contains("格式")) {
-                    dialogManager.showWarning(
-                        title = "注意",
-                        message = state.message
-                    )
-                } else {
-                    dialogManager.showError(
-                        title = "注册失败",
-                        message = state.message
+    // 监听注册结果 (仅响应 Success/Error, 避免 resetState 触发的无用重组)
+    LaunchedEffect(Unit) {
+        snapshotFlow { uiState }.collect { state ->
+            when (state) {
+                is RegisterUiState.Success -> {
+                    dialogManager.showSuccess(
+                        title = "注册成功",
+                        message = "欢迎加入在线考试系统！",
+                        onConfirm = {
+                            onRegisterSuccess()
+                            viewModel.resetState()
+                        }
                     )
                 }
-                viewModel.resetState()
+                is RegisterUiState.Error -> {
+                    if (state.message.contains("已存在") || state.message.contains("格式")) {
+                        dialogManager.showWarning(
+                            title = "注意",
+                            message = state.message
+                        )
+                    } else {
+                        dialogManager.showError(
+                            title = "注册失败",
+                            message = state.message
+                        )
+                    }
+                    viewModel.resetState()
+                }
+                else -> {}
             }
-            else -> {}
         }
     }
 
