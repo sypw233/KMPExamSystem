@@ -39,6 +39,8 @@ import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AdminDashboardData
@@ -74,32 +76,10 @@ fun AdminDashboardScreen() {
 
             when (val state = uiState) {
                 is AdminDashboardUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingContent(message = "加载仪表盘数据...")
                 }
                 is AdminDashboardUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = state.message,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Button(onClick = { viewModel.refresh() }) {
-                                Text("重试")
-                            }
-                        }
-                    }
+                    ErrorContent(message = state.message, onRetry = { viewModel.refresh() })
                 }
                 is AdminDashboardUiState.Success -> {
                     val data = state.data
@@ -185,20 +165,11 @@ fun AdminDashboardScreen() {
                 contentAlignment = Alignment.TopCenter
             ) {
                 when (val state = uiState) {
-                    is AdminDashboardUiState.Loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 32.dp))
-                    is AdminDashboardUiState.Error -> Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(onClick = { viewModel.refresh() }) {
-                            Text("重试")
-                        }
-                    }
+                    is AdminDashboardUiState.Loading -> LoadingContent(message = "加载中...")
+                    is AdminDashboardUiState.Error -> ErrorContent(
+                        message = state.message,
+                        onRetry = { viewModel.refresh() }
+                    )
                     is AdminDashboardUiState.Success -> {
                         val data = state.data
                         val statPairs = remember(data) { buildStatPairs(data) }

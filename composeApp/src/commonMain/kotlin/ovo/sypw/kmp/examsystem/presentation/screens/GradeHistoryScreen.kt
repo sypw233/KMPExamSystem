@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsViewModel
 
@@ -85,20 +87,13 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
         ) {
             when (val state = uiState) {
                 is StatisticsUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingContent(message = "加载成绩数据...")
                 }
                 is StatisticsUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(state.message, color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { userId?.let { viewModel.loadStudentStatistics(it) } }) {
-                                Text("重试")
-                            }
-                        }
-                    }
+                    ErrorContent(
+                        message = state.message,
+                        onRetry = { userId?.let { viewModel.loadStudentStatistics(it) } }
+                    )
                 }
                 is StatisticsUiState.Success -> {
                     GradeHistoryContent(statistics = state.statistics, onRecordClick = { detailSubmissionId = it })

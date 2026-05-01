@@ -2,6 +2,8 @@ package ovo.sypw.kmp.examsystem.presentation.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.presentation.components.common.EmptyState
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
@@ -108,28 +113,18 @@ internal fun ExamList(
     val config = LocalResponsiveConfig.current
     when (state) {
         is ExamListUiState.Loading -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            LoadingContent(message = "加载考试列表...")
         }
         is ExamListUiState.Error -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(state.message, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onRetry) { Text("重试") }
-                }
-            }
+            ErrorContent(message = state.message, onRetry = onRetry)
         }
         is ExamListUiState.Success -> {
             if (state.exams.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        "暂无考试",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                EmptyState(
+                    icon = Icons.Default.Quiz,
+                    title = "暂无考试",
+                    subtitle = "还没有可参加的考试, 请稍后再来"
+                )
             } else if (isDesktop) {
                 ResponsiveLazyVerticalGrid(
                     items = state.exams,

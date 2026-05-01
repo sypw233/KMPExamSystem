@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
@@ -84,13 +85,7 @@ fun ExamTakingScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         when (val state = uiState) {
             is ExamTakingUiState.Loading, ExamTakingUiState.Idle -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("正在加载考试...")
-                    }
-                }
+                LoadingContent(message = "正在加载考试...")
             }
             is ExamTakingUiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

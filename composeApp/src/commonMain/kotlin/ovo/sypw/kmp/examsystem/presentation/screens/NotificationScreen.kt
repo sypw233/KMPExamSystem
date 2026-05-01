@@ -44,6 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.presentation.components.common.EmptyState
+import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
@@ -143,37 +146,18 @@ fun NotificationScreen(onBack: () -> Unit) {
         ) {
             when (val state = uiState) {
                 is NotificationUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    LoadingContent(message = "加载通知列表...")
                 }
                 is NotificationUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(state.message, color = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = { viewModel.loadNotifications() }) { Text("重试") }
-                        }
-                    }
+                    ErrorContent(message = state.message, onRetry = { viewModel.loadNotifications() })
                 }
                 is NotificationUiState.Success -> {
                     if (state.notifications.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.Notifications,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = MaterialTheme.colorScheme.outlineVariant
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    "暂无通知",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
+                        EmptyState(
+                            icon = Icons.Default.Notifications,
+                            title = "暂无通知",
+                            subtitle = "暂时没有新通知, 稍后再来看看"
+                        )
                     } else {
                         val hasMore by viewModel.hasMore.collectAsState()
                         val listItems = buildList {
