@@ -42,7 +42,9 @@ import androidx.compose.foundation.layout.Arrangement
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionType
 import ovo.sypw.kmp.examsystem.data.dto.SubjectiveGradeDetail
+import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -206,7 +208,7 @@ private fun DetailQuestionItem(
     val q = examQuestion.question ?: return
 
     // 客观题的对错判断
-    val isObjective = q.type in listOf("single", "multiple", "true_false")
+    val isObjective = q.questionType in listOf(QuestionType.SINGLE, QuestionType.MULTIPLE, QuestionType.TRUE_FALSE)
     val hasAnswered = studentAnswer.isNotBlank()
 
     // 多选题区分"全对""部分正确""全错"
@@ -215,7 +217,7 @@ private fun DetailQuestionItem(
     if (!isObjective || !hasAnswered) {
         isCorrect = false
         isPartial = false
-    } else if (q.type == "multiple") {
+    } else if (q.questionType == QuestionType.MULTIPLE) {
         val correctSet = (q.answer ?: "").split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
         val studentSet = studentAnswer.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
         isCorrect = studentSet == correctSet

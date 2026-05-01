@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionType
+import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
@@ -121,7 +123,7 @@ internal fun QuestionItem(
                         onValueChange = onAnswerChange,
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("答案") },
-                        minLines = if (question.type == "short_answer") 4 else 2,
+                        minLines = if (question.questionType == QuestionType.SHORT_ANSWER) 4 else 2,
                         shape = MaterialTheme.shapes.small
                     )
                 }

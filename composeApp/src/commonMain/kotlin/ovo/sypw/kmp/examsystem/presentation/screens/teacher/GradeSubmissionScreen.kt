@@ -54,6 +54,8 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionType
+import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 
@@ -106,7 +108,7 @@ fun GradeSubmissionScreen(
     }
 
     // 过滤出主观题 (包括简答题和部分填空题，默认短答题 short_answer)
-    val subjectiveQuestions = questions.filter { it.question?.type == "short_answer" }
+    val subjectiveQuestions = questions.filter { it.question?.questionType == QuestionType.SHORT_ANSWER }
 
     Scaffold(
         topBar = {
