@@ -63,21 +63,8 @@ data class ChangePasswordRequest(
     val newPassword: String
 )
 
-/**
- * 分页用户列表
- */
-@Serializable
-data class PageUserResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<UserResponse> = emptyList(),
-    val number: Int = 0,        // 当前页码（从 0 开始）
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页用户列表 */
+typealias PageUserResponse = PageResponse<UserResponse>
 
 /**
  * 修改个人信息请求（当前登录用户）

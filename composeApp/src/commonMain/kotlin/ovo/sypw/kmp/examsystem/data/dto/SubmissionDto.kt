@@ -73,19 +73,6 @@ data class ProctoringEventResponse(
     val eventTime: String? = null
 )
 
-/**
- * 分页提交记录响应
- */
-@Serializable
-data class PageSubmissionResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<SubmissionResponse> = emptyList(),
-    val number: Int = 0,
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页提交记录响应 */
+typealias PageSubmissionResponse = PageResponse<SubmissionResponse>
 

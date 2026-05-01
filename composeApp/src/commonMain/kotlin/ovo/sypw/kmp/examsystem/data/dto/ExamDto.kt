@@ -112,21 +112,8 @@ data class ExamQuestionRequest(
     val score: Int
 )
 
-/**
- * 分页考试响应
- */
-@Serializable
-data class PageExamResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<ExamResponse> = emptyList(),
-    val number: Int = 0,
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页考试响应 */
+typealias PageExamResponse = PageResponse<ExamResponse>
 
 /**
  * 学生考试试卷题目响应（不含答案和解析）
@@ -174,19 +161,6 @@ data class ComposeRandomExamRequest(
     val options: ComposeOptions? = null
 )
 
-/**
- * 分页题目响应
- */
-@Serializable
-data class PageQuestionResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<QuestionResponse> = emptyList(),
-    val number: Int = 0,
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页题目响应 */
+typealias PageQuestionResponse = PageResponse<QuestionResponse>
 

@@ -63,6 +63,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
+import ovo.sypw.kmp.examsystem.data.dto.UserEnabledStatus
+import ovo.sypw.kmp.examsystem.data.dto.enabledStatus
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementToolbar
@@ -378,17 +380,17 @@ fun UserManageScreen() {
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                             })
-                                            add(0.5f to @Composable { StatusBadge(enabled = user.status == 1) })
+                                            add(0.5f to @Composable { StatusBadge(enabled = user.enabledStatus == UserEnabledStatus.ENABLED) })
                                             add(0.8f to @Composable {
                                                 Row {
                                                     IconButton(onClick = {
-                                                        if (user.status == 1) viewModel.disableUser(user.id)
+                                                        if (user.enabledStatus == UserEnabledStatus.ENABLED) viewModel.disableUser(user.id)
                                                         else viewModel.enableUser(user.id)
                                                     }) {
                                                         Icon(
-                                                            if (user.status == 1) Icons.Default.Block else Icons.Default.CheckCircle,
-                                                            contentDescription = if (user.status == 1) "禁用" else "启用",
-                                                            tint = if (user.status == 1) MaterialTheme.colorScheme.error
+                                                            if (user.enabledStatus == UserEnabledStatus.ENABLED) Icons.Default.Block else Icons.Default.CheckCircle,
+                                                            contentDescription = if (user.enabledStatus == UserEnabledStatus.ENABLED) "禁用" else "启用",
+                                                            tint = if (user.enabledStatus == UserEnabledStatus.ENABLED) MaterialTheme.colorScheme.error
                                                                    else MaterialTheme.colorScheme.primary
                                                         )
                                                     }
@@ -438,7 +440,7 @@ fun UserManageScreen() {
                                         onDelete = { showDeleteConfirm = user },
                                         onResetPassword = { showResetPwdDialog = user },
                                         onToggleStatus = {
-                                            if (user.status == 1) viewModel.disableUser(user.id)
+                                            if (user.enabledStatus == UserEnabledStatus.ENABLED) viewModel.disableUser(user.id)
                                             else viewModel.enableUser(user.id)
                                         }
                                     )

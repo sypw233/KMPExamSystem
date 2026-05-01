@@ -162,18 +162,5 @@ data class AiBatchGradingResponse(
     val details: List<AiGradingDetail> = emptyList()
 )
 
-/**
- * 分页题库响应
- */
-@Serializable
-data class PageQuestionBankResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<QuestionBankResponse> = emptyList(),
-    val number: Int = 0,
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页题库响应 */
+typealias PageQuestionBankResponse = PageResponse<QuestionBankResponse>

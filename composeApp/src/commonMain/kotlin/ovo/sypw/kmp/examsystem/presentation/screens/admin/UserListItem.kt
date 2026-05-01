@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.admin
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +23,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import ovo.sypw.kmp.examsystem.data.dto.UserEnabledStatus
+import ovo.sypw.kmp.examsystem.data.dto.enabledStatus
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,7 +46,8 @@ fun UserCard(
     onToggleStatus: () -> Unit
 ) {
     val config = LocalResponsiveConfig.current
-    val isEnabled = user.status == 1
+    val isEnabled = user.enabledStatus == UserEnabledStatus.ENABLED
+    val isCompact = config.screenSize == ResponsiveUtils.ScreenSize.COMPACT
     val subtitle = listOfNotNull(
         "@${user.username}",
         user.email?.takeIf { it.isNotBlank() }
@@ -64,17 +68,18 @@ fun UserCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(config.contentPadding),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isBatchMode) {
-                Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            // 用户信息
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.fillMaxWidth().padding(config.contentPadding)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isBatchMode) {
+                    Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                // 用户信息
+                Column(modifier = Modifier.weight(1f)) {
+                    // 用户名
                     Text(
                         user.realName ?: user.username,
                         style = MaterialTheme.typography.titleMedium,
@@ -82,40 +87,80 @@ fun UserCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    RoleBadge(role = user.role)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    StatusBadge(enabled = isEnabled)
+                    // 副标题
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
 
-            // 操作按钮
-            if (!isBatchMode) {
-                Row {
-                    IconButton(onClick = onToggleStatus) {
-                        Icon(
-                            if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
-                            contentDescription = if (isEnabled) "禁用" else "启用",
-                            tint = if (isEnabled) MaterialTheme.colorScheme.error
-                                   else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = onResetPassword) {
-                        Icon(Icons.Default.LockReset, contentDescription = "重置密码")
-                    }
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Person, contentDescription = "编辑")
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "删除",
-                             tint = MaterialTheme.colorScheme.error)
+            // 标签和操作按钮行
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 标签
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RoleBadge(role = user.role)
+                    StatusBadge(enabled = isEnabled)
+                }
+
+                // 操作按钮
+                if (!isBatchMode) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        IconButton(
+                            onClick = onToggleStatus,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
+                                contentDescription = if (isEnabled) "禁用" else "启用",
+                                tint = if (isEnabled) MaterialTheme.colorScheme.error
+                                       else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = onResetPassword,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.LockReset,
+                                contentDescription = "重置密码",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "编辑",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "删除",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }

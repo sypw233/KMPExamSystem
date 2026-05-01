@@ -41,18 +41,5 @@ data class CourseRequest(
     val status: Int = 1
 )
 
-/**
- * 分页课程响应
- */
-@Serializable
-data class PageCourseResponse(
-    val totalPages: Int = 0,
-    val totalElements: Long = 0,
-    val size: Int = 20,
-    val content: List<CourseResponse> = emptyList(),
-    val number: Int = 0,
-    val first: Boolean = true,
-    val last: Boolean = true,
-    val numberOfElements: Int = 0,
-    val empty: Boolean = true
-)
+/** 分页课程响应 */
+typealias PageCourseResponse = PageResponse<CourseResponse>

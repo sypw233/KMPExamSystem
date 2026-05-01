@@ -48,6 +48,8 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
+import ovo.sypw.kmp.examsystem.data.dto.SubmissionStatus
+import ovo.sypw.kmp.examsystem.data.dto.submissionStatus
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SubmissionsUiState
 
@@ -136,7 +138,7 @@ fun ExamSubmissionsScreen(
 @Composable
 private fun SubmissionCard(submission: SubmissionResponse, onClick: () -> Unit) {
     val config = LocalResponsiveConfig.current
-    val isGraded = submission.status == 2
+    val isGraded = submission.submissionStatus == SubmissionStatus.GRADED
     val statusColor = if (isGraded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     val statusIcon = if (isGraded) Icons.Default.CheckCircle else Icons.Default.Schedule
 

@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.ExamStatus
+import ovo.sypw.kmp.examsystem.data.dto.examStatus
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
@@ -166,7 +168,7 @@ fun TeacherExamManageScreen(
                         TextButton(
                             onClick = {
                                 val currentIds = (allExamsState as? ExamListUiState.Success)?.exams
-                                    ?.filter { it.status == 0 }
+                                    ?.filter { it.examStatus == ExamStatus.DRAFT }
                                     ?.map { it.id }
                                     ?.toSet() ?: emptySet()
                                 selectedIds = if (selectedIds == currentIds) emptySet() else currentIds
@@ -245,7 +247,7 @@ fun TeacherExamManageScreen(
                         TextButton(
                             onClick = {
                                 val currentIds = (allExamsState as? ExamListUiState.Success)?.exams
-                                    ?.filter { it.status == 0 }
+                                    ?.filter { it.examStatus == ExamStatus.DRAFT }
                                     ?.map { it.id }
                                     ?.toSet() ?: emptySet()
                                 selectedIds = if (selectedIds == currentIds) emptySet() else currentIds
@@ -310,9 +312,9 @@ fun TeacherExamManageScreen(
                     is ExamListUiState.Success -> {
                         val filteredExams = state.exams.filter { exam ->
                             when (selectedTab) {
-                                0 -> exam.status == 0
-                                1 -> exam.status == 1
-                                2 -> exam.status == 2
+                                0 -> exam.examStatus == ExamStatus.DRAFT
+                                1 -> exam.examStatus == ExamStatus.PUBLISHED
+                                2 -> exam.examStatus == ExamStatus.ENDED
                                 else -> true
                             }
                         }
@@ -338,8 +340,8 @@ fun TeacherExamManageScreen(
                                     val isSelected = exam.id in selectedIds
                                     ManageExamCard(
                                         exam = exam,
-                                        canEdit = exam.status == 0 && !isBatchMode,
-                                        isBatchMode = isBatchMode && exam.status == 0,
+                                        canEdit = exam.examStatus == ExamStatus.DRAFT && !isBatchMode,
+                                        isBatchMode = isBatchMode && exam.examStatus == ExamStatus.DRAFT,
                                         isSelected = isSelected,
                                         onToggleSelect = {
                                             selectedIds = if (isSelected) selectedIds - exam.id else selectedIds + exam.id

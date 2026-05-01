@@ -29,6 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -317,3 +318,19 @@ private fun CourseStatBar(
         }
     }
 }
+
+/**
+ * 从仪表盘数据构建统计项列表, 桌面端和移动端共用
+ * @param data 仪表盘数据
+ * @return 标签-数值对列表
+ */
+private fun buildStatPairs(data: AdminDashboardData): List<Pair<String, String>> = listOf(
+    "用户" to data.overview.totalUsers.toString(),
+    "学生" to data.overview.studentCount.toString(),
+    "教师" to data.overview.teacherCount.toString(),
+    "管理员" to data.overview.adminCount.toString(),
+    "课程" to data.overview.totalCourses.toString(),
+    "考试" to data.overview.totalExams.toString(),
+    "题目" to data.overview.totalQuestions.toString(),
+    "提交" to data.overview.totalSubmissions.toString()
+)
