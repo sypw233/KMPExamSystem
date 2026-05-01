@@ -57,21 +57,31 @@ class NotificationRepository(
     }
 
     /**
-     * 标记为已读
+     * 标记为已读（带乐观更新和回滚）
      */
     suspend fun markAsRead(notificationId: Long): Result<Unit> = runWithToken { token ->
-        // 乐观更新：先检查该通知是否原来就是未读
         val wasUnread = _notifications.value.find { it.id == notificationId }?.isRead == false
+        val previousCount = _unreadCount.value
+
+        // 乐观更新：先修改 UI 状态
+        _notifications.value = _notifications.value.map { n ->
+            if (n.id == notificationId) n.copy(isRead = true) else n
+        }
+        if (wasUnread && _unreadCount.value > 0) {
+            _unreadCount.value = _unreadCount.value - 1
+        }
+
         val response = notificationApi.markAsRead(token, notificationId)
         if (response.code == 200) {
-            _notifications.value = _notifications.value.map { n ->
-                if (n.id == notificationId) n.copy(isRead = true) else n
-            }
-            // 乐观递减 unreadCount，避免额外网络请求
-            if (wasUnread && _unreadCount.value > 0) {
-                _unreadCount.value = _unreadCount.value - 1
-            }
+            Unit
         } else {
+            // 回滚乐观更新
+            _notifications.value = _notifications.value.map { n ->
+                if (n.id == notificationId) n.copy(isRead = false) else n
+            }
+            if (wasUnread) {
+                _unreadCount.value = previousCount
+            }
             throw Exception(response.message)
         }
     }
@@ -90,19 +100,27 @@ class NotificationRepository(
     }
 
     /**
-     * 删除通知
+     * 删除通知（带乐观更新和回滚）
      */
     suspend fun deleteNotification(notificationId: Long): Result<Unit> = runWithToken { token ->
-        // 乐观更新：检查被删除通知是否未读
-        val wasUnread = _notifications.value.find { it.id == notificationId }?.isRead == false
+        val deletedNotification = _notifications.value.find { it.id == notificationId }
+        val wasUnread = deletedNotification?.isRead == false
+        val previousNotifications = _notifications.value
+        val previousCount = _unreadCount.value
+
+        // 乐观更新：先移除通知
+        _notifications.value = _notifications.value.filter { it.id != notificationId }
+        if (wasUnread && _unreadCount.value > 0) {
+            _unreadCount.value = _unreadCount.value - 1
+        }
+
         val response = notificationApi.deleteNotification(token, notificationId)
         if (response.code == 200) {
-            _notifications.value = _notifications.value.filter { it.id != notificationId }
-            // 乐观递减 unreadCount
-            if (wasUnread && _unreadCount.value > 0) {
-                _unreadCount.value = _unreadCount.value - 1
-            }
+            Unit
         } else {
+            // 回滚乐观更新
+            _notifications.value = previousNotifications
+            _unreadCount.value = previousCount
             throw Exception(response.message)
         }
     }

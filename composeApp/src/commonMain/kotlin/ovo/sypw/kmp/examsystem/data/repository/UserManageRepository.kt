@@ -55,7 +55,14 @@ class UserManageRepository(
     /** 新建用户 */
     suspend fun createUser(request: UserCreateRequest): Result<UserResponse> = runWithToken { token ->
         val r = userManageApi.createUser(token, request)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
+        if (r.code == 200 && r.data != null) {
+            // 同步更新本地缓存
+            _userPage.value = _userPage.value?.let { page ->
+                page.copy(content = page.content + r.data)
+            }
+            _usersByRole.value = _usersByRole.value + r.data
+            r.data
+        } else throw Exception(r.message)
     }
 
     /** 更新用户信息 */
@@ -71,9 +78,11 @@ class UserManageRepository(
     suspend fun deleteUser(userId: Long): Result<Unit> = runWithToken { token ->
         val r = userManageApi.deleteUser(token, userId)
         if (r.code == 200) {
+            // 同步更新所有本地缓存
             _userPage.value = _userPage.value?.let { page ->
                 page.copy(content = page.content.filter { it.id != userId })
             }
+            _usersByRole.value = _usersByRole.value.filter { it.id != userId }
             Unit
         } else throw Exception(r.message)
     }

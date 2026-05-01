@@ -110,16 +110,21 @@ fun AppTheme(
 
 /**
  * 语义颜色扩展属性
- * 提供 info/warning/success 颜色令牌，支持深色主题自适应
+ * 提供 info/warning/success 颜色令牌, 支持深色主题自适应
+ * 通过 surface 与 onSurface 的亮度比判断当前主题, 兼容 Dynamic Color
  */
+private val ColorScheme.isDarkScheme: Boolean
+    @Composable
+    get() = surface.luminance() < onSurface.luminance()
+
 val ColorScheme.info: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) md_theme_dark_info else md_theme_light_info
+    get() = if (isDarkScheme) md_theme_dark_info else md_theme_light_info
 
 val ColorScheme.warning: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) md_theme_dark_warning else md_theme_light_warning
+    get() = if (isDarkScheme) md_theme_dark_warning else md_theme_light_warning
 
 val ColorScheme.success: Color
     @Composable
-    get() = if (isSystemInDarkTheme()) md_theme_dark_success else md_theme_light_success
+    get() = if (isDarkScheme) md_theme_dark_success else md_theme_light_success

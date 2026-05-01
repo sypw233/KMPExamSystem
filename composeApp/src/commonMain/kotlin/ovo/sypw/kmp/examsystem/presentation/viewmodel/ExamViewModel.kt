@@ -67,12 +67,12 @@ class ExamViewModel(
     private val _actionState = MutableStateFlow<ExamActionState>(ExamActionState.Idle)
     val actionState: StateFlow<ExamActionState> = _actionState.asStateFlow()
 
-    // 当前角色（影响调用哪套 API）
-    private var userRole: UserRole = UserRole.UNKNOWN
+    // 当前角色（影响调用哪套 API），使用 StateFlow 保证并发可见性
+    private val _userRole = MutableStateFlow(UserRole.UNKNOWN)
 
     /** 设置用户角色，根据角色加载对应数据 */
     fun setRole(role: UserRole) {
-        userRole = role
+        _userRole.value = role
         when (role) {
             UserRole.STUDENT -> {
                 loadPublishedExams()
@@ -89,7 +89,7 @@ class ExamViewModel(
     fun loadManagerExams() {
         _allExams.value = ExamListUiState.Loading
         viewModelScope.launch {
-            val result = if (userRole == UserRole.ADMIN)
+            val result = if (_userRole.value == UserRole.ADMIN)
                 examRepository.loadAllExams()
             else
                 examRepository.loadMyExams()

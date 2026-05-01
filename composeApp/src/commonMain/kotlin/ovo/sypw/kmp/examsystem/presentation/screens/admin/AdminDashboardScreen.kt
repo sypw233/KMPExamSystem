@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,6 +40,7 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPanel
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.AdminDashboardData
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AdminDashboardUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AdminDashboardViewModel
 import ovo.sypw.kmp.examsystem.utils.DesktopTwoPaneLayout
@@ -100,17 +102,13 @@ fun AdminDashboardScreen() {
                 }
                 is AdminDashboardUiState.Success -> {
                     val data = state.data
-                    val statPairs = listOf(
-                        "用户" to data.overview.totalUsers.toString(),
-                        "学生" to data.overview.studentCount.toString(),
-                        "教师" to data.overview.teacherCount.toString(),
-                        "管理员" to data.overview.adminCount.toString(),
-                        "课程" to data.overview.totalCourses.toString(),
-                        "考试" to data.overview.totalExams.toString(),
-                        "题目" to data.overview.totalQuestions.toString(),
-                        "提交" to data.overview.totalSubmissions.toString()
-                    )
-                    val statColumns = 4
+                    val statPairs = remember(data) { buildStatPairs(data) }
+                    // 使用响应式列数，根据屏幕宽度自动调整，避免小屏幕卡片挤压
+                    val statColumns = when {
+                        config.screenSizeOrigin < 900.dp -> 2
+                        config.screenSizeOrigin < 1200.dp -> 3
+                        else -> 4
+                    }
                     val rowCount = (statPairs.size + statColumns - 1) / statColumns
                     val estimatedCardHeight = 96.dp
                     val gridHeight = estimatedCardHeight * rowCount + config.verticalSpacing * (rowCount - 1)
@@ -202,46 +200,38 @@ fun AdminDashboardScreen() {
                     }
                     is AdminDashboardUiState.Success -> {
                         val data = state.data
-                        val statPairs = listOf(
-                            "用户" to data.overview.totalUsers.toString(),
-                            "学生" to data.overview.studentCount.toString(),
-                            "教师" to data.overview.teacherCount.toString(),
-                            "管理员" to data.overview.adminCount.toString(),
-                            "课程" to data.overview.totalCourses.toString(),
-                            "考试" to data.overview.totalExams.toString(),
-                            "题目" to data.overview.totalQuestions.toString(),
-                            "提交" to data.overview.totalSubmissions.toString()
-                        )
-                        val statColumns = config.columnCount
+                        val statPairs = remember(data) { buildStatPairs(data) }
+                        // 移动端固定2列，提高信息密度
+                        val statColumns = 2
                         val rowCount = (statPairs.size + statColumns - 1) / statColumns
-                        val estimatedCardHeight = 96.dp
-                        val gridHeight = estimatedCardHeight * rowCount + config.verticalSpacing * (rowCount - 1)
+                        val estimatedCardHeight = 72.dp
+                        val gridHeight = estimatedCardHeight * rowCount + 8.dp * (rowCount - 1)
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(config.screenPadding)
+                                .padding(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 item {
                                     ResponsiveLazyVerticalGrid(
                                         items = statPairs,
                                         modifier = Modifier.fillMaxWidth().height(gridHeight),
-                                        verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                                        horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         columnCountOverride = statColumns
                                     ) { (title, value) ->
-                                        StatCard(title, value, Modifier.fillMaxWidth().height(96.dp), config.cardPadding)
+                                        StatCard(title, value, Modifier.fillMaxWidth().height(72.dp), 12.dp)
                                     }
                                 }
                                 item {
                                     Text(
                                         "课程通过率概览",
-                                        style = MaterialTheme.typography.titleMedium,
+                                        style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
                                     )
                                 }
                                 items(data.topCourseStats, key = { it.courseName }) { item ->
@@ -289,16 +279,38 @@ private fun CourseStatBar(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text("平均: ${averageScore?.let { "%.1f".format(it) } ?: "-"}  最高: ${highestScore ?: "-"}  最低: ${lowestScore ?: "-"}")
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "均: ${averageScore?.let { "%.0f".format(it) } ?: "-"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("最高: ${highestScore ?: "-"}", style = MaterialTheme.typography.labelSmall)
+                Text("最低: ${lowestScore ?: "-"}", style = MaterialTheme.typography.labelSmall)
+            }
             Box(
-                modifier = Modifier.fillMaxWidth().height(10.dp)
+                modifier = Modifier.fillMaxWidth().height(6.dp)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 val scoreRatio = ((averageScore ?: 0.0) / 100.0).coerceIn(0.0, 1.0).toFloat()
                 Box(
-                    modifier = Modifier.fillMaxWidth(scoreRatio).height(10.dp)
+                    modifier = Modifier.fillMaxWidth(scoreRatio).height(6.dp)
                         .background(MaterialTheme.colorScheme.primary)
                 )
             }
