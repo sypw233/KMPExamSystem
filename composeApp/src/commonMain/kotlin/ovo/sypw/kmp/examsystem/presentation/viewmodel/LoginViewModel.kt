@@ -41,6 +41,9 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
      * 登录
      */
     fun login() {
+        // 防止重复提交
+        if (_uiState.value is LoginUiState.Loading) return
+
         if (_username.value.isBlank()) {
             _uiState.value = LoginUiState.Error("请输入用户名")
             return

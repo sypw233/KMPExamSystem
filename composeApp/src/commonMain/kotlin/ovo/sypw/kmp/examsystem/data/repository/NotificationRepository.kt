@@ -13,8 +13,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class NotificationRepository(
     private val notificationApi: NotificationApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
 
     private val _notifications = MutableStateFlow<List<NotificationResponse>>(emptyList())
     val notifications: StateFlow<List<NotificationResponse>> = _notifications.asStateFlow()
@@ -119,15 +119,4 @@ class NotificationRepository(
         }
     }
 
-    /**
-     * 统一的鉴权和异常处理包装器
-     */
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

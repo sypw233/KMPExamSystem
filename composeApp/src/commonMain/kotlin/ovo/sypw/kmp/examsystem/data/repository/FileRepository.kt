@@ -9,8 +9,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class FileRepository(
     private val fileApi: FileApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
 
     suspend fun uploadImage(imageBytes: ByteArray, fileName: String): Result<FileUploadResponse> {
         return runWithToken { token ->
@@ -44,12 +44,4 @@ class FileRepository(
         }
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

@@ -14,8 +14,8 @@ import ovo.sypw.kmp.examsystem.utils.Logger
  */
 class SubmissionRepository(
     private val submissionApi: SubmissionApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
 
     /** 开始考试 */
     suspend fun startExam(examId: Long): Result<SubmissionResponse> = runWithToken { token ->
@@ -97,12 +97,4 @@ class SubmissionRepository(
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

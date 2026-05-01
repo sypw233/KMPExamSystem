@@ -1,6 +1,5 @@
 package ovo.sypw.kmp.examsystem.utils
 
-import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.round
@@ -14,18 +13,10 @@ import kotlin.time.ExperimentalTime
 object StringUtils {
 
     /**
-     * 字符串实例格式化扩展函数，支持 "...".format(...) 调用方式
+     * 字符串格式化扩展函数
+     * 支持多种格式化占位符和可变参数, 适用于KMP跨平台环境
      *
-     * @param args 可变参数列表
-     * @return 格式化后的字符串
-     */
-    fun String.format(vararg args: Any?): String = String.format(this, *args)
-
-    /**
-     * 字符串格式化扩展函数，类似于Kotlin原生的String.format
-     * 支持多种格式化占位符和可变参数
-     *
-     * @param format 格式化字符串，支持以下占位符：
+     * @param format 格式化字符串, 支持以下占位符：
      *   - %s: 字符串
      *   - %d: 整数
      *   - %f: 浮点数
@@ -38,11 +29,10 @@ object StringUtils {
         var result = format
         var argIndex = 0
 
-        // 处理格式化占位符
         val regex = Regex("%(\\.[0-9]+)?[sdfl]")
         result = regex.replace(result) { matchResult ->
             if (argIndex >= args.size) {
-                matchResult.value // 如果参数不够，保持原样
+                matchResult.value
             } else {
                 val arg = args[argIndex++]
                 when {
@@ -69,7 +59,6 @@ object StringUtils {
                                 val value = arg.toDouble()
                                 val multiplier = 10.0.pow(decimals.toDouble())
                                 val rounded = round(value * multiplier) / multiplier
-                                // 手动格式化小数位数
                                 val intPart = rounded.toLong()
                                 val fracPart = ((rounded - intPart) * multiplier).toLong()
                                 "$intPart.${fracPart.toString().padStart(decimals, '0')}"
@@ -88,27 +77,9 @@ object StringUtils {
     }
 
     /**
-     * 简化的浮点数格式化函数（保持向后兼容）
-     * @param format 格式化字符串
-     * @param percentage 浮点数值
-     * @return 格式化后的字符串
-     */
-    fun String.Companion.formatFloat(format: String, percentage: Float): String {
-        return format(format, percentage)
-    }
-
-    /**
-     * 字符串是否为空或仅包含空白字符
-     * @return 如果字符串为空或仅包含空白字符则返回true
-     */
-    fun String?.isNullOrBlank(): Boolean {
-        return this == null || this.isBlank()
-    }
-
-    /**
      * 安全的字符串截取
      * @param maxLength 最大长度
-     * @param suffix 超出长度时的后缀，默认为"..."
+     * @param suffix 超出长度时的后缀, 默认为"..."
      * @return 截取后的字符串
      */
     fun String.truncate(maxLength: Int, suffix: String = "..."): String {
@@ -116,18 +87,6 @@ object StringUtils {
             this
         } else {
             this.substring(0, maxLength - suffix.length) + suffix
-        }
-    }
-
-    /**
-     * 首字母大写
-     * @return 首字母大写的字符串
-     */
-    fun String.capitalize(): String {
-        return if (this.isEmpty()) {
-            this
-        } else {
-            this.first().uppercaseChar() + this.drop(1)
         }
     }
 
@@ -155,7 +114,6 @@ object StringUtils {
      */
     fun formatDateTime(dateTimeString: String): String {
         return try {
-            // 如果是ISO格式，转换为更友好的显示格式
             if (dateTimeString.contains('T')) {
                 val parts = dateTimeString.split('T')
                 val datePart = parts[0]
@@ -170,27 +128,82 @@ object StringUtils {
     }
 
     /**
-     * 格式化相对时间显示（如：2小时前、3天前）
+     * 格式化相对时间显示（如：2小时前、3天前、刚刚）
+     * 将ISO格式的时间戳转换为用户友好的相对时间描述
      * @param dateTimeString ISO格式的日期时间字符串
-     * @return 相对时间字符串
+     * @return 相对时间字符串, 如"刚刚"/"5分钟前"/"3小时前"/"昨天"/"3天前"/"2024-01-15"
      */
     @OptIn(ExperimentalTime::class)
     fun formatRelativeTime(dateTimeString: String): String {
         return try {
-            Clock.System.now().toEpochMilliseconds()
-            // 简单的时间解析，实际项目中建议使用kotlinx-datetime
-            if (dateTimeString.contains('T')) {
-                dateTimeString.replace('T', ' ').substringBefore('.')
-            } else {
-                dateTimeString
-            }
+            if (dateTimeString.isBlank()) return dateTimeString
 
-            // 这里返回格式化的时间，实际实现需要根据具体需求调整
-            formatDateTime(dateTimeString)
+            val now = Clock.System.now().toEpochMilliseconds()
+            val targetMs = parseIsoToEpochMs(dateTimeString) ?: return formatDateTime(dateTimeString)
+            val diffMs = now - targetMs
+
+            when {
+                diffMs < 0 -> formatDateTime(dateTimeString)
+                diffMs < 60_000L -> "刚刚"
+                diffMs < 3_600_000L -> "${diffMs / 60_000L}分钟前"
+                diffMs < 86_400_000L -> "${diffMs / 3_600_000L}小时前"
+                diffMs < 172_800_000L -> "昨天"
+                diffMs < 604_800_000L -> "${diffMs / 86_400_000L}天前"
+                else -> formatDateTime(dateTimeString).substringBefore(' ')
+            }
         } catch (e: Exception) {
-            dateTimeString
+            formatDateTime(dateTimeString)
         }
     }
+
+    /**
+     * 将ISO格式日期时间字符串解析为毫秒时间戳
+     * 支持 "2024-01-15T10:30:00" 和 "2024-01-15T10:30:00.000+08:00" 等格式
+     * @param isoString ISO格式日期时间字符串
+     * @return 毫秒时间戳, 解析失败返回null
+     */
+    private fun parseIsoToEpochMs(isoString: String): Long? {
+        return try {
+            val cleanStr = isoString.substringBefore('.').replace('T', ' ').trim()
+            val parts = cleanStr.split(' ')
+            if (parts.size < 2) return null
+
+            val dateParts = parts[0].split('-')
+            val timeParts = parts[1].split(':')
+            if (dateParts.size < 3 || timeParts.size < 3) return null
+
+            val year = dateParts[0].toInt()
+            val month = dateParts[1].toInt()
+            val day = dateParts[2].toInt()
+            val hour = timeParts[0].toInt()
+            val minute = timeParts[1].toInt()
+            val second = timeParts[2].toInt()
+
+            // 简化的纪元毫秒计算（不考虑闰秒, 适用于近似时间比较）
+            val totalDays = daysFromEpoch(year, month, day)
+            totalDays * 86_400_000L + hour * 3_600_000L + minute * 60_000L + second * 1000L
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * 计算从1970-01-01到指定日期的天数
+     */
+    private fun daysFromEpoch(year: Int, month: Int, day: Int): Long {
+        var totalDays = 0L
+        for (y in 1970 until year) {
+            totalDays += if (isLeapYear(y)) 366 else 365
+        }
+        val monthDays = intArrayOf(0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+        for (m in 1 until month) {
+            totalDays += if (m == 2 && isLeapYear(year)) 29 else monthDays[m]
+        }
+        return totalDays + day - 1
+    }
+
+    private fun isLeapYear(year: Int): Boolean =
+        (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)
 
 
 }

@@ -287,7 +287,7 @@ private fun ExamContent(
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
-                itemsIndexed(exam.questions) { index, examQuestion ->
+                itemsIndexed(exam.questions, key = { _, eq -> eq.questionId }) { index, examQuestion ->
                     val question = examQuestion.question ?: return@itemsIndexed
                     QuestionItem(
                         number = index + 1,

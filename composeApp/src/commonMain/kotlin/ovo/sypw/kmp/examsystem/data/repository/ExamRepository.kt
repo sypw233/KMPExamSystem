@@ -17,8 +17,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 class ExamRepository(
     private val examApi: ExamApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
     private val _publishedExams = MutableStateFlow<List<ExamResponse>>(emptyList())
     val publishedExams: StateFlow<List<ExamResponse>> = _publishedExams.asStateFlow()
 
@@ -67,14 +67,17 @@ class ExamRepository(
         if (r.code == 200) (r.data ?: emptyList()).map { normalizeExamQuestion(it) } else throw Exception(r.message)
     }
 
-    suspend fun createExam(request: ExamRequest): Result<ExamResponse> = runWithToken { token ->
-        val r = examApi.createExam(token, request)
-        if (r.code == 200 && r.data != null) {
-            loadAllExams()
-            r.data
-        } else {
-            throw Exception(r.message)
+    suspend fun createExam(request: ExamRequest): Result<ExamResponse> {
+        val result = runWithToken { token ->
+            val r = examApi.createExam(token, request)
+            if (r.code == 200 && r.data != null) r.data
+            else throw Exception(r.message)
         }
+        // 创建成功后刷新列表缓存
+        if (result.isSuccess) {
+            loadAllExams()
+        }
+        return result
     }
 
     suspend fun updateExam(examId: Long, request: ExamRequest): Result<ExamResponse> = runWithToken { token ->
@@ -224,12 +227,4 @@ class ExamRepository(
             )
         )
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

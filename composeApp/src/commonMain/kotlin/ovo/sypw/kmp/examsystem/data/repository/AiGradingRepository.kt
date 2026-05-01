@@ -14,8 +14,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class AiGradingRepository(
     private val aiGradingApi: AiGradingApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
 
     suspend fun getAiConfigs(): Result<List<AiConfigResponse>> {
         return runWithToken { token ->
@@ -49,12 +49,4 @@ class AiGradingRepository(
         }
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

@@ -9,6 +9,7 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
  * 课程仓库
@@ -16,8 +17,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class CourseRepository(
     private val courseApi: CourseApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
 
     private val _allCourses = MutableStateFlow<List<CourseResponse>>(emptyList())
     val allCourses: StateFlow<List<CourseResponse>> = _allCourses.asStateFlow()
@@ -46,19 +47,14 @@ class CourseRepository(
     /**
      * 获取我的课程（教师：创建的；学生：已选的）
      */
-    suspend fun loadMyCourses(): Result<List<CourseResponse>> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
-            val response = courseApi.getMyCourses(token)
-            if (response.code == 200) {
-                val data = response.data ?: emptyList()
-                _myCourses.value = data
-                Result.success(data)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun loadMyCourses(): Result<List<CourseResponse>> = runWithToken { token ->
+        val response = courseApi.getMyCourses(token)
+        if (response.code == 200) {
+            val data = response.data ?: emptyList()
+            _myCourses.value = data
+            data
+        } else {
+            throw Exception(response.message)
         }
     }
 
@@ -66,18 +62,17 @@ class CourseRepository(
      * 学生选课
      * @param courseId 课程ID
      */
-    suspend fun enrollCourse(courseId: Long): Result<EnrollmentResponse> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
-            val response = courseApi.enrollCourse(token, courseId)
-            if (response.code == 200 && response.data != null) {
-                loadMyEnrollments()
-                Result.success(response.data)
-            } else {
-                Result.failure(Exception(response.message))
+    suspend fun enrollCourse(courseId: Long): Result<EnrollmentResponse> = runWithToken { token ->
+        val response = courseApi.enrollCourse(token, courseId)
+        if (response.code == 200 && response.data != null) {
+            // 刷新选课记录缓存
+            val enrollResult = loadMyEnrollments()
+            if (enrollResult.isFailure) {
+                Logger.w("CourseRepository", "选课成功但刷新选课记录失败: ${enrollResult.exceptionOrNull()?.message}")
             }
-        } catch (e: Exception) {
-            Result.failure(e)
+            response.data
+        } else {
+            throw Exception(response.message)
         }
     }
 
@@ -152,28 +147,15 @@ class CourseRepository(
     /**
      * 获取我的选课记录
      */
-    suspend fun loadMyEnrollments(): Result<List<EnrollmentResponse>> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: return Result.failure(Exception("未登录"))
-            val response = courseApi.getMyEnrollments(token)
-            if (response.code == 200) {
-                val data = response.data ?: emptyList()
-                _myEnrollments.value = data
-                Result.success(data)
-            } else {
-                Result.failure(Exception(response.message))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+    suspend fun loadMyEnrollments(): Result<List<EnrollmentResponse>> = runWithToken { token ->
+        val response = courseApi.getMyEnrollments(token)
+        if (response.code == 200) {
+            val data = response.data ?: emptyList()
+            _myEnrollments.value = data
+            data
+        } else {
+            throw Exception(response.message)
         }
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

@@ -14,8 +14,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class QuestionBankRepository(
     private val questionBankApi: QuestionBankApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
     private val _myBanks = MutableStateFlow<List<QuestionBankResponse>>(emptyList())
     val myBanks: StateFlow<List<QuestionBankResponse>> = _myBanks.asStateFlow()
 
@@ -40,16 +40,24 @@ class QuestionBankRepository(
         if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
-    suspend fun createBank(request: QuestionBankRequest): Result<QuestionBankResponse> = runWithToken { token ->
-        val r = questionBankApi.createBank(token, request)
-        if (r.code == 200 && r.data != null) { loadMyBanks(); r.data }
-        else throw Exception(r.message)
+    suspend fun createBank(request: QuestionBankRequest): Result<QuestionBankResponse> {
+        val result = runWithToken { token ->
+            val r = questionBankApi.createBank(token, request)
+            if (r.code == 200 && r.data != null) r.data
+            else throw Exception(r.message)
+        }
+        if (result.isSuccess) loadMyBanks()
+        return result
     }
 
-    suspend fun updateBank(bankId: Long, request: QuestionBankRequest): Result<QuestionBankResponse> = runWithToken { token ->
-        val r = questionBankApi.updateBank(token, bankId, request)
-        if (r.code == 200 && r.data != null) { loadMyBanks(); r.data }
-        else throw Exception(r.message)
+    suspend fun updateBank(bankId: Long, request: QuestionBankRequest): Result<QuestionBankResponse> {
+        val result = runWithToken { token ->
+            val r = questionBankApi.updateBank(token, bankId, request)
+            if (r.code == 200 && r.data != null) r.data
+            else throw Exception(r.message)
+        }
+        if (result.isSuccess) loadMyBanks()
+        return result
     }
 
     suspend fun deleteBank(bankId: Long): Result<Unit> = runWithToken { token ->
@@ -75,12 +83,4 @@ class QuestionBankRepository(
         else throw Exception(r.message)
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

@@ -71,6 +71,9 @@ class RegisterViewModel(private val authRepository: AuthRepository) : ViewModel(
      * 注册
      */
     fun register() {
+        // 防止重复提交
+        if (_uiState.value is RegisterUiState.Loading) return
+
         // 表单验证
         if (_username.value.isBlank()) {
             _uiState.value = RegisterUiState.Error("请输入用户名")

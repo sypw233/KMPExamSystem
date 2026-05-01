@@ -18,8 +18,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class UserManageRepository(
     private val userManageApi: UserManageApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
     private val _userPage = MutableStateFlow<PageUserResponse?>(null)
     val userPage: StateFlow<PageUserResponse?> = _userPage.asStateFlow()
 
@@ -110,12 +110,4 @@ class UserManageRepository(
         }
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }

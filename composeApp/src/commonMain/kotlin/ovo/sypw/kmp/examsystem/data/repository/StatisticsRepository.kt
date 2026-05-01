@@ -14,8 +14,8 @@ import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
  */
 class StatisticsRepository(
     private val statisticsApi: StatisticsApi,
-    private val tokenStorage: TokenStorage
-) {
+    tokenStorage: TokenStorage
+) : BaseRepository(tokenStorage) {
     suspend fun getStudentStatistics(userId: Long): Result<StudentStatisticsResponse> {
         return runWithToken { token ->
             val response = statisticsApi.getStudentStatistics(token, userId)
@@ -64,12 +64,4 @@ class StatisticsRepository(
         }
     }
 
-    private suspend fun <T> runWithToken(block: suspend (String) -> T): Result<T> {
-        return try {
-            val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
-            Result.success(block(token))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
 }
