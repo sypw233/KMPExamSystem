@@ -26,6 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,20 +65,22 @@ fun ExamFormDialog(
     var showEndTimePicker by remember { mutableStateOf(false) }
 
     // 根据开始时间和时长自动计算结束时间
+    @OptIn(kotlin.time.ExperimentalTime::class)
     LaunchedEffect(startTime, duration) {
         if (startTime.isNotBlank() && duration.toIntOrNull() != null && duration.toInt() > 0) {
             try {
                 val parts = startTime.replace('T', ' ').split(" ")
                 val dateParts = parts[0].split("-")
                 val timeParts = parts[1].split(":")
-                val startInstant = kotlinx.datetime.LocalDateTime(
+                val tz = TimeZone.currentSystemDefault()
+                val startInstant = LocalDateTime(
                     dateParts[0].toInt(), dateParts[1].toInt(), dateParts[2].toInt(),
                     timeParts[0].toInt(), timeParts[1].toInt()
-                ).toInstant(kotlinx.datetime.TimeZone.currentSystemDefault())
-                val endInstant = startInstant.plus(duration.toInt(), kotlinx.datetime.DateTimeUnit.MINUTE)
-                val endLocal = endInstant.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+                ).toInstant(tz)
+                val endInstant = startInstant.plus(duration.toInt(), DateTimeUnit.MINUTE, tz)
+                val endLocal = endInstant.toLocalDateTime(tz)
                 endTime = "%04d-%02d-%02dT%02d:%02d:00".format(
-                    endLocal.year, endLocal.monthNumber, endLocal.dayOfMonth,
+                    endLocal.year, endLocal.month.ordinal + 1, endLocal.day,
                     endLocal.hour, endLocal.minute
                 )
             } catch (_: Exception) {

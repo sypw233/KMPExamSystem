@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,16 +19,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -35,12 +40,18 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
@@ -49,6 +60,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RandomComposeState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 
@@ -85,7 +97,7 @@ fun ExamComposeScreen(
         onConsumed = { viewModel.resetActionState() }
     )
 
-    // 只在成功时关闭组卷弹窗, 失败时弹窗内显示错误
+    // 只在成功时关闭组卷弹窗
     LaunchedEffect(randomComposeState) {
         when (val state = randomComposeState) {
             is RandomComposeState.Success -> {
@@ -144,84 +156,356 @@ fun ExamComposeScreen(
                     )
                 }
                 is ExamComposeUiState.Success -> {
-                    val currentScore = state.examQuestions.sumOf { it.score }
-                    val targetScore = state.exam.totalScore
-                    val isScoreMatched = currentScore == targetScore
                     val screenConfig = LocalResponsiveConfig.current
+                    val isDesktop = screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
-                    Column(
-                        modifier = Modifier.then(
-                            if (screenConfig.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.EXAM_COMPOSE) else Modifier
-                        ).fillMaxSize()
-                    ) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.primaryContainer
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = state.exam.title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "已选 ${state.examQuestions.size} 题",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        text = "$currentScore / $targetScore 分",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (currentScore > targetScore) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        text = if (isScoreMatched) "分数已达标" else "注意分数匹配",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (isScoreMatched) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                    )
-                                }
-                            }
+                    if (isDesktop) {
+                        // 桌面端: 左右双栏 (已选题目 | 题库选题)
+                        DesktopComposeLayout(
+                            state = state,
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        // 移动端: Tab 切换
+                        MobileComposeLayout(
+                            state = state,
+                            viewModel = viewModel,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 桌面端双栏布局: 左侧已选题目, 右侧题库选题
+ */
+@Composable
+private fun DesktopComposeLayout(
+    state: ExamComposeUiState.Success,
+    viewModel: ExamComposeViewModel,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier) {
+        // 左侧: 考试信息 + 已选题目
+        Column(
+            modifier = Modifier.weight(1f).fillMaxHeight().padding(16.dp)
+        ) {
+            ExamScoreHeader(state)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                "已选题目 (${state.examQuestions.size})",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (state.examQuestions.isEmpty()) {
+                    item {
+                        Text(
+                            "尚未选择题目, 请从右侧题库中添加",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                } else {
+                    items(state.examQuestions, key = { it.questionId }) { examQuestion ->
+                        SelectedQuestionCard(
+                            examQuestion = examQuestion,
+                            onRemove = { viewModel.removeQuestionFromExam(examQuestion.questionId) }
+                        )
+                    }
+                }
+            }
+        }
+
+        // 分隔线
+        HorizontalDivider(modifier = Modifier.fillMaxHeight().width(1.dp))
+
+        // 右侧: 题库选题
+        Column(
+            modifier = Modifier.weight(1.2f).fillMaxHeight().padding(16.dp)
+        ) {
+            Text(
+                "题库选题",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuestionBankPanel(
+                allQuestions = state.courseQuestions,
+                selectedQuestionIds = state.examQuestions.map { it.questionId }.toSet(),
+                onAdd = { questionId -> viewModel.addQuestionToExam(questionId, 5) },
+                onRemove = { questionId -> viewModel.removeQuestionFromExam(questionId) }
+            )
+        }
+    }
+}
+
+/**
+ * 移动端 Tab 布局
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MobileComposeLayout(
+    state: ExamComposeUiState.Success,
+    viewModel: ExamComposeViewModel,
+    modifier: Modifier = Modifier
+) {
+    var selectedTab by remember { mutableIntStateOf(0) }
+
+    Column(modifier = modifier) {
+        ExamScoreHeader(state)
+
+        PrimaryTabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("已选 (${state.examQuestions.size})") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("题库选题") }
+            )
+        }
+
+        when (selectedTab) {
+            0 -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (state.examQuestions.isEmpty()) {
+                        item {
+                            Text(
+                                "尚未选择题目, 请切换到题库选题",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(16.dp)
+                            )
                         }
-
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth().weight(1f),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            if (state.courseQuestions.isEmpty()) {
-                                item {
-                                    Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                        Text("当前课程没有题目，请先在题目管理中添加", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            } else {
-                                items(state.courseQuestions, key = { it.id }) { question ->
-                                    val isSelected = state.examQuestions.any { it.questionId == question.id }
-                                    ComposeQuestionCard(
-                                        question = question,
-                                        isSelected = isSelected,
-                                        onToggle = { selected ->
-                                            if (selected) {
-                                                viewModel.addQuestionToExam(question.id, question.score)
-                                            } else {
-                                                viewModel.removeQuestionFromExam(question.id)
-                                            }
-                                        }
-                                    )
-                                }
-                            }
+                    } else {
+                        items(state.examQuestions, key = { it.questionId }) { examQuestion ->
+                            SelectedQuestionCard(
+                                examQuestion = examQuestion,
+                                onRemove = { viewModel.removeQuestionFromExam(examQuestion.questionId) }
+                            )
                         }
                     }
+                }
+            }
+            1 -> {
+                QuestionBankPanel(
+                    allQuestions = state.courseQuestions,
+                    selectedQuestionIds = state.examQuestions.map { it.questionId }.toSet(),
+                    onAdd = { questionId -> viewModel.addQuestionToExam(questionId, 5) },
+                    onRemove = { questionId -> viewModel.removeQuestionFromExam(questionId) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 考试分数概览头部
+ */
+@Composable
+private fun ExamScoreHeader(state: ExamComposeUiState.Success) {
+    val currentScore = state.examQuestions.sumOf { it.score }
+    val targetScore = state.exam.totalScore
+    val isScoreMatched = currentScore == targetScore
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = state.exam.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "已选 ${state.examQuestions.size} 题",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "$currentScore / $targetScore 分",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (currentScore > targetScore) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = if (isScoreMatched) "分数已达标" else "注意分数匹配",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isScoreMatched) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 已选题目卡片 (带移除按钮)
+ */
+@Composable
+private fun SelectedQuestionCard(
+    examQuestion: ExamQuestionResponse,
+    onRemove: () -> Unit
+) {
+    val question = examQuestion.question ?: return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        tonalElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "[${QuestionUtils.questionTypeLabel(question.type)}]",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "${examQuestion.score} 分",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    question.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            TextButton(onClick = onRemove) {
+                Text("移除", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+/**
+ * 题库选题面板 (带搜索和筛选)
+ */
+@Composable
+private fun QuestionBankPanel(
+    allQuestions: List<QuestionResponse>,
+    selectedQuestionIds: Set<Long>,
+    onAdd: (Long) -> Unit,
+    onRemove: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var searchKeyword by remember { mutableStateOf("") }
+    var filterType by remember { mutableStateOf<String?>(null) }
+
+    val filteredQuestions by remember(allQuestions, searchKeyword, filterType) {
+        derivedStateOf {
+            allQuestions.filter { q ->
+                val matchSearch = searchKeyword.isBlank() || q.content.contains(searchKeyword, ignoreCase = true)
+                val matchType = filterType == null || q.type == filterType
+                matchSearch && matchType
+            }
+        }
+    }
+
+    Column(modifier = modifier) {
+        // 搜索框
+        OutlinedTextField(
+            value = searchKeyword,
+            onValueChange = { searchKeyword = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("搜索题目内容...") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 类型筛选
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            FilterChip(
+                selected = filterType == null,
+                onClick = { filterType = null },
+                label = { Text("全部") }
+            )
+            QuestionUtils.questionTypeOptions.forEach { (value, label) ->
+                FilterChip(
+                    selected = filterType == value,
+                    onClick = { filterType = if (filterType == value) null else value },
+                    label = { Text(label) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            "共 ${filteredQuestions.size} 题, 已选 ${selectedQuestionIds.size} 题",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 题目列表
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (filteredQuestions.isEmpty()) {
+                item {
+                    Text(
+                        "没有匹配的题目",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                items(filteredQuestions, key = { it.id }) { question ->
+                    val isSelected = question.id in selectedQuestionIds
+                    ComposeQuestionCard(
+                        question = question,
+                        isSelected = isSelected,
+                        onToggle = { selected ->
+                            if (selected) onAdd(question.id) else onRemove(question.id)
+                        }
+                    )
                 }
             }
         }

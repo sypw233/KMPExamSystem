@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -42,11 +43,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SectionRule
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RandomComposeState
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,9 +66,18 @@ internal fun RandomComposeDialog(
     var shuffleQuestions by remember(config) { mutableStateOf(config.shuffleQuestions) }
     var lenientMode by remember(config) { mutableStateOf(config.lenientMode) }
     val totalCalculatedScore = sections.sumOf { it.count * it.scorePerQuestion }
+    val screenConfig = LocalResponsiveConfig.current
+
+    // 大屏使用 Dialog + 自定义宽度, 小屏使用 AlertDialog
+    val dialogMaxWidth = when (screenConfig.screenSize) {
+        ResponsiveUtils.ScreenSize.EXPANDED -> 680.dp
+        ResponsiveUtils.ScreenSize.MEDIUM -> 560.dp
+        ResponsiveUtils.ScreenSize.COMPACT -> Dp.Unspecified
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = if (dialogMaxWidth != Dp.Unspecified) Modifier.widthIn(max = dialogMaxWidth) else Modifier,
         title = { Text("智能随机组卷") },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp).verticalScroll(rememberScrollState())) {

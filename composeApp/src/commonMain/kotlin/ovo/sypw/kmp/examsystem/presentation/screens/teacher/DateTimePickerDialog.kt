@@ -46,6 +46,7 @@ internal fun formatDateTimeForDisplay(isoDateTime: String): String {
     return "$datePart $timePart"
 }
 
+@kotlin.time.ExperimentalTime
 private fun parseDateTimeComponents(isoDateTime: String): List<Int> {
     return try {
         val normalized = isoDateTime.replace('T', ' ')
@@ -63,7 +64,7 @@ private fun parseDateTimeComponents(isoDateTime: String): List<Int> {
         // 默认使用当前时间
         val now = kotlin.time.Clock.System.now()
         val localDateTime = now.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-        listOf(localDateTime.year, localDateTime.monthNumber, localDateTime.dayOfMonth, localDateTime.hour, localDateTime.minute)
+        listOf(localDateTime.year, localDateTime.month.ordinal + 1, localDateTime.day, localDateTime.hour, localDateTime.minute)
     }
 }
 
