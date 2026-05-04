@@ -11,6 +11,6 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 val examModule = module {
     single { ExamApi(get()) }
     single { ExamRepository(get(), get()) }
-    factory { ExamViewModel(get()) }
+    factory { ExamViewModel(get(), get()) }
     factory { ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamComposeViewModel(get(), get(), get()) }
 }

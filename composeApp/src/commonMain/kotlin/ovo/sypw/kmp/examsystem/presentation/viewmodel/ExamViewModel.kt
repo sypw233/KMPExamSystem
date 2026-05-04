@@ -40,8 +40,35 @@ sealed interface ExamActionState {
  * 按3种 Tab 加载：未开始(draft=0) | 进行中(published=1) | 已结束(ended=2)
  */
 class ExamViewModel(
-    private val examRepository: ExamRepository
+    private val examRepository: ExamRepository,
+    private val authStateManager: AuthStateManager
 ) : ViewModel() {
+
+    init {
+        // 自动从 AuthState 检测用户角色
+        viewModelScope.launch {
+            authStateManager.authState.collect { state ->
+                val role = when (state) {
+                    is AuthState.Authenticated -> when (state.role.lowercase()) {
+                        "admin" -> UserRole.ADMIN
+                        "teacher" -> UserRole.TEACHER
+                        "student" -> UserRole.STUDENT
+                        else -> UserRole.UNKNOWN
+                    }
+                    is AuthState.UserRole -> when (state.role.lowercase()) {
+                        "admin" -> UserRole.ADMIN
+                        "teacher" -> UserRole.TEACHER
+                        "student" -> UserRole.STUDENT
+                        else -> UserRole.UNKNOWN
+                    }
+                    is AuthState.Unauthenticated -> UserRole.UNKNOWN
+                }
+                if (role != _userRole.value && role != UserRole.UNKNOWN) {
+                    setRole(role)
+                }
+            }
+        }
+    }
 
     // 管理视角：全部考试列表（管理员/教师用 "我的考试" vs "全部考试"）
     private val _allExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
