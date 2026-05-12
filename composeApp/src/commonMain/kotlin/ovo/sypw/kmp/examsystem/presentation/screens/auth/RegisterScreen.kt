@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
@@ -33,7 +35,7 @@ import ovo.sypw.kmp.examsystem.utils.DialogManager
 /**
  * 注册界面
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
@@ -57,6 +59,11 @@ fun RegisterScreen(
     var realNameInteracted by remember { mutableStateOf(false) }
     var emailInteracted by remember { mutableStateOf(false) }
     val config = LocalResponsiveConfig.current
+
+    // 处理返回键 - 返回登录页面
+    BackHandler {
+        onNavigateToLogin()
+    }
 
     // 监听注册结果 (仅响应 Success/Error, 避免 resetState 触发的无用重组)
     LaunchedEffect(Unit) {

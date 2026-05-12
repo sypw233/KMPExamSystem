@@ -53,6 +53,14 @@ fun DashboardScreen(
         examViewModel.loadPublishedExams()
     }
 
+    // 认证状态变化时重新加载通知
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Authenticated) {
+            notificationViewModel.loadNotifications()
+            notificationViewModel.loadUnreadCount()
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
