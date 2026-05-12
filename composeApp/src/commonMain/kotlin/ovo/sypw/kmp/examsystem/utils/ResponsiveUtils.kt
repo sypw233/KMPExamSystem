@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -39,11 +37,12 @@ object ResponsiveUtils {
 
     /**
      * Material Design 3 推荐的断点
+     * 桌面端需要更大宽度（1200dp）才能切换，确保在大屏设备上获得更好的体验
      */
     object Breakpoints {
         val COMPACT_MAX = 600.dp
-        val MEDIUM_MAX = 900.dp    // 增加到900dp，让更多设备使用桌面布局
-        val EXPANDED_LARGE = 1200.dp  // 大屏桌面断点
+        val MEDIUM_MAX = 1200.dp   // 增加到1200dp，让桌面端需要更大宽度才切换
+        val EXPANDED_LARGE = 1600.dp  // 大屏桌面断点，同步增加
     }
 
     /**
@@ -427,7 +426,7 @@ fun <T> ResponsiveLazyVerticalGrid(
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
     columnCountOverride: Int? = null,
-    minItemWidth: Dp = 320.dp,
+    minItemWidth: Dp = 200.dp,
     itemContent: @Composable (T) -> Unit
 ) {
     val config = LocalResponsiveConfig.current
@@ -442,21 +441,17 @@ fun <T> ResponsiveLazyVerticalGrid(
                 )
             ).coerceAtLeast(1)
 
-        if (columns == 1 || items.isEmpty()) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = contentPadding,
-                verticalArrangement = verticalArrangement
-            ) {
-                items(items, key = key) { itemContent(it) }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = contentPadding,
-                verticalArrangement = verticalArrangement
-            ) {
-                items(items.chunked(columns).withIndex().toList(), key = { it.index }) { (_, rowItems) ->
+        // 使用 Column 而非 LazyColumn,避免嵌套在父 LazyColumn 中导致无限高度约束崩溃
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = verticalArrangement
+        ) {
+            if (columns == 1 || items.isEmpty()) {
+                items.forEach { item ->
+                    itemContent(item)
+                }
+            } else {
+                items.chunked(columns).forEach { rowItems ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = horizontalArrangement

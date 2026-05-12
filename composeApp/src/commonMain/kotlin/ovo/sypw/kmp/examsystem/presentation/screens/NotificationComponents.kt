@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -248,6 +249,8 @@ private fun notificationTypeColor(type: String) = when (type) {
     "EXAM_REMINDER" -> MaterialTheme.colorScheme.tertiary
     "GRADE_RELEASED" -> MaterialTheme.colorScheme.secondary
     "COURSE_UPDATE" -> MaterialTheme.colorScheme.secondary
+    "COURSE_ENROLLED" -> MaterialTheme.colorScheme.primary
+    "SYSTEM_ANNOUNCEMENT" -> MaterialTheme.colorScheme.tertiary
     else -> MaterialTheme.colorScheme.outline
 }
 
@@ -256,5 +259,7 @@ private fun notificationTypeIcon(type: String): ImageVector = when (type) {
     "EXAM_REMINDER" -> Icons.Default.Notifications
     "GRADE_RELEASED" -> Icons.Default.Grade
     "COURSE_UPDATE" -> Icons.AutoMirrored.Filled.Announcement
+    "COURSE_ENROLLED" -> Icons.Default.School
+    "SYSTEM_ANNOUNCEMENT" -> Icons.AutoMirrored.Filled.Announcement
     else -> Icons.Default.Notifications
 }
