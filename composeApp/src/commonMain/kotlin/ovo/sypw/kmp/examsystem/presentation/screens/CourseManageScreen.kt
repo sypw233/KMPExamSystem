@@ -23,7 +23,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -94,20 +93,14 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                     title = { Text(if (userRole == UserRole.ADMIN) "全部课程" else "我的授课") },
                     scrollBehavior = scrollBehavior,
                     actions = {
+                        IconButton(onClick = { showCreateDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "新建课程")
+                        }
                         IconButton(onClick = {
                             if (userRole == UserRole.ADMIN) courseViewModel.loadAllCourses() else courseViewModel.loadMyCourses()
                         }) { Icon(Icons.Default.Refresh, contentDescription = "刷新") }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-                )
-            }
-        },
-        floatingActionButton = {
-            if (!isDesktop) {
-                ExtendedFloatingActionButton(
-                onClick = { showCreateDialog = true },
-                icon = { Icon(Icons.Default.Add, null) },
-                text = { Text("新建课程") }
                 )
             }
         },

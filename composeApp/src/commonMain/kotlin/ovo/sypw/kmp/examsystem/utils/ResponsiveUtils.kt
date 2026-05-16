@@ -443,7 +443,7 @@ fun <T> ResponsiveLazyVerticalGrid(
 
         // 使用 Column 而非 LazyColumn,避免嵌套在父 LazyColumn 中导致无限高度约束崩溃
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(contentPadding),
             verticalArrangement = verticalArrangement
         ) {
             if (columns == 1 || items.isEmpty()) {

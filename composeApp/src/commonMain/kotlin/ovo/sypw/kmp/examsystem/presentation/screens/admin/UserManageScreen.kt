@@ -34,7 +34,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -144,19 +143,13 @@ fun UserManageScreen() {
                     ),
                     actions = {
                         TextButton(onClick = { isBatchMode = true }) { Text("批量") }
+                        IconButton(onClick = { showCreateDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "新建用户")
+                        }
                         IconButton(onClick = { viewModel.loadUsers(queryParams) }) {
                             Icon(Icons.Default.Refresh, contentDescription = "刷新")
                         }
                     }
-                )
-            }
-        },
-        floatingActionButton = {
-            if (!isDesktop && !isBatchMode) {
-                ExtendedFloatingActionButton(
-                    onClick = { showCreateDialog = true },
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("新建用户") }
                 )
             }
         },

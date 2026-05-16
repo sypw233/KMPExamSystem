@@ -24,7 +24,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -180,21 +179,15 @@ fun TeacherExamManageScreen(
                     actions = {
                         if (selectedTab == 0) {
                             TextButton(onClick = { isBatchMode = true }) { Text("批量") }
+                            IconButton(onClick = { showCreateDialog = true }) {
+                                Icon(Icons.Default.Add, contentDescription = "新建考试")
+                            }
                         }
                         IconButton(onClick = { viewModel.loadManagerExams() }) {
                             Icon(Icons.Default.Refresh, "刷新")
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
-                )
-            }
-        },
-        floatingActionButton = {
-            if (!isDesktop && selectedTab == 0 && !isBatchMode) {
-                ExtendedFloatingActionButton(
-                    onClick = { showCreateDialog = true },
-                    icon = { Icon(Icons.Default.Add, null) },
-                    text = { Text("新建考试") }
                 )
             }
         },

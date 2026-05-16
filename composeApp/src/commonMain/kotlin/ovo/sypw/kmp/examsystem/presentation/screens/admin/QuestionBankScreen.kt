@@ -118,7 +118,12 @@ fun QuestionBankScreen() {
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
+                    if (!mobileShowQuestions) {
+                        IconButton(onClick = { createDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = "新建题库")
+                        }
+                    }
+                    IconButton(onClick = {
                         viewModel.downloadTemplate(
                             onSuccess = { bytes ->
                                 scope.launch {
@@ -128,41 +133,26 @@ fun QuestionBankScreen() {
                             onError = { scope.launch { snackbar.showSnackbar(it) } }
                         )
                     }) {
-                        Icon(Icons.Default.Share, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("下载模板")
+                        Icon(Icons.Default.Share, contentDescription = "下载模板")
                     }
-                    TextButton(onClick = {
+                    IconButton(onClick = {
                         val bankId = selectedBank?.id
                         if (bankId == null) {
                             scope.launch { snackbar.showSnackbar("请先选择一个题库") }
-                            return@TextButton
+                            return@IconButton
                         }
                         importQuestionsFromFile(bankId)
                     }) {
-                        Icon(Icons.Default.Done, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("导入")
+                        Icon(Icons.Default.Done, contentDescription = "导入题目")
                     }
-                    TextButton(onClick = { viewModel.refreshBanks() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("刷新")
+                    IconButton(onClick = { viewModel.refreshBanks() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
                     }
                 }
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbar) },
-        floatingActionButton = {
-            if (!isDesktop && !mobileShowQuestions) {
-                Button(onClick = { createDialog = true }) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("新建题库")
-                }
-            }
-        }
+        snackbarHost = { SnackbarHost(snackbar) }
     ) { padding ->
         Column(
             modifier = Modifier
