@@ -106,8 +106,8 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         //noinspection OldTargetApi
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 233
+        versionName = "ovO2.33"
     }
     packaging {
         resources {
