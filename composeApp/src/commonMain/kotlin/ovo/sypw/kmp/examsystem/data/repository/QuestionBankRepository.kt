@@ -22,9 +22,9 @@ class QuestionBankRepository(
     private val _bankQuestions = MutableStateFlow<List<QuestionResponse>>(emptyList())
     val bankQuestions: StateFlow<List<QuestionResponse>> = _bankQuestions.asStateFlow()
 
-    suspend fun loadMyBanks(): Result<List<QuestionBankResponse>> = runWithToken { token ->
+    suspend fun loadMyBanks(keyword: String? = null): Result<List<QuestionBankResponse>> = runWithToken { token ->
         fetchAllPages(
-            requestPage = { page, size -> questionBankApi.getMyBanks(token, page, size) },
+            requestPage = { page, size -> questionBankApi.getAllBanks(token, page, size, keyword) },
             content = { it.content },
             last = { it.last },
             totalPages = { it.totalPages },

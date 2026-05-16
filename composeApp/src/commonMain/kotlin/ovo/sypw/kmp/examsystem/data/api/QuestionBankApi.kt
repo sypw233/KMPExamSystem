@@ -19,12 +19,22 @@ class QuestionBankApi(httpClient: HttpClient) : BaseApiService(httpClient) {
         private const val BANK_ENDPOINT = "/api/question-banks"
     }
 
-    /** 获取所有题库（分页） */
-    suspend fun getAllBanks(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageQuestionBankResponse> {
+    /** 获取所有题库（分页，支持搜索） */
+    suspend fun getAllBanks(
+        token: String,
+        page: Int = 0,
+        size: Int = 20,
+        keyword: String? = null
+    ): ApiResponse<PageQuestionBankResponse> {
+        val params = buildMap<String, Any> {
+            put("page", page)
+            put("size", size)
+            keyword?.let { put("keyword", it) }
+        }
         val result = getWithToken(
             endpoint = BANK_ENDPOINT,
             token = token,
-            parameters = mapOf("page" to page, "size" to size)
+            parameters = params
         )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())

@@ -50,10 +50,10 @@ class QuestionBankViewModel(
         loadAllQuestions()
     }
 
-    fun refreshBanks() {
+    fun refreshBanks(keyword: String? = null) {
         viewModelScope.launch {
             _uiState.value = QuestionBankUiState.Loading
-            questionBankRepository.loadMyBanks()
+            questionBankRepository.loadMyBanks(keyword)
                 .onSuccess { _uiState.value = QuestionBankUiState.Success(it) }
                 .onFailure { _uiState.value = QuestionBankUiState.Error(it.message ?: "加载题库失败") }
         }

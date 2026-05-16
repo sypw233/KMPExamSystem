@@ -63,14 +63,23 @@ class CourseViewModel(
         loadMyCourses()
     }
 
-    /** 加载所有活跃课程 */
-    fun loadAllCourses() {
+    /** 加载所有活跃课程（支持搜索/筛选） */
+    fun loadAllCourses(
+        keyword: String? = null,
+        status: Int? = null,
+        teacherId: Long? = null
+    ) {
         viewModelScope.launch {
             _allCoursesState.value = CourseUiState.Loading
-            courseRepository.loadAllCourses()
+            courseRepository.loadAllCourses(keyword, status, teacherId)
                 .onSuccess { _allCoursesState.value = CourseUiState.Success(it) }
                 .onFailure { _allCoursesState.value = CourseUiState.Error(it.message ?: "加载课程失败") }
         }
+    }
+
+    /** 搜索课程 */
+    fun searchCourses(keyword: String) {
+        loadAllCourses(keyword = keyword.takeIf { it.isNotBlank() })
     }
 
     /** 加载我的课程 */

@@ -139,9 +139,12 @@ private fun DashboardExamCard(exam: ExamResponse, onStartExam: () -> Unit, confi
 
             Spacer(modifier = Modifier.height(config.verticalSpacing))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 DashboardIconText(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
-                Spacer(modifier = Modifier.width(config.horizontalSpacing * 2))
                 DashboardIconText(Icons.AutoMirrored.Filled.Assignment, "满分 ${exam.totalScore}")
             }
 

@@ -88,7 +88,10 @@ internal fun ExamCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 InfoChip(Icons.Default.Timer, "${exam.duration ?: "-"} 分钟")
                 InfoChip(Icons.AutoMirrored.Filled.Assignment, "满分 ${exam.totalScore}")
                 if (exam.questionCount > 0) {

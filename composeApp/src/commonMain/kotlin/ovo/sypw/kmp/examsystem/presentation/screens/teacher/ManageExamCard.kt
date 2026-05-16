@@ -3,6 +3,8 @@ package ovo.sypw.kmp.examsystem.presentation.screens.teacher
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ManageExamCard(
     exam: ExamResponse,
@@ -87,57 +90,66 @@ fun ManageExamCard(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = MaterialTheme.shapes.small
+                // 课程名称和状态标签
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        exam.courseName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
-                }
-                Surface(color = statusColor, shape = MaterialTheme.shapes.small) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = MaterialTheme.shapes.small
                     ) {
-                        Icon(statusIcon, null, modifier = Modifier.size(12.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(statusLabel, style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            exam.courseName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                    Surface(color = statusColor, shape = MaterialTheme.shapes.small) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(statusIcon, null, modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(statusLabel, style = MaterialTheme.typography.labelSmall)
+                        }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(exam.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            if (!exam.description.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(exam.description, style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(exam.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                if (!exam.description.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(exam.description, style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)) {
-                Text("${exam.questionCount} 题", style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.outline)
-                Text("满分 ${exam.totalScore}", style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.outline)
-                Text("${exam.duration ?: "-"} 分钟", style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.outline)
-            }
+                // 考试信息标签，使用 FlowRow 避免挤压
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text("${exam.questionCount} 题", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.outline)
+                    Text("满分 ${exam.totalScore}", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.outline)
+                    Text("${exam.duration ?: "-"} 分钟", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.outline)
+                }
 
             } // close else
 
             if (canEdit) {
                 Spacer(modifier = Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 操作按钮，使用 FlowRow 避免挤压
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     TextButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
@@ -151,7 +163,6 @@ fun ManageExamCard(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("删除")
                     }
-                    Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = { onRandomCompose?.invoke() }) {
                         Text("智能组卷", style = MaterialTheme.typography.labelSmall)
                     }

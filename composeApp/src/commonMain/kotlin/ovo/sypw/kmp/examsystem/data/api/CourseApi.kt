@@ -20,12 +20,34 @@ class CourseApi(httpClient: HttpClient) : BaseApiService(httpClient) {
         private const val COURSE_ENDPOINT = "/api/courses"
     }
 
-    /** 获取所有活跃课程（分页） */
-    suspend fun getAllActiveCourses(token: String, page: Int = 0, size: Int = 20): ApiResponse<PageCourseResponse> {
+    /**
+     * 获取所有活跃课程（分页，支持搜索/筛选）
+     * @param token 访问令牌
+     * @param page 页码（从0开始）
+     * @param size 每页大小
+     * @param keyword 搜索关键词（可选，匹配课程名称）
+     * @param status 课程状态筛选（可选，1=活跃）
+     * @param teacherId 教师ID筛选（可选）
+     */
+    suspend fun getAllActiveCourses(
+        token: String,
+        page: Int = 0,
+        size: Int = 20,
+        keyword: String? = null,
+        status: Int? = null,
+        teacherId: Long? = null
+    ): ApiResponse<PageCourseResponse> {
+        val params = buildMap<String, Any> {
+            put("page", page)
+            put("size", size)
+            keyword?.let { put("keyword", it) }
+            status?.let { put("status", it) }
+            teacherId?.let { put("teacherId", it) }
+        }
         val result = getWithToken(
             endpoint = COURSE_ENDPOINT,
             token = token,
-            parameters = mapOf("page" to page, "size" to size)
+            parameters = params
         )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())

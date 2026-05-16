@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -63,18 +64,32 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
             OutlinedTextField(
                 value = keyword,
                 onValueChange = { keyword = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("搜索用户名/姓名/邮箱") },
-                leadingIcon = { Icon(Icons.Default.Search, null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                placeholder = { Text("搜索用户名/姓名/邮箱", style = MaterialTheme.typography.bodySmall) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
                 trailingIcon = {
                     if (keyword.isNotEmpty()) {
-                        IconButton(onClick = {
-                            keyword = ""
-                            onParamsChange(params.copy(keyword = null, page = 0))
-                        }) { Icon(Icons.Default.Close, null) }
+                        IconButton(
+                            onClick = {
+                                keyword = ""
+                                onParamsChange(params.copy(keyword = null, page = 0))
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
                     }
                 },
-                singleLine = true
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(8.dp))
             FlowRow(

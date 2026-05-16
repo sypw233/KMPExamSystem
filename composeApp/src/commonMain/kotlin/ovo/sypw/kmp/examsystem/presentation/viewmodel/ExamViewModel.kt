@@ -9,6 +9,8 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
+import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.utils.Logger
 
@@ -41,34 +43,12 @@ sealed interface ExamActionState {
  */
 class ExamViewModel(
     private val examRepository: ExamRepository,
-    private val authStateManager: AuthStateManager
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    init {
-        // 自动从 AuthState 检测用户角色
-        viewModelScope.launch {
-            authStateManager.authState.collect { state ->
-                val role = when (state) {
-                    is AuthState.Authenticated -> when (state.role.lowercase()) {
-                        "admin" -> UserRole.ADMIN
-                        "teacher" -> UserRole.TEACHER
-                        "student" -> UserRole.STUDENT
-                        else -> UserRole.UNKNOWN
-                    }
-                    is AuthState.UserRole -> when (state.role.lowercase()) {
-                        "admin" -> UserRole.ADMIN
-                        "teacher" -> UserRole.TEACHER
-                        "student" -> UserRole.STUDENT
-                        else -> UserRole.UNKNOWN
-                    }
-                    is AuthState.Unauthenticated -> UserRole.UNKNOWN
-                }
-                if (role != _userRole.value && role != UserRole.UNKNOWN) {
-                    setRole(role)
-                }
-            }
-        }
-    }
+    // 当前角色（影响调用哪套 API），使用 StateFlow 保证并发可见性
+    // 必须在 init 块之前声明，因为 init 块中的协程会立即访问此属性
+    private val _userRole = MutableStateFlow(UserRole.UNKNOWN)
 
     // 管理视角：全部考试列表（管理员/教师用 "我的考试" vs "全部考试"）
     private val _allExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
@@ -94,8 +74,25 @@ class ExamViewModel(
     private val _actionState = MutableStateFlow<ExamActionState>(ExamActionState.Idle)
     val actionState: StateFlow<ExamActionState> = _actionState.asStateFlow()
 
-    // 当前角色（影响调用哪套 API），使用 StateFlow 保证并发可见性
-    private val _userRole = MutableStateFlow(UserRole.UNKNOWN)
+    init {
+        // 自动从 AuthState 检测用户角色
+        viewModelScope.launch {
+            authRepository.authState.collect { state ->
+                val role = when (state) {
+                    is AuthState.Authenticated -> when (state.user.role.lowercase()) {
+                        "admin" -> UserRole.ADMIN
+                        "teacher" -> UserRole.TEACHER
+                        "student" -> UserRole.STUDENT
+                        else -> UserRole.UNKNOWN
+                    }
+                    else -> UserRole.UNKNOWN
+                }
+                if (role != _userRole.value && role != UserRole.UNKNOWN) {
+                    setRole(role)
+                }
+            }
+        }
+    }
 
     /** 设置用户角色，根据角色加载对应数据 */
     fun setRole(role: UserRole) {

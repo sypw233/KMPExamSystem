@@ -30,11 +30,18 @@ class CourseRepository(
     val myEnrollments: StateFlow<List<EnrollmentResponse>> = _myEnrollments.asStateFlow()
 
     /**
-     * 获取所有活跃课程列表（分页）
+     * 获取所有活跃课程列表（分页，支持搜索/筛选）
+     * @param keyword 搜索关键词（可选）
+     * @param status 课程状态筛选（可选）
+     * @param teacherId 教师ID筛选（可选）
      */
-    suspend fun loadAllCourses(): Result<List<CourseResponse>> = runWithToken { token ->
+    suspend fun loadAllCourses(
+        keyword: String? = null,
+        status: Int? = null,
+        teacherId: Long? = null
+    ): Result<List<CourseResponse>> = runWithToken { token ->
         fetchAllPages(
-            requestPage = { page, size -> courseApi.getAllActiveCourses(token, page, size) },
+            requestPage = { page, size -> courseApi.getAllActiveCourses(token, page, size, keyword, status, teacherId) },
             content = { it.content },
             last = { it.last },
             totalPages = { it.totalPages },
