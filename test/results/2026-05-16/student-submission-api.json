@@ -1,0 +1,22 @@
+﻿{
+    "code":  200,
+    "message":  "æäº¤æå",
+    "data":  {
+                 "id":  207,
+                 "examId":  104,
+                 "examTitle":  "E2Eèè¯-0516152720",
+                 "userId":  3,
+                 "userName":  "Alice Student",
+                 "answers":  "{\"653\":\"è¿æ¯ä¸æ¬¡ç«¯å°ç«¯æµè¯æäº¤\",\"652\":\"2\"}",
+                 "objectiveScore":  null,
+                 "subjectiveScore":  null,
+                 "totalScore":  40,
+                 "status":  1,
+                 "statusDescription":  "å·²æäº¤",
+                 "switchCount":  0,
+                 "startTime":  "2026-05-16T15:28:13.1374789",
+                 "submitTime":  "2026-05-16T15:28:13.1195539",
+                 "submitDetail":  "{\"questionScores\":{\"652\":40,\"653\":0},\"totalScore\":40,\"autoGraded\":true}",
+                 "proctoringData":  null
+             }
+}

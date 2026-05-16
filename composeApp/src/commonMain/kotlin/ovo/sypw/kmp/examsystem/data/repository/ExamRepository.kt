@@ -123,14 +123,24 @@ class ExamRepository(
 
     /** 学生：获取可参加的考试 */
     suspend fun getMyAvailableExams(): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getMyAvailableExams(token)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        fetchAllPages(
+            requestPage = { page, size -> examApi.getMyAvailableExams(token, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     /** 学生：获取已完成的考试 */
     suspend fun getMyCompletedExams(): Result<List<ExamResponse>> = runWithToken { token ->
-        val r = examApi.getMyCompletedExams(token)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+        fetchAllPages(
+            requestPage = { page, size -> examApi.getMyCompletedExams(token, page, size) },
+            content = { it.content },
+            last = { it.last },
+            totalPages = { it.totalPages },
+            distinctKey = { it.id }
+        )
     }
 
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->

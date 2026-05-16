@@ -67,8 +67,16 @@ class ExamApi(httpClient: HttpClient) : BaseApiService(httpClient) {
     }
 
     /** 学生：获取可参加的考试 */
-    suspend fun getMyAvailableExams(token: String): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/my-available", token = token)
+    suspend fun getMyAvailableExams(
+        token: String,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageExamResponse> {
+        val result = getWithToken(
+            endpoint = "$EXAM_ENDPOINT/my-available",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)
@@ -77,8 +85,16 @@ class ExamApi(httpClient: HttpClient) : BaseApiService(httpClient) {
     }
 
     /** 学生：获取已完成的考试 */
-    suspend fun getMyCompletedExams(token: String): ApiResponse<List<ExamResponse>> {
-        val result = getWithToken(endpoint = "$EXAM_ENDPOINT/my-completed", token = token)
+    suspend fun getMyCompletedExams(
+        token: String,
+        page: Int = 0,
+        size: Int = 20
+    ): ApiResponse<PageExamResponse> {
+        val result = getWithToken(
+            endpoint = "$EXAM_ENDPOINT/my-completed",
+            token = token,
+            parameters = mapOf("page" to page, "size" to size)
+        )
         return when (result) {
             is NetworkResult.Success -> ApiResponse(result.data.code, result.data.msg, result.data.parseData())
             is NetworkResult.Error -> ApiResponse(500, result.message, null)

@@ -105,8 +105,14 @@ fun GradeSubmissionScreen(
         }
     }
 
-    // 过滤出主观题 (包括简答题和部分填空题，默认短答题 short_answer)
-    val subjectiveQuestions = questions.filter { it.question?.questionType == QuestionType.SHORT_ANSWER }
+    // Manual grading covers both fill blank and short answer questions.
+    val subjectiveQuestions = questions.filter {
+        it.question?.questionType in setOf(QuestionType.FILL_BLANK, QuestionType.SHORT_ANSWER)
+    }
+    val objectiveScore = remember(submission?.objectiveScore, submission?.totalScore, submission?.subjectiveScore) {
+        submission?.objectiveScore
+            ?: ((submission?.totalScore ?: 0) - (submission?.subjectiveScore ?: 0)).coerceAtLeast(0)
+    }
 
     Scaffold(
         topBar = {
@@ -141,7 +147,7 @@ fun GradeSubmissionScreen(
                     Column {
                         Text("考试: ${submission?.examTitle ?: ""}", fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("客观题得分: ${submission?.objectiveScore ?: 0}", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text("客观题得分: $objectiveScore", color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     Button(
                         onClick = {
