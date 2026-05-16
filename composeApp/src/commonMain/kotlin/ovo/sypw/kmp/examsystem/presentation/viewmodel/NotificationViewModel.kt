@@ -48,6 +48,9 @@ class NotificationViewModel(
     val hasMore: StateFlow<Boolean> = _hasMore.asStateFlow()
 
     private val pageSize = 20
+    private var isLoadingFirstPage = false
+    private var isLoadingUnreadCount = false
+    private var hasLoadedUnreadCount = false
 
     init {
         loadNotifications()
@@ -57,7 +60,12 @@ class NotificationViewModel(
     /**
      * 加载通知列表
      */
-    fun loadNotifications(page: Int = 0) {
+    fun loadNotifications(page: Int = 0, force: Boolean = true) {
+        if (page == 0) {
+            if (!force && _uiState.value is NotificationUiState.Success) return
+            if (isLoadingFirstPage) return
+            isLoadingFirstPage = true
+        }
         viewModelScope.launch {
             if (page == 0) _uiState.value = NotificationUiState.Loading
             notificationRepository.loadNotifications(page, pageSize)
@@ -75,6 +83,7 @@ class NotificationViewModel(
                         _actionState.value = NotificationActionState.Error(e.message ?: "加载更多失败")
                     }
                 }
+            if (page == 0) isLoadingFirstPage = false
         }
     }
 
@@ -90,9 +99,14 @@ class NotificationViewModel(
     /**
      * 刷新未读数
      */
-    fun loadUnreadCount() {
+    fun loadUnreadCount(force: Boolean = true) {
+        if (!force && hasLoadedUnreadCount) return
+        if (isLoadingUnreadCount) return
+        isLoadingUnreadCount = true
         viewModelScope.launch {
             notificationRepository.loadUnreadCount()
+                .onSuccess { hasLoadedUnreadCount = true }
+            isLoadingUnreadCount = false
         }
     }
 

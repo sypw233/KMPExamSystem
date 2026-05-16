@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,7 +50,6 @@ fun ManageExamCard(
     onDelete: () -> Unit,
     onPublish: () -> Unit,
     onCompose: (() -> Unit)? = null,
-    onRandomCompose: (() -> Unit)? = null,
     onViewSubmissions: (() -> Unit)? = null
 ) {
     val config = LocalResponsiveConfig.current
@@ -147,29 +147,36 @@ fun ManageExamCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 // 操作按钮，使用 FlowRow 避免挤压
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    TextButton(onClick = onEdit) {
+                    Button(
+                        onClick = onPublish,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) { Text("发布") }
+                    OutlinedButton(
+                        onClick = { onCompose?.invoke() },
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("组卷")
+                    }
+                    TextButton(
+                        onClick = onEdit,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                    ) {
                         Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("编辑")
                     }
                     TextButton(
                         onClick = onDelete,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) {
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("删除")
                     }
-                    TextButton(onClick = { onRandomCompose?.invoke() }) {
-                        Text("智能组卷", style = MaterialTheme.typography.labelSmall)
-                    }
-                    OutlinedButton(onClick = { onCompose?.invoke() }) {
-                        Text("组卷")
-                    }
-                    Button(onClick = onPublish) { Text("发布") }
                 }
             } else {
                 Spacer(modifier = Modifier.height(10.dp))

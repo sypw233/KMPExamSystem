@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -196,6 +198,7 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                                     if (s.courses.isEmpty()) {
                                         Text("暂无课程", modifier = Modifier.padding(top = 32.dp))
                                     } else {
+                                        val bottomSafePadding = if (isDesktop) config.screenPadding else config.screenPadding + 96.dp
                                         ResponsiveLazyVerticalGrid(
                                             items = s.courses,
                                             key = { it.id },
@@ -207,12 +210,13 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                                                         Modifier
                                                     }
                                                 )
-                                                .fillMaxSize(),
+                                                .fillMaxSize()
+                                                .verticalScroll(rememberScrollState()),
                                             contentPadding = PaddingValues(
                                                 start = config.screenPadding,
                                                 end = config.screenPadding,
                                                 top = config.screenPadding,
-                                                bottom = config.screenPadding + 80.dp
+                                                bottom = bottomSafePadding
                                             ),
                                             verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                                             horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)

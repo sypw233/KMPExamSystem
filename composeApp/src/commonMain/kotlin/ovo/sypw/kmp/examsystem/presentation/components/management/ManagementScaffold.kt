@@ -14,8 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @Composable
 fun ManagementPageHeader(
@@ -66,12 +69,14 @@ fun ManagementPanel(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
+    val isCompact = LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.COMPACT
+
     Surface(
         modifier = modifier,
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        tonalElevation = 1.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        shape = if (isCompact) RectangleShape else MaterialTheme.shapes.extraLarge,
+        color = if (isCompact) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainerLowest,
+        tonalElevation = if (isCompact) 0.dp else 1.dp,
+        border = if (isCompact) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         content = content
     )
 }

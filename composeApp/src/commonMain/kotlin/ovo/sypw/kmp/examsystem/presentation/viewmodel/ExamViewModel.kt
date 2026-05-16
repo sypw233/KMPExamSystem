@@ -73,6 +73,9 @@ class ExamViewModel(
     // 操作反馈
     private val _actionState = MutableStateFlow<ExamActionState>(ExamActionState.Idle)
     val actionState: StateFlow<ExamActionState> = _actionState.asStateFlow()
+    private var isLoadingManagerExams = false
+    private var isLoadingPublishedExams = false
+    private var isLoadingEndedExams = false
 
     init {
         // 自动从 AuthState 检测用户角色
@@ -88,15 +91,16 @@ class ExamViewModel(
                     else -> UserRole.UNKNOWN
                 }
                 if (role != _userRole.value && role != UserRole.UNKNOWN) {
-                    setRole(role)
+                    setRole(role, loadData = false)
                 }
             }
         }
     }
 
     /** 设置用户角色，根据角色加载对应数据 */
-    fun setRole(role: UserRole) {
+    fun setRole(role: UserRole, loadData: Boolean = true) {
         _userRole.value = role
+        if (!loadData) return
         when (role) {
             UserRole.STUDENT -> {
                 loadPublishedExams()
@@ -110,7 +114,10 @@ class ExamViewModel(
     }
 
     /** 管理员/教师视角：加载考试列表（管理员看全部，教师看我的） */
-    fun loadManagerExams() {
+    fun loadManagerExams(force: Boolean = true) {
+        if (!force && _allExams.value is ExamListUiState.Success) return
+        if (isLoadingManagerExams) return
+        isLoadingManagerExams = true
         _allExams.value = ExamListUiState.Loading
         viewModelScope.launch {
             val result = if (_userRole.value == UserRole.ADMIN)
@@ -121,11 +128,15 @@ class ExamViewModel(
                 onSuccess = { _allExams.value = ExamListUiState.Success(it) },
                 onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
             )
+            isLoadingManagerExams = false
         }
     }
 
     /** 加载已发布的考试（学生用可参加接口，教师/管理员用状态筛选） */
-    fun loadPublishedExams() {
+    fun loadPublishedExams(force: Boolean = true) {
+        if (!force && _notStartedExams.value is ExamListUiState.Success) return
+        if (isLoadingPublishedExams) return
+        isLoadingPublishedExams = true
         viewModelScope.launch {
             _notStartedExams.value = ExamListUiState.Loading
             val result = if (_userRole.value == UserRole.STUDENT) {
@@ -140,11 +151,15 @@ class ExamViewModel(
                 .onFailure { e ->
                     _notStartedExams.value = ExamListUiState.Error(e.message ?: "加载考试失败")
                 }
+            isLoadingPublishedExams = false
         }
     }
 
     /** 加载已结束的考试（学生用已完成接口，教师/管理员用状态筛选） */
-    fun loadEndedExams() {
+    fun loadEndedExams(force: Boolean = true) {
+        if (!force && _endedExams.value is ExamListUiState.Success) return
+        if (isLoadingEndedExams) return
+        isLoadingEndedExams = true
         viewModelScope.launch {
             _endedExams.value = ExamListUiState.Loading
             val result = if (_userRole.value == UserRole.STUDENT) {
@@ -154,6 +169,7 @@ class ExamViewModel(
             }
             result.onSuccess { _endedExams.value = ExamListUiState.Success(it) }
                 .onFailure { e -> _endedExams.value = ExamListUiState.Error(e.message ?: "加载历史考试失败") }
+            isLoadingEndedExams = false
         }
     }
 

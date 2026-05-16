@@ -1,5 +1,7 @@
 package ovo.sypw.kmp.examsystem.presentation.screens
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ManageCourseCard(
     course: CourseResponse,
@@ -69,7 +72,11 @@ fun ManageCourseCard(
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 TextButton(onClick = onManageEnrollments) {
                     Icon(Icons.Default.People, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))

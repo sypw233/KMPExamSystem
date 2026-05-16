@@ -52,28 +52,44 @@ class CourseViewModel(
 
     private val _actionState = MutableStateFlow<CourseActionState>(CourseActionState.Idle)
     val actionState: StateFlow<CourseActionState> = _actionState.asStateFlow()
+    private var isLoadingAllCourses = false
+    private var isLoadingMyCourses = false
 
     // 当前正在编辑/查看的课程学生列表
     private val _courseStudents = MutableStateFlow<List<EnrollmentResponse>>(emptyList())
     val courseStudents: StateFlow<List<EnrollmentResponse>> = _courseStudents.asStateFlow()
 
     init {
-        // 自动加载课程列表（教师加载自己的，管理员加载全部）
-        loadAllCourses()
-        loadMyCourses()
+        val cachedAllCourses = courseRepository.allCourses.value
+        val cachedMyCourses = courseRepository.myCourses.value
+        if (cachedAllCourses.isNotEmpty()) {
+            _allCoursesState.value = CourseUiState.Success(cachedAllCourses)
+        } else {
+            loadAllCourses(force = false)
+        }
+        if (cachedMyCourses.isNotEmpty()) {
+            _myCoursesState.value = CourseUiState.Success(cachedMyCourses)
+        } else {
+            loadMyCourses(force = false)
+        }
     }
 
     /** 加载所有活跃课程（支持搜索/筛选） */
     fun loadAllCourses(
         keyword: String? = null,
         status: Int? = null,
-        teacherId: Long? = null
+        teacherId: Long? = null,
+        force: Boolean = true
     ) {
+        if (!force && _allCoursesState.value is CourseUiState.Success) return
+        if (isLoadingAllCourses) return
+        isLoadingAllCourses = true
         viewModelScope.launch {
             _allCoursesState.value = CourseUiState.Loading
             courseRepository.loadAllCourses(keyword, status, teacherId)
                 .onSuccess { _allCoursesState.value = CourseUiState.Success(it) }
                 .onFailure { _allCoursesState.value = CourseUiState.Error(it.message ?: "加载课程失败") }
+            isLoadingAllCourses = false
         }
     }
 
@@ -83,12 +99,16 @@ class CourseViewModel(
     }
 
     /** 加载我的课程 */
-    fun loadMyCourses() {
+    fun loadMyCourses(force: Boolean = true) {
+        if (!force && _myCoursesState.value is CourseUiState.Success) return
+        if (isLoadingMyCourses) return
+        isLoadingMyCourses = true
         viewModelScope.launch {
             _myCoursesState.value = CourseUiState.Loading
             courseRepository.loadMyCourses()
                 .onSuccess { _myCoursesState.value = CourseUiState.Success(it) }
                 .onFailure { _myCoursesState.value = CourseUiState.Error(it.message ?: "加载我的课程失败") }
+            isLoadingMyCourses = false
         }
     }
 

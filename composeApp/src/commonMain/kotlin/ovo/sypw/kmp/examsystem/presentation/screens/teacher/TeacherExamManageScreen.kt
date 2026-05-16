@@ -101,7 +101,6 @@ fun TeacherExamManageScreen(
     var showEditDialog by remember { mutableStateOf<ExamResponse?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<ExamResponse?>(null) }
     var composeExam by remember { mutableStateOf<ExamResponse?>(null) }
-    var randomComposeExam by remember { mutableStateOf<ExamResponse?>(null) }
     var viewSubmissionsExam by remember { mutableStateOf<ExamResponse?>(null) }
 
     var isBatchMode by remember { mutableStateOf(false) }
@@ -126,16 +125,6 @@ fun TeacherExamManageScreen(
             examId = exam.id,
             courseId = exam.courseId,
             onBack = { composeExam = null }
-        )
-        return
-    }
-
-    randomComposeExam?.let { exam ->
-        ExamComposeScreen(
-            examId = exam.id,
-            courseId = exam.courseId,
-            autoOpenRandomCompose = true,
-            onBack = { randomComposeExam = null }
         )
         return
     }
@@ -340,7 +329,6 @@ fun TeacherExamManageScreen(
                                         onDelete = { showDeleteConfirm = exam },
                                         onPublish = { viewModel.publishExam(exam.id) },
                                         onCompose = { composeExam = exam },
-                                        onRandomCompose = { randomComposeExam = exam },
                                         onViewSubmissions = { viewSubmissionsExam = exam }
                                     )
                                 }

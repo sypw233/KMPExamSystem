@@ -29,7 +29,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
+import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -47,7 +50,9 @@ fun ExamsScreen(
     navigationManager: NavigationManager,
     onStartExam: (Long) -> Unit = {}
 ) {
+    val authRepository: AuthRepository = koinInject()
     val examViewModel: ExamViewModel = koinInject()
+    val authState by authRepository.authState.collectAsState()
     val notStartedState by examViewModel.notStartedExams.collectAsState()
     val endedState by examViewModel.endedExams.collectAsState()
 
@@ -59,10 +64,18 @@ fun ExamsScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    // 初始加载考试数据
-    LaunchedEffect(Unit) {
-        examViewModel.loadPublishedExams()
-        examViewModel.loadEndedExams()
+    // 按登录角色加载一次；返回页面时如果已有状态则不重复请求。
+    LaunchedEffect(authState) {
+        val authenticated = authState as? AuthState.Authenticated ?: return@LaunchedEffect
+        val role = when (authenticated.user.role.lowercase()) {
+            "admin" -> UserRole.ADMIN
+            "teacher" -> UserRole.TEACHER
+            "student" -> UserRole.STUDENT
+            else -> UserRole.UNKNOWN
+        }
+        examViewModel.setRole(role, loadData = false)
+        examViewModel.loadPublishedExams(force = false)
+        examViewModel.loadEndedExams(force = false)
     }
 
     Scaffold(

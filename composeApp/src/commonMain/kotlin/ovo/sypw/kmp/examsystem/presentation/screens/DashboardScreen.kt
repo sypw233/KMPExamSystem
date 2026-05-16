@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -48,16 +49,20 @@ fun DashboardScreen(
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val config = LocalResponsiveConfig.current
 
-    // 初始加载考试数据
-    LaunchedEffect(Unit) {
-        examViewModel.loadPublishedExams()
-    }
-
-    // 认证状态变化时重新加载通知
+    // 认证状态变化时按需加载；显式刷新/重试仍会强制请求。
     LaunchedEffect(authState) {
-        if (authState is AuthState.Authenticated) {
-            notificationViewModel.loadNotifications()
-            notificationViewModel.loadUnreadCount()
+        val authenticated = authState as? AuthState.Authenticated
+        if (authenticated != null) {
+            val role = when (authenticated.user.role.lowercase()) {
+                "admin" -> UserRole.ADMIN
+                "teacher" -> UserRole.TEACHER
+                "student" -> UserRole.STUDENT
+                else -> UserRole.UNKNOWN
+            }
+            examViewModel.setRole(role, loadData = false)
+            examViewModel.loadPublishedExams(force = false)
+            notificationViewModel.loadNotifications(force = false)
+            notificationViewModel.loadUnreadCount(force = false)
         }
     }
 
@@ -93,10 +98,7 @@ fun DashboardScreen(
                         GreetingSection(
                             userName = user?.realName ?: "同学",
                             unreadCount = unreadCount,
-                            config = config,
-                            onNavigateToExams = onNavigateToExams,
-                            onNavigateToCourses = onNavigateToCourses,
-                            onNavigateToNotifications = onNavigateToNotifications
+                            config = config
                         )
                     }
 
