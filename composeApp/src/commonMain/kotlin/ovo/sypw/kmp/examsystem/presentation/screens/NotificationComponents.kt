@@ -46,6 +46,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.StringUtils
@@ -134,6 +136,8 @@ internal fun SendNotificationDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("发送系统通知") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

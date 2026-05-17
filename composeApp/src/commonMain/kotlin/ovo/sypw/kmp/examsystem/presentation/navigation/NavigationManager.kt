@@ -4,29 +4,35 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
  * 导航管理器
  * 持有当前路由、考试模式状态，并感知用户角色以提供角色专属导航项
  */
-class NavigationManager {
+class NavigationManager(
+    initialScreen: String = AppRoutes.HOME,
+    initialRole: UserRole = UserRole.UNKNOWN,
+    initialExamMode: Boolean = false,
+    initialExamId: Long? = null
+) {
 
     // 当前页面路由，默认首页
-    private val _currentScreen = mutableStateOf(AppRoutes.HOME)
+    private val _currentScreen = mutableStateOf(initialScreen)
     val currentScreen: State<String> = _currentScreen
 
     // 当前用户角色，未知时为 UNKNOWN
-    private val _userRole = mutableStateOf(UserRole.UNKNOWN)
+    private val _userRole = mutableStateOf(initialRole)
     val userRole: State<UserRole> = _userRole
 
     // 考试模式：进入全屏答题时为 true
-    private val _isInExamMode = mutableStateOf(false)
+    private val _isInExamMode = mutableStateOf(initialExamMode)
     val isInExamMode: State<Boolean> = _isInExamMode
 
     // 当前答题的考试 ID
-    private val _currentExamId = mutableStateOf<Long?>(null)
+    private val _currentExamId = mutableStateOf(initialExamId)
     val currentExamId: State<Long?> = _currentExamId
 
     // 导航历史栈
@@ -112,4 +118,23 @@ class NavigationManager {
 
 /** 创建并 remember NavigationManager 实例 */
 @Composable
-fun rememberNavigationManager(): NavigationManager = remember { NavigationManager() }
+fun rememberNavigationManager(): NavigationManager = rememberSaveable(
+    saver = Saver(
+        save = {
+            listOf(
+                it.currentScreen.value,
+                it.userRole.value.name,
+                it.isInExamMode.value,
+                it.currentExamId.value
+            )
+        },
+        restore = { saved ->
+            NavigationManager(
+                initialScreen = saved[0] as String,
+                initialRole = UserRole.valueOf(saved[1] as String),
+                initialExamMode = saved[2] as Boolean,
+                initialExamId = saved[3] as Long?
+            )
+        }
+    )
+) { NavigationManager() }

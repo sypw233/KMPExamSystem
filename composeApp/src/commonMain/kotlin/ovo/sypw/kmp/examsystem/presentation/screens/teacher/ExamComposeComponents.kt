@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SectionRule
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RandomComposeState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
@@ -77,7 +79,9 @@ internal fun RandomComposeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = if (dialogMaxWidth != Dp.Unspecified) Modifier.widthIn(max = dialogMaxWidth) else Modifier,
+        modifier = adaptiveDialogModifier()
+            .then(if (dialogMaxWidth != Dp.Unspecified) Modifier.widthIn(max = dialogMaxWidth) else Modifier),
+        properties = adaptiveDialogProperties(),
         title = { Text("智能随机组卷") },
         text = {
             Column(modifier = Modifier.fillMaxWidth().heightIn(max = 500.dp).verticalScroll(rememberScrollState())) {

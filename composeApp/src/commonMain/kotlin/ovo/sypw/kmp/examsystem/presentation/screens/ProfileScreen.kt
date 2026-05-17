@@ -56,6 +56,7 @@ fun ProfileScreen() {
         "grades" -> GradeHistoryScreen(onBack = { currentSubScreen = null })
         "notifications" -> NotificationScreen(onBack = { currentSubScreen = null })
         "settings" -> AppSettingsScreen(onBack = { currentSubScreen = null })
+        "about" -> AboutScreen(onBack = { currentSubScreen = null })
         else -> {
             Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
                 ProfileMainScreen(
@@ -68,7 +69,8 @@ fun ProfileScreen() {
                     onLogout = { scope.launch { authRepository.logout() } },
                     onOpenEditProfile = { showEditProfileDialog = true },
                     onOpenHelp = { showHelpDialog = true },
-                    onOpenSettings = { currentSubScreen = "settings" }
+                    onOpenSettings = { currentSubScreen = "settings" },
+                    onOpenAbout = { currentSubScreen = "about" }
                 )
             }
         }

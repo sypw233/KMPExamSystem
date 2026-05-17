@@ -27,6 +27,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -49,6 +51,8 @@ import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.common.EmptyState
 import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
+import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -74,10 +78,12 @@ fun NotificationScreen(onBack: () -> Unit) {
     var showSendDialog by remember { mutableStateOf(false) }
     var showActionMenu by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val config = LocalResponsiveConfig.current
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -146,6 +152,20 @@ fun NotificationScreen(onBack: () -> Unit) {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
+        ActionEffect(
+            actionState = viewModel.actionState.collectAsState(),
+            snackbarHostState = snackbarHostState,
+            isSuccess = { it is NotificationActionState.Success },
+            isError = { it is NotificationActionState.Error },
+            getMessage = {
+                when (it) {
+                    is NotificationActionState.Success -> it.message
+                    is NotificationActionState.Error -> it.message
+                    else -> ""
+                }
+            },
+            onConsumed = { viewModel.resetActionState() }
+        )
         LaunchedEffect(uiState !is NotificationUiState.Loading) {
             isRefreshing = false
         }

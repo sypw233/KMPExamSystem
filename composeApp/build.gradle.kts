@@ -42,8 +42,7 @@ kotlin {
             implementation(libs.ktor.client.android)
             // Koin Android支持
             implementation(libs.koin.android)
-
-
+            implementation(libs.mediation.sdk)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -54,7 +53,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.material.icons.extended)
             // 跨平台返回键处理
-            implementation("org.jetbrains.compose.ui:ui-backhandler:1.9.3")
+            implementation(libs.ui.backhandler)
             // KMP ViewModel
             implementation(libs.kmp.viewmodel)
             implementation(libs.kmp.viewmodel.compose)
@@ -108,6 +107,19 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 233
         versionName = "ovO2.33"
+        buildConfigField(
+            "String",
+            "PANGLE_APP_ID",
+            "\"${providers.gradleProperty("PANGLE_APP_ID").orElse("").get()}\""
+        )
+        buildConfigField(
+            "String",
+            "PANGLE_SPLASH_AD_ID",
+            "\"${providers.gradleProperty("PANGLE_SPLASH_AD_ID").orElse("").get()}\""
+        )
+    }
+    buildFeatures {
+        buildConfig = true
     }
     packaging {
         resources {

@@ -12,6 +12,9 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
+        maven {
+            url = java.net.URI("https://artifact.bytedance.com/repository/pangle")  //穿山甲融合SDK依赖
+        }
     }
 }
 
@@ -25,6 +28,9 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        maven {
+            url = java.net.URI("https://artifact.bytedance.com/repository/pangle") //穿山甲融合SDK依赖
+        }
     }
 }
 

@@ -19,8 +19,10 @@ ktor = "3.3.3"
 koin = "4.1.1"
 materialIconsExtended = "1.7.3"
 coil = "3.3.0"
+mediationSdk = "7.6.1.1"
 richeditor-compose = "1.0.0-rc13"
 markdown-renderer = "0.38.1"
+uiBackhandler = "1.11.0"
 
 [libraries]
 compose-chart = { module = "io.github.sypw233:compose-charts", version.ref = "chart" }
@@ -50,9 +52,11 @@ koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 material-icons-extended = { group = "org.jetbrains.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+mediation-sdk = { module = "com.pangle.cn:mediation-sdk", version.ref = "mediationSdk" }
 richeditor-compose = { module = "com.mohamedrejeb.richeditor:richeditor-compose", version.ref = "richeditor-compose" }
 markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "markdown-renderer" }
 markdown-renderer-m3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "markdown-renderer" }
+ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "uiBackhandler" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

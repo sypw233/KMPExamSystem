@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -271,7 +273,13 @@ internal fun QuestionListPanel(
                     textStyle = MaterialTheme.typography.bodySmall
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(bottom = 4.dp)
+                ) {
                     typeChips.forEach { (key, label) ->
                         FilterChip(
                             selected = filterType == key,
@@ -280,7 +288,13 @@ internal fun QuestionListPanel(
                         )
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(bottom = 8.dp)
+                ) {
                     diffChips.forEach { (key, label) ->
                         FilterChip(
                             selected = filterDifficulty == key,
@@ -423,7 +437,7 @@ internal fun QuestionListPanel(
                     ResponsiveLazyVerticalGrid(
                         items = filteredQuestions,
                         key = { it.id },
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                         horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
                     ) { question ->

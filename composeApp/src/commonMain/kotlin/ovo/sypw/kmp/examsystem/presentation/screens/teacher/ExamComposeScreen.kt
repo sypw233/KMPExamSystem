@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoFixHigh
@@ -281,7 +283,7 @@ private fun MobileComposeLayout(
             0 -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (state.examQuestions.isEmpty()) {
@@ -445,7 +447,9 @@ private fun QuestionBankPanel(
         OutlinedTextField(
             value = searchKeyword,
             onValueChange = { searchKeyword = it },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
             placeholder = { Text("搜索题目内容...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true
@@ -456,7 +460,10 @@ private fun QuestionBankPanel(
         // 类型筛选
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
         ) {
             FilterChip(
                 selected = filterType == null,
@@ -477,7 +484,8 @@ private fun QuestionBankPanel(
         Text(
             "共 ${filteredQuestions.size} 题, 已选 ${selectedQuestionIds.size} 题",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp)
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -485,6 +493,7 @@ private fun QuestionBankPanel(
         // 题目列表
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (filteredQuestions.isEmpty()) {

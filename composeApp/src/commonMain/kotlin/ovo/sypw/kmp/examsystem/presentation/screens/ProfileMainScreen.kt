@@ -46,7 +46,8 @@ internal fun ProfileMainScreen(
     onLogout: () -> Unit,
     onOpenEditProfile: () -> Unit,
     onOpenHelp: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenAbout: () -> Unit
 ) {
     val isStudent = user?.role?.uppercase() == "STUDENT"
     val config = LocalResponsiveConfig.current
@@ -101,7 +102,8 @@ internal fun ProfileMainScreen(
                         onNavigateToGrades = onNavigateToGrades,
                         onNavigateToNotifications = onNavigateToNotifications,
                         onOpenHelp = onOpenHelp,
-                        onOpenSettings = onOpenSettings
+                        onOpenSettings = onOpenSettings,
+                        onOpenAbout = onOpenAbout
                     )
                 }
             }
@@ -110,21 +112,30 @@ internal fun ProfileMainScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(config.screenPadding),
-            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            UserInfoCard(user = user, onClick = onOpenEditProfile)
-            ProfileMenuCards(
-                isStudent = isStudent,
-                isTeacherOrAdmin = isTeacherOrAdmin,
-                unreadCount = unreadCount,
-                onNavigateToGrades = onNavigateToGrades,
-                onNavigateToNotifications = onNavigateToNotifications,
-                onOpenHelp = onOpenHelp,
-                onOpenSettings = onOpenSettings
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                UserInfoCard(user = user, onClick = onOpenEditProfile)
+                ProfileMenuCards(
+                    isStudent = isStudent,
+                    isTeacherOrAdmin = isTeacherOrAdmin,
+                    unreadCount = unreadCount,
+                    onNavigateToGrades = onNavigateToGrades,
+                    onNavigateToNotifications = onNavigateToNotifications,
+                    onOpenHelp = onOpenHelp,
+                    onOpenSettings = onOpenSettings,
+                    onOpenAbout = onOpenAbout
+                )
+            }
+            Spacer(modifier = Modifier.height(config.verticalSpacing))
             OutlinedActionButton(
                 text = "退出登录",
                 onClick = onLogout,
@@ -144,7 +155,8 @@ private fun ProfileMenuCards(
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onOpenHelp: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenAbout: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -185,6 +197,12 @@ private fun ProfileMenuCards(
                 title = "设置",
                 subtitle = "主题、考试展示、字体大小与外部链接",
                 onClick = onOpenSettings
+            )
+            MenuItem(
+                icon = Icons.Default.Info,
+                title = "关于",
+                subtitle = "版本、项目仓库与更新检查",
+                onClick = onOpenAbout
             )
         }
     }

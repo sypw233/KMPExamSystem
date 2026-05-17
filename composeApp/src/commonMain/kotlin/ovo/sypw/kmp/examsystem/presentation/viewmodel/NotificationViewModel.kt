@@ -148,7 +148,7 @@ class NotificationViewModel(
         }
     }
 
-    fun sendNotification(title: String, content: String, type: String = "ANNOUNCEMENT") {
+    fun sendNotification(title: String, content: String, type: String = "SYSTEM_ANNOUNCEMENT") {
         if (title.isBlank() || content.isBlank()) {
             _actionState.value = NotificationActionState.Error("标题和内容不能为空")
             return

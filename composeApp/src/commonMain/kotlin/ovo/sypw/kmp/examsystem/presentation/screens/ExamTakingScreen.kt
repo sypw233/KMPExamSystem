@@ -49,6 +49,8 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.settings.AppSettingsStore
@@ -171,6 +173,8 @@ private fun ExamContent(
     var showExitDialog by remember { mutableStateOf(false) }
     var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
     var focusViolationCount by remember { mutableStateOf(0) }
+    var showViolationWarning by remember { mutableStateOf(false) }
+    var violationWarningMessage by remember { mutableStateOf("") }
     var showForceSubmitDialog by remember { mutableStateOf(false) }
     var currentQuestionIndex by remember(exam.questions.size) { mutableIntStateOf(0) }
     val appSettings by AppSettingsStore.settings.collectAsState()
@@ -212,6 +216,8 @@ private fun ExamContent(
             "blur",
             "考试窗口失焦 ${lostMs}ms，第 $focusViolationCount 次"
         )
+        violationWarningMessage = "检测到离开考试界面或应用失焦，本次行为已上报服务器。当前记录 $focusViolationCount/$strictThreshold 次。"
+        showViolationWarning = true
 
         if (exam.exam.strictMode && focusViolationCount >= strictThreshold) {
             showForceSubmitDialog = true
@@ -351,6 +357,8 @@ private fun ExamContent(
         val unanswered = total - answered
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             title = { Text("确认交卷?") },
             text = {
                 Column {
@@ -386,9 +394,26 @@ private fun ExamContent(
         )
     }
 
+    if (showViolationWarning && !showForceSubmitDialog) {
+        AlertDialog(
+            onDismissRequest = { showViolationWarning = false },
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
+            title = { Text("监考提醒") },
+            text = { Text(violationWarningMessage) },
+            confirmButton = {
+                Button(onClick = { showViolationWarning = false }) {
+                    Text("继续考试")
+                }
+            }
+        )
+    }
+
     if (showForceSubmitDialog) {
         AlertDialog(
             onDismissRequest = { },
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             title = { Text("监考警告") },
             text = { Text("检测到多次切屏/失去焦点行为，系统将自动提交试卷。") },
             confirmButton = {
