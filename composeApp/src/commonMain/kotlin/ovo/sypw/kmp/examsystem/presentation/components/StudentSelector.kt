@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 
 @Composable
 fun StudentSelector(
@@ -82,6 +85,8 @@ fun StudentSelector(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("选择学生") },
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -90,7 +95,7 @@ fun StudentSelector(
                     onValueChange = { searchKeyword = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 56.dp),
                     placeholder = { Text("搜索学生", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(

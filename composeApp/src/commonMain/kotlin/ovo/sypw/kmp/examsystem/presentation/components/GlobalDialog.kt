@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.domain.DialogConfig
 import ovo.sypw.kmp.examsystem.domain.DialogType
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 
 /**
  * 全局弹窗组件
@@ -31,6 +33,8 @@ fun GlobalDialog(
                     onDismiss()
                 }
             },
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             icon = {
                 Icon(
                     imageVector = getDialogIcon(config.type),

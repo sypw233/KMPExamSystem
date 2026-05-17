@@ -46,6 +46,8 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.presentation.components.StudentSelector
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +68,8 @@ fun CourseFormDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text(title) },
         text = {
             Column(
@@ -160,6 +164,8 @@ fun EnrollmentManageDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("选课管理: ${course.courseName}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {

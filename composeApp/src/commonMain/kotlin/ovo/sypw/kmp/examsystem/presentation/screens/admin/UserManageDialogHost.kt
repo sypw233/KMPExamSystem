@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserManageViewModel
 
 @Composable
@@ -50,6 +52,8 @@ internal fun UserManageDialogHost(
     showDeleteConfirm?.let { user ->
         AlertDialog(
             onDismissRequest = onDismissDelete,
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             title = { Text("删除用户") },
             text = { Text("确定要删除用户「${user.realName ?: user.username}」吗？此操作不可撤销。") },
             confirmButton = {
@@ -81,6 +85,8 @@ internal fun UserManageDialogHost(
     if (showBatchDeleteConfirm) {
         AlertDialog(
             onDismissRequest = onDismissBatchDelete,
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             title = { Text("批量删除用户") },
             text = { Text("确定要删除选中的 ${selectedIds.size} 位用户吗？此操作不可撤销。") },
             confirmButton = {

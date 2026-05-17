@@ -32,7 +32,7 @@ import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveScrollableGrid
 
 @Composable
 internal fun DesktopExamLayout(
@@ -126,7 +126,7 @@ internal fun ExamList(
                     subtitle = "还没有可参加的考试, 请稍后再来"
                 )
             } else if (isDesktop) {
-                ResponsiveLazyVerticalGrid(
+                ResponsiveScrollableGrid(
                     items = state.exams,
                     key = { it.id },
                     modifier = Modifier.fillMaxSize(),

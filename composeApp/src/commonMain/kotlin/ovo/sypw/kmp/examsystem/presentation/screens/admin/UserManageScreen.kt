@@ -74,7 +74,6 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserListState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.UserManageViewModel
 import ovo.sypw.kmp.examsystem.utils.DesktopDataTableRow
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 /**
@@ -409,31 +408,29 @@ fun UserManageScreen() {
                                     }
                                 }
                             } else {
-                                // Mobile: card grid layout
-                                ResponsiveLazyVerticalGrid(
-                                    items = page.content,
-                                    key = { it.id },
-                                    modifier = Modifier.weight(1f),
+                                LazyColumn(
+                                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                                    contentPadding = PaddingValues(top = 8.dp, bottom = 160.dp),
                                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                                    horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
-                                    contentPadding = PaddingValues(bottom = 80.dp)
-                                ) { user ->
-                                    val isSelected = user.id in selectedIds
-                                    UserCard(
-                                        user = user,
-                                        isBatchMode = isBatchMode,
-                                        isSelected = isSelected,
-                                        onToggleSelect = {
-                                            selectedIds = if (isSelected) selectedIds - user.id else selectedIds + user.id
-                                        },
-                                        onEdit = { showEditDialog = user },
-                                        onDelete = { showDeleteConfirm = user },
-                                        onResetPassword = { showResetPwdDialog = user },
-                                        onToggleStatus = {
-                                            if (user.enabledStatus == UserEnabledStatus.ENABLED) viewModel.disableUser(user.id)
-                                            else viewModel.enableUser(user.id)
-                                        }
-                                    )
+                                ) {
+                                    items(page.content, key = { it.id }) { user ->
+                                        val isSelected = user.id in selectedIds
+                                        UserCard(
+                                            user = user,
+                                            isBatchMode = isBatchMode,
+                                            isSelected = isSelected,
+                                            onToggleSelect = {
+                                                selectedIds = if (isSelected) selectedIds - user.id else selectedIds + user.id
+                                            },
+                                            onEdit = { showEditDialog = user },
+                                            onDelete = { showDeleteConfirm = user },
+                                            onResetPassword = { showResetPwdDialog = user },
+                                            onToggleStatus = {
+                                                if (user.enabledStatus == UserEnabledStatus.ENABLED) viewModel.disableUser(user.id)
+                                                else viewModel.enableUser(user.id)
+                                            }
+                                        )
+                                    }
                                 }
                             }
                             if (page.totalPages > 1) {

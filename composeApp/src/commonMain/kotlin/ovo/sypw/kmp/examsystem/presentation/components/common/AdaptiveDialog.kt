@@ -2,6 +2,7 @@ package ovo.sypw.kmp.examsystem.presentation.components.common
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -14,12 +15,20 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 fun adaptiveDialogModifier(): Modifier {
     val config = LocalResponsiveConfig.current
     val horizontalInset = with(LocalDensity.current) { 10.toDp() }
-    return if (config.screenSize == ResponsiveUtils.ScreenSize.COMPACT) {
-        Modifier
+    return when (config.screenSize) {
+        ResponsiveUtils.ScreenSize.COMPACT -> Modifier
             .fillMaxWidth()
             .padding(horizontal = horizontalInset)
-    } else {
-        Modifier.fillMaxWidth()
+
+        ResponsiveUtils.ScreenSize.MEDIUM -> Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .widthIn(max = 640.dp)
+
+        ResponsiveUtils.ScreenSize.EXPANDED -> Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .widthIn(max = 720.dp)
     }
 }
 

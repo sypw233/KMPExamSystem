@@ -50,6 +50,8 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.EnrollState
 import ovo.sypw.kmp.examsystem.utils.Logger
@@ -192,6 +194,8 @@ private fun WithdrawCourseDialog(
     val scope = rememberCoroutineScope()
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("退课确认") },
         text = { Text("确定退选课程「${course.courseName}」吗？") },
         confirmButton = {
@@ -217,6 +221,8 @@ private fun CourseExamsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("课程考试 - ${course.courseName}") },
         text = {
             if (isLoading) {

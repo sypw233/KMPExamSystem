@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.UserCreateRequest
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +48,8 @@ fun CreateUserDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("新建用户") },
         text = {
             Column(
@@ -139,6 +143,8 @@ fun EditUserDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("编辑用户：${user.username}") },
         text = {
             Column(

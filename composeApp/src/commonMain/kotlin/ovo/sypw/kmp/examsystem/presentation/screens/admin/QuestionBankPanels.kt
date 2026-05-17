@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,7 +56,6 @@ import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.utils.DesktopDataTableRow
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @Composable
@@ -84,7 +85,7 @@ internal fun BankListPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .height(48.dp),
+                        .heightIn(min = 56.dp),
                     placeholder = { Text("搜索题库", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -259,8 +260,7 @@ internal fun QuestionListPanel(
                     onValueChange = { searchText = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp)
-                        .padding(bottom = 8.dp),
+                        .heightIn(min = 56.dp),
                     placeholder = { Text("搜索题目内容", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -272,6 +272,8 @@ internal fun QuestionListPanel(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -362,7 +364,7 @@ internal fun QuestionListPanel(
                         HorizontalDivider()
 
                         // Table data rows
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
                             itemsIndexed(filteredQuestions, key = { _, q -> q.id }) { index, question ->
                                 DesktopDataTableRow(
                                     modifier = Modifier,
@@ -433,19 +435,18 @@ internal fun QuestionListPanel(
                         }
                     }
                 } else {
-                    // Mobile card layout
-                    ResponsiveLazyVerticalGrid(
-                        items = filteredQuestions,
-                        key = { it.id },
+                    LazyColumn(
                         modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentPadding = PaddingValues(bottom = 160.dp),
                         verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
-                        horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
-                    ) { question ->
-                        QuestionCard(
-                            question = question,
-                            onEdit = { onEditQuestion(question) },
-                            onDelete = { onDeleteQuestion(question) }
-                        )
+                    ) {
+                        items(filteredQuestions, key = { it.id }) { question ->
+                            QuestionCard(
+                                question = question,
+                                onEdit = { onEditQuestion(question) },
+                                onDelete = { onDeleteQuestion(question) }
+                            )
+                        }
                     }
                 }
             } else {

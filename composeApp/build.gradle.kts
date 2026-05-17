@@ -106,8 +106,8 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         //noinspection OldTargetApi
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 233
-        versionName = "ovO2.33"
+        versionCode = 2333
+        versionName = "ovO2.333"
         buildConfigField(
             "String",
             "PANGLE_APP_ID",
