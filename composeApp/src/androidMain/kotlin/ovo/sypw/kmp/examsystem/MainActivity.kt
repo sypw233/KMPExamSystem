@@ -3,6 +3,8 @@ package ovo.sypw.kmp.examsystem
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Build
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
@@ -57,6 +59,10 @@ class MainActivity : ComponentActivity() {
         val appId = BuildConfig.PANGLE_APP_ID
         val splashAdId = BuildConfig.PANGLE_SPLASH_AD_ID
         if (appId.isBlank() || splashAdId.isBlank()) return
+        if (!isPangleNativeAbiSupported()) {
+            Log.w(TAG, "Skip Pangle splash: unsupported ABI ${Build.SUPPORTED_ABIS.joinToString()}")
+            return
+        }
 
         val dismissRunnable = Runnable { dismissSplash(container) }
         mainHandler.postDelayed(dismissRunnable, SPLASH_TIMEOUT_MS + 800L)
@@ -69,16 +75,23 @@ class MainActivity : ComponentActivity() {
             .debug(BuildConfig.DEBUG)
             .build()
 
-        TTAdSdk.init(applicationContext, config)
-        TTAdSdk.start(object : TTAdSdk.Callback {
-            override fun success() {
-                loadSplashAd(container, splashAdId, dismissRunnable)
-            }
+        runCatching {
+            TTAdSdk.init(applicationContext, config)
+            TTAdSdk.start(object : TTAdSdk.Callback {
+                override fun success() {
+                    Log.i(TAG, "Pangle init success")
+                    loadSplashAd(container, splashAdId, dismissRunnable)
+                }
 
-            override fun fail(code: Int, msg: String?) {
-                dismissSplash(container)
-            }
-        })
+                override fun fail(code: Int, msg: String?) {
+                    Log.w(TAG, "Pangle init failed: $code $msg")
+                    dismissSplash(container)
+                }
+            })
+        }.onFailure {
+            Log.e(TAG, "Pangle init error", it)
+            dismissSplash(container)
+        }
     }
 
     private fun loadSplashAd(container: FrameLayout, splashAdId: String, dismissRunnable: Runnable) {
@@ -97,9 +110,12 @@ class MainActivity : ComponentActivity() {
         TTAdSdk.getAdManager()
             .createAdNative(this)
             .loadSplashAd(adSlot, object : TTAdNative.CSJSplashAdListener {
-                override fun onSplashLoadSuccess(ad: CSJSplashAd?) = Unit
+                override fun onSplashLoadSuccess(ad: CSJSplashAd?) {
+                    Log.i(TAG, "Pangle splash load success")
+                }
 
                 override fun onSplashLoadFail(error: CSJAdError?) {
+                    Log.w(TAG, "Pangle splash load failed: ${error?.code} ${error?.msg}")
                     dismissSplash(container)
                 }
 
@@ -108,11 +124,19 @@ class MainActivity : ComponentActivity() {
                         dismissSplash(container)
                         return
                     }
+                    Log.i(TAG, "Pangle splash render success")
                     mainHandler.removeCallbacks(dismissRunnable)
                     ad.setSplashAdListener(object : CSJSplashAd.SplashAdListener {
-                        override fun onSplashAdShow(ad: CSJSplashAd?) = Unit
-                        override fun onSplashAdClick(ad: CSJSplashAd?) = Unit
+                        override fun onSplashAdShow(ad: CSJSplashAd?) {
+                            Log.i(TAG, "Pangle splash shown")
+                        }
+
+                        override fun onSplashAdClick(ad: CSJSplashAd?) {
+                            Log.i(TAG, "Pangle splash clicked")
+                        }
+
                         override fun onSplashAdClose(ad: CSJSplashAd?, closeType: Int) {
+                            Log.i(TAG, "Pangle splash closed: $closeType")
                             dismissSplash(container)
                         }
                     })
@@ -122,9 +146,15 @@ class MainActivity : ComponentActivity() {
                 }
 
                 override fun onSplashRenderFail(ad: CSJSplashAd?, error: CSJAdError?) {
+                    Log.w(TAG, "Pangle splash render failed: ${error?.code} ${error?.msg}")
                     dismissSplash(container)
                 }
             }, SPLASH_TIMEOUT_MS)
+    }
+
+    private fun isPangleNativeAbiSupported(): Boolean {
+        val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull().orEmpty()
+        return primaryAbi == "arm64-v8a" || primaryAbi == "armeabi-v7a"
     }
 
     private fun dismissSplash(container: FrameLayout) {
@@ -134,6 +164,7 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        private const val TAG = "PangleSplash"
         private const val SPLASH_TIMEOUT_MS = 3500
     }
 }
