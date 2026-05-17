@@ -45,7 +45,6 @@ internal fun ProfileMainScreen(
     onNavigateToNotifications: () -> Unit,
     onLogout: () -> Unit,
     onOpenEditProfile: () -> Unit,
-    onOpenHelp: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
@@ -101,7 +100,6 @@ internal fun ProfileMainScreen(
                         unreadCount = unreadCount,
                         onNavigateToGrades = onNavigateToGrades,
                         onNavigateToNotifications = onNavigateToNotifications,
-                        onOpenHelp = onOpenHelp,
                         onOpenSettings = onOpenSettings,
                         onOpenAbout = onOpenAbout
                     )
@@ -130,7 +128,6 @@ internal fun ProfileMainScreen(
                     unreadCount = unreadCount,
                     onNavigateToGrades = onNavigateToGrades,
                     onNavigateToNotifications = onNavigateToNotifications,
-                    onOpenHelp = onOpenHelp,
                     onOpenSettings = onOpenSettings,
                     onOpenAbout = onOpenAbout
                 )
@@ -154,7 +151,6 @@ private fun ProfileMenuCards(
     unreadCount: Long,
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onOpenHelp: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
@@ -186,12 +182,6 @@ private fun ProfileMenuCards(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
-            MenuItem(
-                icon = Icons.Default.Info,
-                title = if (isTeacherOrAdmin) "帮助中心" else "使用说明",
-                subtitle = "查看功能说明与使用提示",
-                onClick = onOpenHelp
-            )
             MenuItem(
                 icon = Icons.Default.SettingsApplications,
                 title = "设置",

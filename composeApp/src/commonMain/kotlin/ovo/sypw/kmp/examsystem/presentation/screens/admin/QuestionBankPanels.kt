@@ -1,6 +1,12 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.admin
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +20,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,6 +32,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +44,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -85,7 +92,7 @@ internal fun BankListPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .heightIn(min = 56.dp),
+                        .height(48.dp),
                     placeholder = { Text("搜索题库", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -141,6 +148,7 @@ internal fun BankListPanel(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 120.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(banks, key = { it.id }) { bank ->
@@ -205,6 +213,7 @@ internal fun QuestionListPanel(
     modifier: Modifier = Modifier
 ) {
     val config = LocalResponsiveConfig.current
+    val isCompact = config.screenSize == ResponsiveUtils.ScreenSize.COMPACT
 
     Card(
         modifier = modifier,
@@ -220,20 +229,32 @@ internal fun QuestionListPanel(
             ) {
                 Text(
                     selectedBank?.name ?: "请选择题库",
-                    style = MaterialTheme.typography.titleMedium
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = if (isCompact) 2 else 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 val bank = selectedBank
                 if (bank != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(onClick = onCreateQuestion) {
+                    Row(
+                        modifier = Modifier.padding(start = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        TextButton(
+                            onClick = onCreateQuestion,
+                            contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 12.dp, vertical = 8.dp)
+                        ) {
                             Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("新建题目")
+                            Text(if (isCompact) "新建" else "新建题目", maxLines = 1)
                         }
-                        TextButton(onClick = { onImportQuestions(bank) }) {
+                        TextButton(
+                            onClick = { onImportQuestions(bank) },
+                            contentPadding = PaddingValues(horizontal = if (isCompact) 8.dp else 12.dp, vertical = 8.dp)
+                        ) {
                             Icon(Icons.Default.Done, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("导入题目")
+                            Text(if (isCompact) "导入" else "导入题目", maxLines = 1)
                         }
                     }
                 }
@@ -244,6 +265,7 @@ internal fun QuestionListPanel(
                 var searchText by remember { mutableStateOf("") }
                 var filterType by remember { mutableStateOf<String?>(null) }
                 var filterDifficulty by remember { mutableStateOf<String?>(null) }
+                var filtersExpanded by remember { mutableStateOf(false) }
 
                 val typeChips = QuestionUtils.questionTypeOptions
                 val diffChips = QuestionUtils.difficultyOptions
@@ -255,54 +277,77 @@ internal fun QuestionListPanel(
                     matchSearch && matchType && matchDiff
                 }
 
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp),
-                    placeholder = { Text("搜索题目内容", style = MaterialTheme.typography.bodySmall) },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(bottom = 4.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    typeChips.forEach { (key, label) ->
-                        FilterChip(
-                            selected = filterType == key,
-                            onClick = { filterType = if (filterType == key) null else key },
-                            label = { Text(label) }
-                        )
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { searchText = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        placeholder = { Text("搜索题目内容", style = MaterialTheme.typography.bodySmall) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedButton(
+                        onClick = { filtersExpanded = !filtersExpanded },
+                        modifier = Modifier.height(48.dp),
+                        contentPadding = PaddingValues(horizontal = if (isCompact) 10.dp else 14.dp)
+                    ) {
+                        Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(if (filtersExpanded) "收起" else "筛选", maxLines = 1)
                     }
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(bottom = 8.dp)
+
+                AnimatedVisibility(
+                    visible = filtersExpanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = shrinkVertically() + fadeOut()
                 ) {
-                    diffChips.forEach { (key, label) ->
-                        FilterChip(
-                            selected = filterDifficulty == key,
-                            onClick = { filterDifficulty = if (filterDifficulty == key) null else key },
-                            label = { Text(label) }
-                        )
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(bottom = 4.dp)
+                        ) {
+                            typeChips.forEach { (key, label) ->
+                                FilterChip(
+                                    selected = filterType == key,
+                                    onClick = { filterType = if (filterType == key) null else key },
+                                    label = { Text(label) }
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(bottom = 8.dp)
+                        ) {
+                            diffChips.forEach { (key, label) ->
+                                FilterChip(
+                                    selected = filterDifficulty == key,
+                                    onClick = { filterDifficulty = if (filterDifficulty == key) null else key },
+                                    label = { Text(label) }
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
                     }
                 }
 

@@ -37,6 +37,7 @@ import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.storage.LocalStorage
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
+import ovo.sypw.kmp.examsystem.presentation.navigation.ActiveExamSession
 import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
 import ovo.sypw.kmp.examsystem.presentation.navigation.AppPermanentDrawerSheet
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
@@ -186,12 +187,33 @@ private fun MainAppContent() {
 @Composable
 private fun AuthenticatedContent(authState: AuthState.Authenticated) {
     val navigationManager = rememberNavigationManager()
+    val localStorage: LocalStorage = koinInject()
     val isInExamMode by navigationManager.isInExamMode
     val currentExamId by navigationManager.currentExamId
+    var activeExamRestored by remember(authState.user.id) { mutableStateOf(false) }
 
     // 登录后立即同步用户角色到 NavigationManager
     LaunchedEffect(authState.user.role) {
         navigationManager.setRoleFromString(authState.user.role)
+    }
+
+    LaunchedEffect(authState.user.id) {
+        val savedExamId = localStorage.getLong(ActiveExamSession.ACTIVE_EXAM_ID, -1L)
+        if (authState.user.role == "student" && savedExamId > 0L && !navigationManager.isInExamMode.value) {
+            navigationManager.enterExamMode(savedExamId)
+        }
+        activeExamRestored = true
+    }
+
+    LaunchedEffect(activeExamRestored, isInExamMode, currentExamId) {
+        if (!activeExamRestored) return@LaunchedEffect
+        val examId = currentExamId
+        if (isInExamMode && examId != null) {
+            localStorage.saveLong(ActiveExamSession.ACTIVE_EXAM_ID, examId)
+        } else {
+            localStorage.remove(ActiveExamSession.ACTIVE_EXAM_ID)
+            localStorage.remove(ActiveExamSession.FOCUS_LOST_AT)
+        }
     }
 
     val config = LocalResponsiveConfig.current

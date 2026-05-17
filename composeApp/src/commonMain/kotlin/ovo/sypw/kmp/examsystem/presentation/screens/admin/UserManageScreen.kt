@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -55,11 +56,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
@@ -86,6 +90,7 @@ fun UserManageScreen() {
     val viewModel: UserManageViewModel = koinInject()
     val listState by viewModel.listState.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
     val queryParams by viewModel.queryParams.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val config = LocalResponsiveConfig.current
@@ -292,9 +297,21 @@ fun UserManageScreen() {
                     }
                     is UserListState.Success -> {
                         val page = state.page
+                        val userListState = rememberLazyListState()
+                        LaunchedEffect(userListState, page.number, page.last, isLoadingMore) {
+                            snapshotFlow {
+                                val lastVisible = userListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                                lastVisible >= page.content.lastIndex - 3
+                            }
+                                .map { it && !page.last && !isLoadingMore }
+                                .distinctUntilChanged()
+                                .collect { shouldLoad ->
+                                    if (shouldLoad) viewModel.loadNextPage()
+                                }
+                        }
                         Column(modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier).fillMaxSize()) {
                             Text(
-                                "共 ${page.totalElements} 位用户，第 ${page.number + 1}/${page.totalPages} 页",
+                                "共 ${page.totalElements} 位用户，已加载 ${page.content.size} 位",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -327,6 +344,7 @@ fun UserManageScreen() {
                                 )
                                 HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
                                 LazyColumn(
+                                    state = userListState,
                                     modifier = Modifier.weight(1f),
                                     contentPadding = PaddingValues(bottom = 80.dp)
                                 ) {
@@ -406,9 +424,20 @@ fun UserManageScreen() {
                                             columns = rowColumns.toTypedArray()
                                         )
                                     }
+                                    if (isLoadingMore) {
+                                        item(key = "loading_more") {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                                            }
+                                        }
+                                    }
                                 }
                             } else {
                                 LazyColumn(
+                                    state = userListState,
                                     modifier = Modifier.weight(1f).fillMaxWidth(),
                                     contentPadding = PaddingValues(top = 8.dp, bottom = 160.dp),
                                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
@@ -431,16 +460,17 @@ fun UserManageScreen() {
                                             }
                                         )
                                     }
+                                    if (isLoadingMore) {
+                                        item(key = "loading_more") {
+                                            Box(
+                                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                                            }
+                                        }
+                                    }
                                 }
-                            }
-                            if (page.totalPages > 1) {
-                                PaginationBar(
-                                    currentPage = page.number,
-                                    totalPages = page.totalPages,
-                                    hasFirst = !page.first,
-                                    hasLast = !page.last,
-                                    onPageChange = { viewModel.loadPage(it) }
-                                )
                             }
                         }
                     }

@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import ovo.sypw.kmp.examsystem.data.dto.UserInfo
@@ -50,35 +51,56 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing + 4.dp)
         ) {
             val avatarUrl = user?.avatar
-            Box(
-                modifier = Modifier.size(72.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = avatarUrl,
-                        contentDescription = "头像",
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                    )
-                } else {
-                    Surface(
-                        modifier = Modifier.size(72.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = user?.realName?.take(1)?.uppercase()
-                                    ?: user?.username?.take(1)?.uppercase()
-                                    ?: "?",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
+            val roleLabel = user?.role?.uppercase()?.let {
+                when (it) {
+                    "STUDENT" -> "学生"
+                    "TEACHER" -> "教师"
+                    "ADMIN" -> "管理员"
+                    else -> user.role
+                }
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Box(
+                    modifier = Modifier.size(72.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "头像",
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                        )
+                    } else {
+                        Surface(
+                            modifier = Modifier.size(72.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = user?.realName?.take(1)?.uppercase()
+                                        ?: user?.username?.take(1)?.uppercase()
+                                        ?: "?",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
                         }
                     }
+                }
+                if (roleLabel != null) {
+                    SuggestionChip(
+                        onClick = { },
+                        label = { Text(roleLabel, maxLines = 1) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = null
+                    )
                 }
             }
 
@@ -86,43 +108,36 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = user?.realName ?: user?.username ?: "未登录",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = user?.realName ?: user?.username ?: "未登录",
+                        modifier = Modifier.weight(1f, fill = false),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (user != null) {
+                        Text(
+                            text = "@${user.username}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
 
                 if (user != null) {
-                    Text(
-                        text = "@${user.username}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                    )
-
-                    val roleLabel = when (user.role.uppercase()) {
-                        "STUDENT" -> "学生"
-                        "TEACHER" -> "教师"
-                        "ADMIN" -> "管理员"
-                        else -> user.role
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        SuggestionChip(
-                            onClick = { },
-                            label = { Text(roleLabel) },
-                            colors = SuggestionChipDefaults.suggestionChipColors(
-                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                                labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            border = null
+                    if (!user.email.isNullOrBlank()) {
+                        Text(
+                            text = user.email,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        if (!user.email.isNullOrBlank()) {
-                            Text(
-                                text = user.email,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
-                            )
-                        }
                     }
                 } else {
                     Text(

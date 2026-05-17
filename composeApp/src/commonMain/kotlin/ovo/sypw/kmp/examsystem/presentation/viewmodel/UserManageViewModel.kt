@@ -37,6 +37,9 @@ class UserManageViewModel(
     private val _listState = MutableStateFlow<UserListState>(UserListState.Loading)
     val listState: StateFlow<UserListState> = _listState.asStateFlow()
 
+    private val _isLoadingMore = MutableStateFlow(false)
+    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
+
     private val _actionState = MutableStateFlow<UserActionState>(UserActionState.Idle)
     val actionState: StateFlow<UserActionState> = _actionState.asStateFlow()
 
@@ -67,6 +70,25 @@ class UserManageViewModel(
     /** 翻页 */
     fun loadPage(page: Int) {
         loadUsers(_queryParams.value.copy(page = page))
+    }
+
+    fun loadNextPage() {
+        val current = _listState.value as? UserListState.Success ?: return
+        if (current.page.last || _isLoadingMore.value) return
+        val nextParams = _queryParams.value.copy(page = current.page.number + 1)
+        _isLoadingMore.value = true
+        viewModelScope.launch {
+            userManageRepository.loadUsers(nextParams).fold(
+                onSuccess = { nextPage ->
+                    _queryParams.value = nextParams
+                    _listState.value = UserListState.Success(
+                        nextPage.copy(content = current.page.content + nextPage.content)
+                    )
+                },
+                onFailure = { _actionState.value = UserActionState.Error(it.message ?: "加载更多失败") }
+            )
+            _isLoadingMore.value = false
+        }
     }
 
     /** 选择当前操作的用户 */

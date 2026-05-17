@@ -55,7 +55,6 @@ import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPane
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AiCustomProvider
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AiModelMode
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.AiSettingsForm
-import ovo.sypw.kmp.examsystem.presentation.viewmodel.DEFAULT_KIMI_PRESET
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SystemSettingsViewModel
@@ -119,7 +118,7 @@ fun SystemSettingsScreen(onBack: (() -> Unit)? = null) {
             if (isDesktop) {
                 ManagementPageHeader(
                     title = "AI 配置",
-                    subtitle = "默认模型固定为 Kimi，自定义模式支持预置兼容服务或手动 Base URL。"
+                    subtitle = "配置智能判题模型、提示词和评分参数。"
                 ) {
                     IconButton(onClick = { viewModel.refresh() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "刷新")
@@ -188,36 +187,33 @@ private fun SystemSettingsForm(
     ) {
         SettingsSectionCard(
             title = "模型来源",
-            description = "默认模型固定为 Kimi，不开放展示基础参数；切到自定义模型后，才允许选择兼容服务或手动填写 Base URL。"
+            description = null
         ) {
-            ModeCards(selected = form.mode, onSelect = { form = form.copy(mode = it) })
+            ModeCards(
+                selected = form.mode,
+                onSelect = {
+                    form = form.copy(
+                        mode = it,
+                        customProvider = if (it == AiModelMode.CUSTOM) AiCustomProvider.CUSTOM_URL else form.customProvider
+                    )
+                }
+            )
 
             if (form.mode == AiModelMode.DEFAULT) {
                 FixedPresetCard()
             } else {
-                ProviderCards(
-                    selected = form.customProvider,
-                    onSelect = {
-                        form = form.copy(
-                            customProvider = it,
-                            customBaseUrl = if (it == AiCustomProvider.CUSTOM_URL) form.customBaseUrl else "",
-                            customModelName = form.customModelName.ifBlank { it.placeholderModel }
-                        )
-                    }
+                Text(
+                    text = "兼容 OpenAI Compatible 格式",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
-                if (form.customProvider == AiCustomProvider.CUSTOM_URL) {
-                    OutlinedTextField(
-                        value = form.customBaseUrl,
-                        onValueChange = { form = form.copy(customBaseUrl = it) },
-                        label = { Text("Base URL") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                } else {
-                    ReadOnlyValueRow("Base URL", form.customProvider.baseUrl.orEmpty())
-                }
-
+                OutlinedTextField(
+                    value = form.customBaseUrl.ifBlank { form.customProvider.baseUrl.orEmpty() },
+                    onValueChange = { form = form.copy(customBaseUrl = it, customProvider = AiCustomProvider.CUSTOM_URL) },
+                    label = { Text("Base URL") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
                 OutlinedTextField(
                     value = form.customModelName,
                     onValueChange = { form = form.copy(customModelName = it) },
@@ -295,7 +291,7 @@ private fun SystemSettingsForm(
 @Composable
 private fun SettingsSectionCard(
     title: String,
-    description: String,
+    description: String?,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerLow) {
@@ -306,7 +302,9 @@ private fun SettingsSectionCard(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!description.isNullOrBlank()) {
+                Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             content()
         }
     }
@@ -321,7 +319,7 @@ private fun ModeCards(
         AiModelMode.values().forEach { mode ->
             ActionCard(
                 title = mode.label,
-                description = if (mode == AiModelMode.DEFAULT) "固定 Kimi，不显示接口细节" else "支持兼容服务和自定义 URL",
+                description = if (mode == AiModelMode.DEFAULT) "采用针对智能判题微调的QWEN3模型" else "兼容 OpenAI Compatible 格式",
                 icon = if (mode == AiModelMode.DEFAULT) Icons.Default.AutoAwesome else Icons.Default.Code,
                 selected = mode == selected,
                 onClick = { onSelect(mode) }
@@ -354,16 +352,11 @@ private fun FixedPresetCard() {
                 }
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("系统默认 Kimi 模型", style = MaterialTheme.typography.titleSmall)
+                Text("默认判题模型", style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = "后端固定维护，无需填写 Base URL、Model Name 或 API Key",
+                    text = "采用针对智能判题微调的QWEN3模型",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = DEFAULT_KIMI_PRESET.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

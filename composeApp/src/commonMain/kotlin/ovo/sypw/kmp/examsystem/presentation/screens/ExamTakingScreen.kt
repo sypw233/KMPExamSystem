@@ -52,6 +52,8 @@ import kotlinx.coroutines.delay
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
+import ovo.sypw.kmp.examsystem.data.storage.LocalStorage
+import ovo.sypw.kmp.examsystem.presentation.navigation.ActiveExamSession
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
 import ovo.sypw.kmp.examsystem.presentation.settings.AppSettingsStore
 import ovo.sypw.kmp.examsystem.presentation.settings.ExamDisplayMode
@@ -60,7 +62,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
-import kotlin.time.TimeMark
+import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 
 @Composable
@@ -74,6 +76,7 @@ fun ExamTakingScreen(
     val answers by viewModel.answers.collectAsState()
     val submitErrorMessage by viewModel.submitErrorMessage.collectAsState()
     val isSubmitting by viewModel.isSubmitting.collectAsState()
+    val localStorage: LocalStorage = koinInject()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -114,6 +117,10 @@ fun ExamTakingScreen(
                 }
             }
             is ExamTakingUiState.Submitted -> {
+                LaunchedEffect(state.submission.id) {
+                    localStorage.remove(ActiveExamSession.ACTIVE_EXAM_ID)
+                    localStorage.remove(ActiveExamSession.FOCUS_LOST_AT)
+                }
                 // 【修复 BUG-06】needsGrading 改为检查 submission.status < 2（未批改）
                 // 而非依赖 totalScore == 0 && subjectiveScore == null（客观 0 分会误判）
                 val needsGrading = state.submission.status < 2 &&
@@ -138,6 +145,7 @@ fun ExamTakingScreen(
                     onToggleMultiple = { qId, opt -> viewModel.toggleMultipleChoice(qId, opt) },
                     onRecordProctoringEvent = { event, desc -> viewModel.recordProctoringEvent(event, desc) },
                     onSubmit = { viewModel.submitExam() },
+                    localStorage = localStorage,
                     onExit = {
                         navigationManager.exitExamMode()
                         viewModel.reset()
@@ -155,7 +163,7 @@ fun ExamTakingScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class, ExperimentalTime::class)
 @Composable
 private fun ExamContent(
     exam: ExamTakingUiState.Ready,
@@ -165,20 +173,20 @@ private fun ExamContent(
     onToggleMultiple: (Long, String) -> Unit,
     onRecordProctoringEvent: (String, String?) -> Unit,
     onSubmit: () -> Unit,
+    localStorage: LocalStorage,
     onExit: () -> Unit
 ) {
     val hasDuration = (exam.exam.duration ?: 0) > 0
     // 【修复 BUG-04】使用精确的 mutableIntState 配合 TimeSource 避免 delay 累计偏差
     var remainingSeconds by remember { mutableIntStateOf(if (hasDuration) (exam.exam.duration ?: 0) * 60 else -1) }
     var showExitDialog by remember { mutableStateOf(false) }
-    var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
+    var hasPendingFocusWarning by remember { mutableStateOf(false) }
     var focusViolationCount by remember { mutableStateOf(0) }
     var showViolationWarning by remember { mutableStateOf(false) }
     var violationWarningMessage by remember { mutableStateOf("") }
-    var showForceSubmitDialog by remember { mutableStateOf(false) }
     var currentQuestionIndex by remember(exam.questions.size) { mutableIntStateOf(0) }
     val appSettings by AppSettingsStore.settings.collectAsState()
-    val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
+    val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 }
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val config = LocalResponsiveConfig.current
 
@@ -203,24 +211,28 @@ private fun ExamContent(
 
     LaunchedEffect(windowFocused) {
         if (!windowFocused) {
-            lastLostFocusMark = TimeSource.Monotonic.markNow()
+            if (showExitDialog || showViolationWarning) return@LaunchedEffect
+            if (!hasPendingFocusWarning) {
+                focusViolationCount += 1
+                hasPendingFocusWarning = true
+                localStorage.saveLong(ActiveExamSession.FOCUS_LOST_AT, focusViolationCount.toLong())
+                onRecordProctoringEvent(
+                    "blur",
+                    "考试窗口失焦，第 $focusViolationCount 次"
+                )
+                violationWarningMessage = "检测到离开考试界面或应用失焦，本次行为已上报服务器。当前记录 $focusViolationCount 次。"
+                if (exam.exam.strictMode && strictThreshold != null && focusViolationCount >= strictThreshold) {
+                    onSubmit()
+                }
+            }
             return@LaunchedEffect
         }
-        val lostMark = lastLostFocusMark ?: return@LaunchedEffect
-        val lostMs = lostMark.elapsedNow().inWholeMilliseconds
-        lastLostFocusMark = null
-        if (lostMs < 3000) return@LaunchedEffect
-
-        focusViolationCount += 1
-        onRecordProctoringEvent(
-            "blur",
-            "考试窗口失焦 ${lostMs}ms，第 $focusViolationCount 次"
-        )
-        violationWarningMessage = "检测到离开考试界面或应用失焦，本次行为已上报服务器。当前记录 $focusViolationCount/$strictThreshold 次。"
-        showViolationWarning = true
-
-        if (exam.exam.strictMode && focusViolationCount >= strictThreshold) {
-            showForceSubmitDialog = true
+        val persistedViolation = localStorage.getLong(ActiveExamSession.FOCUS_LOST_AT, 0L)
+        if (!hasPendingFocusWarning && persistedViolation <= 0L) return@LaunchedEffect
+        hasPendingFocusWarning = false
+        localStorage.remove(ActiveExamSession.FOCUS_LOST_AT)
+        if (!(exam.exam.strictMode && strictThreshold != null && focusViolationCount >= strictThreshold)) {
+            showViolationWarning = true
         }
     }
 
@@ -246,9 +258,9 @@ private fun ExamContent(
                         }
                         if (exam.exam.strictMode) {
                             Text(
-                                text = "监考: 切屏 $focusViolationCount/$strictThreshold 次",
+                                text = "监考: 切屏 $focusViolationCount 次",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (focusViolationCount >= strictThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (strictThreshold != null && focusViolationCount >= strictThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -394,7 +406,7 @@ private fun ExamContent(
         )
     }
 
-    if (showViolationWarning && !showForceSubmitDialog) {
+    if (showViolationWarning) {
         AlertDialog(
             onDismissRequest = { showViolationWarning = false },
             modifier = adaptiveDialogModifier(),
@@ -406,25 +418,6 @@ private fun ExamContent(
                     Text("继续考试")
                 }
             }
-        )
-    }
-
-    if (showForceSubmitDialog) {
-        AlertDialog(
-            onDismissRequest = { },
-            modifier = adaptiveDialogModifier(),
-            properties = adaptiveDialogProperties(),
-            title = { Text("监考警告") },
-            text = { Text("检测到多次切屏/失去焦点行为，系统将自动提交试卷。") },
-            confirmButton = {
-                Button(onClick = {
-                    showForceSubmitDialog = false
-                    onSubmit()
-                }) {
-                    Text("立即交卷")
-                }
-            },
-            dismissButton = {}
         )
     }
 }

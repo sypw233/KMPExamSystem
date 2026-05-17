@@ -1,5 +1,10 @@
 package ovo.sypw.kmp.examsystem.presentation.screens.teacher
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -28,6 +34,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -431,6 +438,7 @@ private fun QuestionBankPanel(
 ) {
     var searchKeyword by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf<String?>(null) }
+    var filtersExpanded by remember { mutableStateOf(false) }
 
     val filteredQuestions by remember(allQuestions, searchKeyword, filterType) {
         derivedStateOf {
@@ -443,39 +451,58 @@ private fun QuestionBankPanel(
     }
 
     Column(modifier = modifier) {
-        // 搜索框
-        OutlinedTextField(
-            value = searchKeyword,
-            onValueChange = { searchKeyword = it },
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            placeholder = { Text("搜索题目内容...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            singleLine = true
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 类型筛选
-        Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            FilterChip(
-                selected = filterType == null,
-                onClick = { filterType = null },
-                label = { Text("全部") }
+            OutlinedTextField(
+                value = searchKeyword,
+                onValueChange = { searchKeyword = it },
+                modifier = Modifier.weight(1f).height(48.dp),
+                placeholder = { Text("搜索题目内容...", style = MaterialTheme.typography.bodySmall) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodySmall
             )
-            QuestionUtils.questionTypeOptions.forEach { (value, label) ->
+            OutlinedButton(
+                onClick = { filtersExpanded = !filtersExpanded },
+                modifier = Modifier.height(48.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp)
+            ) {
+                Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(if (filtersExpanded) "收起" else "筛选", maxLines = 1)
+            }
+        }
+
+        AnimatedVisibility(
+            visible = filtersExpanded,
+            enter = fadeIn() + expandVertically(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(start = 16.dp, top = 8.dp, end = 16.dp)
+            ) {
                 FilterChip(
-                    selected = filterType == value,
-                    onClick = { filterType = if (filterType == value) null else value },
-                    label = { Text(label) }
+                    selected = filterType == null,
+                    onClick = { filterType = null },
+                    label = { Text("全部") }
                 )
+                QuestionUtils.questionTypeOptions.forEach { (value, label) ->
+                    FilterChip(
+                        selected = filterType == value,
+                        onClick = { filterType = if (filterType == value) null else value },
+                        label = { Text(label) }
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
             }
         }
 

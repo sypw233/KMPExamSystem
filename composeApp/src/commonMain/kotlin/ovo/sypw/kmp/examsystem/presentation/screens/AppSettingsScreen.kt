@@ -50,7 +50,7 @@ fun AppSettingsScreen(onBack: () -> Unit) {
             AppSettingsContent(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = ResponsiveUtils.MaxWidths.FORM)
+                    .widthIn(max = ResponsiveUtils.MaxWidths.NARROW)
             )
         }
     }

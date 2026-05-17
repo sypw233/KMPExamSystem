@@ -42,7 +42,7 @@ fun ProfileScreen() {
     val snackbar = remember { SnackbarHostState() }
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
-    var showHelpDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         notificationViewModel.loadUnreadCount(force = false)
@@ -56,7 +56,6 @@ fun ProfileScreen() {
         "grades" -> GradeHistoryScreen(onBack = { currentSubScreen = null })
         "notifications" -> NotificationScreen(onBack = { currentSubScreen = null })
         "settings" -> AppSettingsScreen(onBack = { currentSubScreen = null })
-        "about" -> AboutScreen(onBack = { currentSubScreen = null })
         else -> {
             Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
                 ProfileMainScreen(
@@ -68,9 +67,8 @@ fun ProfileScreen() {
                     onNavigateToNotifications = { currentSubScreen = "notifications" },
                     onLogout = { scope.launch { authRepository.logout() } },
                     onOpenEditProfile = { showEditProfileDialog = true },
-                    onOpenHelp = { showHelpDialog = true },
                     onOpenSettings = { currentSubScreen = "settings" },
-                    onOpenAbout = { currentSubScreen = "about" }
+                    onOpenAbout = { showAboutDialog = true }
                 )
             }
         }
@@ -134,7 +132,7 @@ fun ProfileScreen() {
         )
     }
 
-    if (showHelpDialog) {
-        HelpDialog(onDismiss = { showHelpDialog = false })
+    if (showAboutDialog) {
+        AboutDialog(onDismiss = { showAboutDialog = false })
     }
 }

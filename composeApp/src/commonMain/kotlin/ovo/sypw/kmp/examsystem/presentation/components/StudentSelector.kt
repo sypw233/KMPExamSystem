@@ -95,7 +95,7 @@ fun StudentSelector(
                     onValueChange = { searchKeyword = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 56.dp),
+                        .height(48.dp),
                     placeholder = { Text("搜索学生", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
