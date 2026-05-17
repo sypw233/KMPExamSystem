@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -143,10 +142,12 @@ fun RegisterScreen(
                     // 用户名
                     OutlinedTextField(
                         value = username,
-                        onValueChange = { viewModel.updateUsername(it) },
+                        onValueChange = {
+                            usernameInteracted = true
+                            viewModel.updateUsername(it)
+                        },
                         label = { Text("用户名") },
-                        modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) usernameInteracted = true },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = usernameInteracted && username.length < 3,
                         supportingText = if (usernameInteracted && username.length < 3) {
@@ -166,10 +167,12 @@ fun RegisterScreen(
                     // 密码
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { viewModel.updatePassword(it) },
+                        onValueChange = {
+                            passwordInteracted = true
+                            viewModel.updatePassword(it)
+                        },
                         label = { Text("密码") },
-                        modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) passwordInteracted = true },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = passwordInteracted && password.length < 6,
                         supportingText = if (passwordInteracted && password.length < 6) {
@@ -184,7 +187,7 @@ fun RegisterScreen(
                             imeAction = ImeAction.Next
                         ),
                         trailingIcon = {
-                            FilledIconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
@@ -198,10 +201,12 @@ fun RegisterScreen(
                     // 确认密码
                     OutlinedTextField(
                         value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
+                        onValueChange = {
+                            confirmPasswordInteracted = true
+                            confirmPassword = it
+                        },
                         label = { Text("确认密码") },
-                        modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) confirmPasswordInteracted = true },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = confirmPasswordInteracted && confirmPassword != password,
                         supportingText = if (confirmPasswordInteracted && confirmPassword != password) {
@@ -216,7 +221,7 @@ fun RegisterScreen(
                             imeAction = ImeAction.Next
                         ),
                         trailingIcon = {
-                            FilledIconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                                 Icon(
                                     imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = if (confirmPasswordVisible) "隐藏密码" else "显示密码"
@@ -230,10 +235,12 @@ fun RegisterScreen(
                     // 真实姓名
                     OutlinedTextField(
                         value = realName,
-                        onValueChange = { viewModel.updateRealName(it) },
+                        onValueChange = {
+                            realNameInteracted = true
+                            viewModel.updateRealName(it)
+                        },
                         label = { Text("真实姓名") },
-                        modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) realNameInteracted = true },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = realNameInteracted && realName.isBlank(),
                         supportingText = if (realNameInteracted && realName.isBlank()) {
@@ -253,10 +260,12 @@ fun RegisterScreen(
                     // 邮箱
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { viewModel.updateEmail(it) },
+                        onValueChange = {
+                            emailInteracted = true
+                            viewModel.updateEmail(it)
+                        },
                         label = { Text("邮箱（选填）") },
-                        modifier = Modifier.fillMaxWidth()
-                            .onFocusChanged { if (!it.isFocused) emailInteracted = true },
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = emailInteracted && email.isNotBlank() && !email.contains("@"),
                         supportingText = if (emailInteracted && email.isNotBlank() && !email.contains("@")) {

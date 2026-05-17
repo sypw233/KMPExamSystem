@@ -24,8 +24,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -43,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -125,10 +124,14 @@ fun LoginScreen(
                         passwordInteracted = passwordInteracted,
                         uiState = uiState,
                         quickAccounts = quickAccounts,
-                        onUsernameChange = viewModel::updateUsername,
-                        onPasswordChange = viewModel::updatePassword,
-                        onUsernameInteracted = { usernameInteracted = true },
-                        onPasswordInteracted = { passwordInteracted = true },
+                        onUsernameChange = {
+                            usernameInteracted = true
+                            viewModel.updateUsername(it)
+                        },
+                        onPasswordChange = {
+                            passwordInteracted = true
+                            viewModel.updatePassword(it)
+                        },
                         onPasswordVisibleChange = { passwordVisible = it },
                         onQuickFill = { quickUsername, quickPassword ->
                             viewModel.updateUsername(quickUsername)
@@ -156,10 +159,14 @@ fun LoginScreen(
                     passwordInteracted = passwordInteracted,
                     uiState = uiState,
                     quickAccounts = quickAccounts,
-                    onUsernameChange = viewModel::updateUsername,
-                    onPasswordChange = viewModel::updatePassword,
-                    onUsernameInteracted = { usernameInteracted = true },
-                    onPasswordInteracted = { passwordInteracted = true },
+                    onUsernameChange = {
+                        usernameInteracted = true
+                        viewModel.updateUsername(it)
+                    },
+                    onPasswordChange = {
+                        passwordInteracted = true
+                        viewModel.updatePassword(it)
+                    },
                     onPasswordVisibleChange = { passwordVisible = it },
                     onQuickFill = { quickUsername, quickPassword ->
                         viewModel.updateUsername(quickUsername)
@@ -237,8 +244,6 @@ private fun LoginFormCard(
     quickAccounts: List<Triple<String, String, String>>,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onUsernameInteracted: () -> Unit,
-    onPasswordInteracted: () -> Unit,
     onPasswordVisibleChange: (Boolean) -> Unit,
     onQuickFill: (String, String) -> Unit,
     onLogin: () -> Unit,
@@ -257,6 +262,15 @@ private fun LoginFormCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Text(
+                text = "在线考试系统",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "欢迎登录",
                 style = MaterialTheme.typography.headlineLarge,
@@ -290,8 +304,7 @@ private fun LoginFormCard(
                 onValueChange = onUsernameChange,
                 label = { Text("用户名") },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { if (!it.isFocused) onUsernameInteracted() },
+                    .fillMaxWidth(),
                 singleLine = true,
                 enabled = uiState !is LoginUiState.Loading,
                 isError = usernameInteracted && username.isBlank(),
@@ -311,25 +324,19 @@ private fun LoginFormCard(
                 onValueChange = onPasswordChange,
                 label = { Text("密码") },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { if (!it.isFocused) onPasswordInteracted() },
+                    .fillMaxWidth(),
                 singleLine = true,
                 enabled = uiState !is LoginUiState.Loading,
-                isError = passwordInteracted && password.isBlank(),
-                supportingText = if (passwordInteracted && password.isBlank()) {
-                    { Text("请输入密码") }
-                } else {
-                    null
-                },
+                isError = false,
                 leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onLogin() }),
                 trailingIcon = {
-                    FilledIconButton(onClick = { onPasswordVisibleChange(!passwordVisible) }) {
+                    IconButton(onClick = { onPasswordVisibleChange(!passwordVisible) }) {
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = null
+                            contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
                         )
                     }
                 }

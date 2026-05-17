@@ -1,5 +1,11 @@
 package ovo.sypw.kmp.examsystem
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -127,25 +133,34 @@ private fun MainAppContent() {
                     }
 
                     is AuthState.Unauthenticated, is AuthState.Error -> {
-                        // 未登录，显示登录或注册界面
-                        if (showRegisterScreen) {
-                            RegisterScreen(
-                                onRegisterSuccess = {
-                                    showRegisterScreen = false
-                                },
-                                onNavigateToLogin = {
-                                    showRegisterScreen = false
-                                }
-                            )
-                        } else {
-                            LoginScreen(
-                                onLoginSuccess = {
-                                    // 登录成功后会自动更新 authState
-                                },
-                                onNavigateToRegister = {
-                                    showRegisterScreen = true
-                                }
-                            )
+                        AnimatedContent(
+                            targetState = showRegisterScreen,
+                            transitionSpec = {
+                                val direction = if (targetState) 1 else -1
+                                (slideInHorizontally { width -> direction * width / 4 } + fadeIn())
+                                    .togetherWith(slideOutHorizontally { width -> -direction * width / 4 } + fadeOut())
+                            },
+                            label = "auth-screen-transition"
+                        ) { isRegister ->
+                            if (isRegister) {
+                                RegisterScreen(
+                                    onRegisterSuccess = {
+                                        showRegisterScreen = false
+                                    },
+                                    onNavigateToLogin = {
+                                        showRegisterScreen = false
+                                    }
+                                )
+                            } else {
+                                LoginScreen(
+                                    onLoginSuccess = {
+                                        // 登录成功后会自动更新 authState
+                                    },
+                                    onNavigateToRegister = {
+                                        showRegisterScreen = true
+                                    }
+                                )
+                            }
                         }
                     }
 
