@@ -148,39 +148,53 @@ fun LoginScreen(
                     )
                 }
             } else {
-                LoginFormCard(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(config.screenPadding),
-                    username = username,
-                    password = password,
-                    passwordVisible = passwordVisible,
-                    usernameInteracted = usernameInteracted,
-                    passwordInteracted = passwordInteracted,
-                    uiState = uiState,
-                    quickAccounts = quickAccounts,
-                    onUsernameChange = {
-                        usernameInteracted = true
-                        viewModel.updateUsername(it)
-                    },
-                    onPasswordChange = {
-                        passwordInteracted = true
-                        viewModel.updatePassword(it)
-                    },
-                    onPasswordVisibleChange = { passwordVisible = it },
-                    onQuickFill = { quickUsername, quickPassword ->
-                        viewModel.updateUsername(quickUsername)
-                        viewModel.updatePassword(quickPassword)
-                        usernameInteracted = true
-                        passwordInteracted = true
-                    },
-                    onLogin = {
-                        usernameInteracted = true
-                        passwordInteracted = true
-                        viewModel.login()
-                    },
-                    onNavigateToRegister = onNavigateToRegister
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "在线考试系统",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    LoginFormCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        username = username,
+                        password = password,
+                        passwordVisible = passwordVisible,
+                        usernameInteracted = usernameInteracted,
+                        passwordInteracted = passwordInteracted,
+                        uiState = uiState,
+                        quickAccounts = quickAccounts,
+                        onUsernameChange = {
+                            usernameInteracted = true
+                            viewModel.updateUsername(it)
+                        },
+                        onPasswordChange = {
+                            passwordInteracted = true
+                            viewModel.updatePassword(it)
+                        },
+                        onPasswordVisibleChange = { passwordVisible = it },
+                        onQuickFill = { quickUsername, quickPassword ->
+                            viewModel.updateUsername(quickUsername)
+                            viewModel.updatePassword(quickPassword)
+                            usernameInteracted = true
+                            passwordInteracted = true
+                        },
+                        onLogin = {
+                            usernameInteracted = true
+                            passwordInteracted = true
+                            viewModel.login()
+                        },
+                        onNavigateToRegister = onNavigateToRegister
+                    )
+                }
             }
         }
     }
@@ -262,15 +276,6 @@ private fun LoginFormCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "在线考试系统",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
             Text(
                 text = "欢迎登录",
                 style = MaterialTheme.typography.headlineLarge,
