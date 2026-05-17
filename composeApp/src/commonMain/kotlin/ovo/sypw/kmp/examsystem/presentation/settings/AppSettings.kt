@@ -1,25 +1,35 @@
 package ovo.sypw.kmp.examsystem.presentation.settings
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import ovo.sypw.kmp.examsystem.data.storage.LocalStorage
 
 enum class AppThemeMode(val label: String) {
     SYSTEM("跟随系统"),
-    LIGHT("日间模式"),
-    DARK("夜间模式")
+    LIGHT("浅色模式"),
+    DARK("深色模式")
 }
 
 enum class ThemeAccentMode(val label: String) {
-    SYSTEM("莫奈取色"),
+    SYSTEM("跟随系统"),
     CUSTOM("自定义")
 }
 
-enum class ThemeAccent(val label: String) {
-    BLUE("海蓝"),
-    GREEN("松绿"),
-    ROSE("玫红")
+enum class ThemeAccent(val label: String, val seedHex: String) {
+    BLUE("海湾蓝", "#006D77"),
+    GREEN("松石绿", "#2E6B35"),
+    ROSE("玫瑰粉", "#9B4057"),
+    AMBER("琥珀橙", "#9A5E00"),
+    TEAL("青玉色", "#006A60"),
+    VIOLET("鸢尾紫", "#6B4EA2"),
+    SLATE("雾灰蓝", "#4C607A"),
+    CORAL("珊瑚橙", "#A44A3F")
 }
 
 enum class ExamDisplayMode(val label: String) {
@@ -38,31 +48,121 @@ data class AppSettingsState(
     val themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val accentMode: ThemeAccentMode = ThemeAccentMode.SYSTEM,
     val accent: ThemeAccent = ThemeAccent.BLUE,
+    val useCustomAccentColor: Boolean = false,
+    val customAccentHex: String = ThemeAccent.BLUE.seedHex,
     val examDisplayMode: ExamDisplayMode = ExamDisplayMode.LIST,
     val fontScaleLevel: FontScaleLevel = FontScaleLevel.STANDARD
-)
+) {
+    val resolvedAccentHex: String
+        get() = if (useCustomAccentColor) customAccentHex else accent.seedHex
+}
 
 object AppSettingsStore {
+    private const val KEY_THEME_MODE = "app_settings_theme_mode"
+    private const val KEY_ACCENT_MODE = "app_settings_accent_mode"
+    private const val KEY_ACCENT = "app_settings_accent"
+    private const val KEY_USE_CUSTOM_ACCENT = "app_settings_use_custom_accent"
+    private const val KEY_CUSTOM_ACCENT_HEX = "app_settings_custom_accent_hex"
+    private const val KEY_EXAM_DISPLAY_MODE = "app_settings_exam_display_mode"
+    private const val KEY_FONT_SCALE = "app_settings_font_scale"
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _settings = MutableStateFlow(AppSettingsState())
+    private var localStorage: LocalStorage? = null
+    private var initialized = false
+
     val settings: StateFlow<AppSettingsState> = _settings.asStateFlow()
 
+    suspend fun initialize(storage: LocalStorage) {
+        if (initialized && localStorage === storage) return
+        localStorage = storage
+        _settings.value = AppSettingsState(
+            themeMode = storage.getString(KEY_THEME_MODE).toAppThemeMode(),
+            accentMode = storage.getString(KEY_ACCENT_MODE).toThemeAccentMode(),
+            accent = storage.getString(KEY_ACCENT).toThemeAccent(),
+            useCustomAccentColor = storage.getBoolean(KEY_USE_CUSTOM_ACCENT, false),
+            customAccentHex = storage.getString(KEY_CUSTOM_ACCENT_HEX)?.normalizeColorHex()
+                ?: ThemeAccent.BLUE.seedHex,
+            examDisplayMode = storage.getString(KEY_EXAM_DISPLAY_MODE).toExamDisplayMode(),
+            fontScaleLevel = storage.getString(KEY_FONT_SCALE).toFontScaleLevel()
+        )
+        initialized = true
+    }
+
     fun setThemeMode(mode: AppThemeMode) {
-        _settings.update { it.copy(themeMode = mode) }
+        updateSettings { it.copy(themeMode = mode) }
     }
 
     fun setAccentMode(mode: ThemeAccentMode) {
-        _settings.update { it.copy(accentMode = mode) }
+        updateSettings { it.copy(accentMode = mode) }
     }
 
     fun setAccent(accent: ThemeAccent) {
-        _settings.update { it.copy(accent = accent, accentMode = ThemeAccentMode.CUSTOM) }
+        updateSettings {
+            it.copy(
+                accent = accent,
+                accentMode = ThemeAccentMode.CUSTOM,
+                useCustomAccentColor = false
+            )
+        }
+    }
+
+    fun setCustomAccentColor(hex: String) {
+        val normalized = hex.normalizeColorHex() ?: return
+        updateSettings {
+            it.copy(
+                accentMode = ThemeAccentMode.CUSTOM,
+                useCustomAccentColor = true,
+                customAccentHex = normalized
+            )
+        }
     }
 
     fun setExamDisplayMode(mode: ExamDisplayMode) {
-        _settings.update { it.copy(examDisplayMode = mode) }
+        updateSettings { it.copy(examDisplayMode = mode) }
     }
 
     fun setFontScale(level: FontScaleLevel) {
-        _settings.update { it.copy(fontScaleLevel = level) }
+        updateSettings { it.copy(fontScaleLevel = level) }
+    }
+
+    private fun updateSettings(transform: (AppSettingsState) -> AppSettingsState) {
+        _settings.update(transform)
+        persistSettings()
+    }
+
+    private fun persistSettings() {
+        val storage = localStorage ?: return
+        val current = _settings.value
+        scope.launch {
+            storage.saveString(KEY_THEME_MODE, current.themeMode.name)
+            storage.saveString(KEY_ACCENT_MODE, current.accentMode.name)
+            storage.saveString(KEY_ACCENT, current.accent.name)
+            storage.saveBoolean(KEY_USE_CUSTOM_ACCENT, current.useCustomAccentColor)
+            storage.saveString(KEY_CUSTOM_ACCENT_HEX, current.customAccentHex)
+            storage.saveString(KEY_EXAM_DISPLAY_MODE, current.examDisplayMode.name)
+            storage.saveString(KEY_FONT_SCALE, current.fontScaleLevel.name)
+        }
     }
 }
+
+private fun String.normalizeColorHex(): String? {
+    val raw = trim().removePrefix("#").uppercase()
+    if (raw.length != 6 || raw.any { it !in "0123456789ABCDEF" }) return null
+    return "#$raw"
+}
+
+private fun String?.toAppThemeMode(): AppThemeMode =
+    AppThemeMode.entries.firstOrNull { it.name == this } ?: AppThemeMode.SYSTEM
+
+private fun String?.toThemeAccentMode(): ThemeAccentMode =
+    ThemeAccentMode.entries.firstOrNull { it.name == this } ?: ThemeAccentMode.SYSTEM
+
+private fun String?.toThemeAccent(): ThemeAccent =
+    ThemeAccent.entries.firstOrNull { it.name == this } ?: ThemeAccent.BLUE
+
+private fun String?.toExamDisplayMode(): ExamDisplayMode =
+    ExamDisplayMode.entries.firstOrNull { it.name == this } ?: ExamDisplayMode.LIST
+
+private fun String?.toFontScaleLevel(): FontScaleLevel =
+    FontScaleLevel.entries.firstOrNull { it.name == this } ?: FontScaleLevel.STANDARD

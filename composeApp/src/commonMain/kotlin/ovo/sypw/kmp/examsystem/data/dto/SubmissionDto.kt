@@ -1,6 +1,7 @@
 package ovo.sypw.kmp.examsystem.data.dto
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /**
  * 提交考试答案请求
@@ -66,13 +67,22 @@ data class SubjectiveGradeDetail(
  */
 @Serializable
 data class ProctoringEventResponse(
-    val id: Long,
+    val recorded: Boolean = false,
+    val autoSubmitted: Boolean = false
+)
+
+/**
+ * 监考数据详情响应
+ */
+@Serializable
+data class ProctoringDataResponse(
     val submissionId: Long,
-    val eventType: String,
-    val detail: String? = null,
-    val eventTime: String? = null
+    val examId: Long,
+    val userId: Long,
+    val switchCount: Int = 0,
+    val proctoringData: JsonObject = JsonObject(emptyMap()),
+    val status: Int = 0
 )
 
 /** 分页提交记录响应 */
 typealias PageSubmissionResponse = PageResponse<SubmissionResponse>
-

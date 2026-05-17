@@ -209,8 +209,8 @@ private fun ExamContent(
 
         focusViolationCount += 1
         onRecordProctoringEvent(
-            "WINDOW_FOCUS_LOST",
-            "lost_focus_ms=$lostMs,count=$focusViolationCount"
+            "blur",
+            "考试窗口失焦 ${lostMs}ms，第 $focusViolationCount 次"
         )
 
         if (exam.exam.strictMode && focusViolationCount >= strictThreshold) {

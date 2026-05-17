@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
+import kotlin.math.max
+import kotlin.math.min
 import ovo.sypw.kmp.examsystem.presentation.settings.ThemeAccent
 import ovo.sypw.kmp.examsystem.presentation.settings.ThemeAccentMode
 
@@ -97,6 +99,7 @@ fun AppTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
     accentMode: ThemeAccentMode = ThemeAccentMode.SYSTEM,
     accent: ThemeAccent = ThemeAccent.BLUE,
+    customAccentHex: String? = null,
     fontScale: Float = 1f,
     content: @Composable() () -> Unit
 ) {
@@ -106,7 +109,11 @@ fun AppTheme(
         DarkColors
     }
     val colors = if (accentMode == ThemeAccentMode.CUSTOM) {
-        baseColors.withAccent(accent, useDarkTheme)
+        baseColors.withAccent(
+            accent = accent,
+            dark = useDarkTheme,
+            customAccent = customAccentHex?.toColorOrNull()
+        )
     } else {
         baseColors
     }
@@ -119,8 +126,14 @@ fun AppTheme(
     )
 }
 
-private fun ColorScheme.withAccent(accent: ThemeAccent, dark: Boolean): ColorScheme {
-    val palette = when (accent) {
+private fun ColorScheme.withAccent(
+    accent: ThemeAccent,
+    dark: Boolean,
+    customAccent: Color? = null
+): ColorScheme {
+    val palette = customAccent?.let { seed ->
+        seed.toAccentPalette(dark)
+    } ?: when (accent) {
         ThemeAccent.BLUE -> if (dark) AccentPalette(
             primary = Color(0xFF8BD3DD),
             onPrimary = Color(0xFF00363D),
@@ -154,6 +167,61 @@ private fun ColorScheme.withAccent(accent: ThemeAccent, dark: Boolean): ColorSch
             primaryContainer = Color(0xFFFFD9E2),
             onPrimaryContainer = Color(0xFF3F0017)
         )
+        ThemeAccent.AMBER -> if (dark) AccentPalette(
+            primary = Color(0xFFFFB95B),
+            onPrimary = Color(0xFF4F2500),
+            primaryContainer = Color(0xFF713800),
+            onPrimaryContainer = Color(0xFFFFDDB6)
+        ) else AccentPalette(
+            primary = Color(0xFF9A5E00),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFFFDDB6),
+            onPrimaryContainer = Color(0xFF311B00)
+        )
+        ThemeAccent.TEAL -> if (dark) AccentPalette(
+            primary = Color(0xFF4FDAC6),
+            onPrimary = Color(0xFF003730),
+            primaryContainer = Color(0xFF005047),
+            onPrimaryContainer = Color(0xFF6EF7E2)
+        ) else AccentPalette(
+            primary = Color(0xFF006A60),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFF74F8E3),
+            onPrimaryContainer = Color(0xFF00201C)
+        )
+        ThemeAccent.VIOLET -> if (dark) AccentPalette(
+            primary = Color(0xFFD3BCFF),
+            onPrimary = Color(0xFF3C1E71),
+            primaryContainer = Color(0xFF53358A),
+            onPrimaryContainer = Color(0xFFEBDDFF)
+        ) else AccentPalette(
+            primary = Color(0xFF6B4EA2),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFEBDDFF),
+            onPrimaryContainer = Color(0xFF250A58)
+        )
+        ThemeAccent.SLATE -> if (dark) AccentPalette(
+            primary = Color(0xFFB5C8E7),
+            onPrimary = Color(0xFF1D3148),
+            primaryContainer = Color(0xFF344960),
+            onPrimaryContainer = Color(0xFFD4E4FF)
+        ) else AccentPalette(
+            primary = Color(0xFF4C607A),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFD4E4FF),
+            onPrimaryContainer = Color(0xFF061C33)
+        )
+        ThemeAccent.CORAL -> if (dark) AccentPalette(
+            primary = Color(0xFFFFB4A8),
+            onPrimary = Color(0xFF61140C),
+            primaryContainer = Color(0xFF7F2C21),
+            onPrimaryContainer = Color(0xFFFFDAD4)
+        ) else AccentPalette(
+            primary = Color(0xFFA44A3F),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFFFDAD4),
+            onPrimaryContainer = Color(0xFF410002)
+        )
     }
     return copy(
         primary = palette.primary,
@@ -173,6 +241,46 @@ private data class AccentPalette(
     val primaryContainer: Color,
     val onPrimaryContainer: Color
 )
+
+private fun String.toColorOrNull(): Color? {
+    val normalized = trim().removePrefix("#")
+    if (normalized.length != 6) return null
+    val value = normalized.toLongOrNull(16) ?: return null
+    return Color(0xFF000000 or value)
+}
+
+private fun Color.toAccentPalette(dark: Boolean): AccentPalette {
+    val primary = if (dark) mixWith(Color.White, 0.35f) else this
+    val primaryContainer = if (dark) mixWith(Color.Black, 0.45f) else mixWith(Color.White, 0.78f)
+    return AccentPalette(
+        primary = primary,
+        onPrimary = primary.bestForeground(),
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = primaryContainer.bestForeground()
+    )
+}
+
+private fun Color.mixWith(other: Color, ratio: Float): Color {
+    val clamped = ratio.coerceIn(0f, 1f)
+    return Color(
+        red = red * (1f - clamped) + other.red * clamped,
+        green = green * (1f - clamped) + other.green * clamped,
+        blue = blue * (1f - clamped) + other.blue * clamped,
+        alpha = 1f
+    )
+}
+
+private fun Color.bestForeground(): Color {
+    val contrastOnBlack = contrastRatio(this, Color.Black)
+    val contrastOnWhite = contrastRatio(this, Color.White)
+    return if (contrastOnBlack >= contrastOnWhite) Color.Black else Color.White
+}
+
+private fun contrastRatio(background: Color, foreground: Color): Float {
+    val lighter = max(background.luminance(), foreground.luminance())
+    val darker = min(background.luminance(), foreground.luminance())
+    return ((lighter + 0.05f) / (darker + 0.05f))
+}
 
 private fun Typography.scaled(scale: Float): Typography =
     if (scale == 1f) this else copy(

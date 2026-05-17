@@ -28,6 +28,7 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.data.storage.LocalStorage
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
 import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
@@ -68,6 +69,10 @@ fun App() {
             .build()
     }
     PlatformKoinApplication {
+        val localStorage: LocalStorage = koinInject()
+        LaunchedEffect(localStorage) {
+            AppSettingsStore.initialize(localStorage)
+        }
         val appSettings by AppSettingsStore.settings.collectAsState()
         val systemDark = isSystemInDarkTheme()
         val useDarkTheme = when (appSettings.themeMode) {
@@ -79,6 +84,7 @@ fun App() {
             useDarkTheme = useDarkTheme,
             accentMode = appSettings.accentMode,
             accent = appSettings.accent,
+            customAccentHex = appSettings.resolvedAccentHex,
             fontScale = appSettings.fontScaleLevel.scale
         ) {
             MainAppContent()

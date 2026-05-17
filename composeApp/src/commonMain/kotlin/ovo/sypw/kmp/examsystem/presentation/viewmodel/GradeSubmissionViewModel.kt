@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringDataResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.repository.AiGradingRepository
 import ovo.sypw.kmp.examsystem.data.repository.SubmissionRepository
@@ -21,6 +22,13 @@ sealed interface GradeActionState {
     data object Loading : GradeActionState
     data class Success(val message: String) : GradeActionState
     data class Error(val message: String) : GradeActionState
+}
+
+sealed interface ProctoringUiState {
+    data object Idle : ProctoringUiState
+    data object Loading : ProctoringUiState
+    data class Success(val data: ProctoringDataResponse) : ProctoringUiState
+    data class Error(val message: String) : ProctoringUiState
 }
 
 class GradeSubmissionViewModel(
@@ -44,6 +52,9 @@ class GradeSubmissionViewModel(
 
     private val _detailError = MutableStateFlow<String?>(null)
     val detailError: StateFlow<String?> = _detailError.asStateFlow()
+
+    private val _proctoringState = MutableStateFlow<ProctoringUiState>(ProctoringUiState.Idle)
+    val proctoringState: StateFlow<ProctoringUiState> = _proctoringState.asStateFlow()
 
     fun loadSubmissions(examId: Long) {
         _uiState.value = SubmissionsUiState.Loading
@@ -95,6 +106,20 @@ class GradeSubmissionViewModel(
 
     suspend fun requestAiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<AiGradingResponse> {
         return aiGradingRepository.aiGrade(questionId, studentAnswer, maxScore)
+    }
+
+    fun loadProctoringData(submissionId: Long) {
+        _proctoringState.value = ProctoringUiState.Loading
+        viewModelScope.launch {
+            submissionRepository.getProctoringData(submissionId).fold(
+                onSuccess = { _proctoringState.value = ProctoringUiState.Success(it) },
+                onFailure = { _proctoringState.value = ProctoringUiState.Error(it.message ?: "加载监考记录失败") }
+            )
+        }
+    }
+
+    fun clearProctoringData() {
+        _proctoringState.value = ProctoringUiState.Idle
     }
 
     fun resetActionState() {

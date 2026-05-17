@@ -3,8 +3,8 @@ package ovo.sypw.kmp.examsystem.data.api
 import ovo.sypw.kmp.examsystem.data.dto.ApiResponse
 import ovo.sypw.kmp.examsystem.data.dto.GradeRequest
 import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringDataResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
-import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import io.ktor.client.HttpClient
@@ -133,11 +133,11 @@ class SubmissionApi(httpClient: HttpClient) : BaseApiService(httpClient) {
     /**
      * 获取某次提交的监考记录
      */
-    suspend fun getProctoringEvents(token: String, submissionId: Long): ApiResponse<List<ProctoringEventResponse>> {
+    suspend fun getProctoringData(token: String, submissionId: Long): ApiResponse<ProctoringDataResponse> {
         val result = getWithToken(endpoint = "$SUBMISSION_ENDPOINT/$submissionId/proctoring", token = token)
         return when (result) {
             is NetworkResult.Success -> {
-                val data = result.data.parseData<List<ProctoringEventResponse>>()
+                val data = result.data.parseData<ProctoringDataResponse>()
                 ApiResponse(code = result.data.code, message = result.data.msg, data = data)
             }
             is NetworkResult.Error -> ApiResponse(code = 500, message = result.message, data = null)
@@ -188,4 +188,3 @@ class SubmissionApi(httpClient: HttpClient) : BaseApiService(httpClient) {
         }
     }
 }
-

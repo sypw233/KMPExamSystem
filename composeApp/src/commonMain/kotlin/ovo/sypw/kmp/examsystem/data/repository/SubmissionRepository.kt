@@ -2,8 +2,8 @@ package ovo.sypw.kmp.examsystem.data.repository
 
 import ovo.sypw.kmp.examsystem.data.api.SubmissionApi
 import ovo.sypw.kmp.examsystem.data.dto.PageSubmissionResponse
+import ovo.sypw.kmp.examsystem.data.dto.ProctoringDataResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventRequest
-import ovo.sypw.kmp.examsystem.data.dto.ProctoringEventResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionRequest
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
@@ -79,9 +79,9 @@ class SubmissionRepository(
     /**
      * 获取某次提交的监考记录
      */
-    suspend fun getProctoringEvents(submissionId: Long): Result<List<ProctoringEventResponse>> = runWithToken { token ->
-        val r = submissionApi.getProctoringEvents(token, submissionId)
-        if (r.code == 200) r.data ?: emptyList() else throw Exception(r.message)
+    suspend fun getProctoringData(submissionId: Long): Result<ProctoringDataResponse> = runWithToken { token ->
+        val r = submissionApi.getProctoringData(token, submissionId)
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
     /**
