@@ -84,13 +84,7 @@ fun DashboardScreen(
                     upcomingExamsState = upcomingExamsState,
                     onNavigateToExams = onNavigateToExams,
                     onMarkRead = { id -> notificationViewModel.markAsRead(id) },
-                    onNotificationClick = { notification ->
-                        if (notification.type in setOf("EXAM_PUBLISHED", "EXAM_REMINDER", "GRADE_RELEASED")) {
-                            onNavigateToExams()
-                        } else {
-                            onNavigateToNotifications()
-                        }
-                    },
+                    onNotificationClick = {},
                     onRetryNotifications = { notificationViewModel.loadNotifications() },
                     onRetryExams = { examViewModel.loadPublishedExams() },
                     showExamSection = showExamSection,
@@ -116,13 +110,7 @@ fun DashboardScreen(
                             notificationState = notificationState,
                             config = config,
                             onMarkRead = { id -> notificationViewModel.markAsRead(id) },
-                            onNotificationClick = { notification ->
-                                if (notification.type in setOf("EXAM_PUBLISHED", "EXAM_REMINDER", "GRADE_RELEASED")) {
-                                    onNavigateToExams()
-                                } else {
-                                    onNavigateToNotifications()
-                                }
-                            },
+                            onNotificationClick = {},
                             onRetry = { notificationViewModel.loadNotifications() }
                         )
                     }

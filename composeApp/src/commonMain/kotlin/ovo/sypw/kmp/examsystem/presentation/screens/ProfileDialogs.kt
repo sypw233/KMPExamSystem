@@ -241,9 +241,6 @@ fun ChangePasswordDialog(
 
 @Composable
 fun AppSettingsDialog(onDismiss: () -> Unit) {
-    val settings by AppSettingsStore.settings.collectAsState()
-    val uriHandler = LocalUriHandler.current
-
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
@@ -255,70 +252,78 @@ fun AppSettingsDialog(onDismiss: () -> Unit) {
         properties = adaptiveDialogProperties(),
         title = { Text("设置") },
         text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                SettingsSection("主题设置")
-                ChoiceRow(
-                    title = "显示模式",
-                    items = AppThemeMode.values().toList(),
-                    selected = settings.themeMode,
-                    label = { it.label },
-                    onSelect = AppSettingsStore::setThemeMode
-                )
-                ChoiceRow(
-                    title = "主题色",
-                    items = ThemeAccentMode.values().toList(),
-                    selected = settings.accentMode,
-                    label = { it.label },
-                    onSelect = AppSettingsStore::setAccentMode
-                )
-                if (settings.accentMode == ThemeAccentMode.CUSTOM) {
-                    ChoiceRow(
-                        title = "自定义色",
-                        items = ThemeAccent.values().toList(),
-                        selected = settings.accent,
-                        label = { it.label },
-                        onSelect = AppSettingsStore::setAccent
-                    )
-                }
-
-                SettingsSection("考试设置")
-                ChoiceRow(
-                    title = "答题展示",
-                    items = ExamDisplayMode.values().toList(),
-                    selected = settings.examDisplayMode,
-                    label = { it.label },
-                    onSelect = AppSettingsStore::setExamDisplayMode
-                )
-
-                SettingsSection("字体大小")
-                Text(
-                    text = "较大的字号可能导致部分密集页面出现换行或滚动增多。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                ChoiceRow(
-                    title = "字号",
-                    items = FontScaleLevel.values().toList(),
-                    selected = settings.fontScaleLevel,
-                    label = { it.label },
-                    onSelect = AppSettingsStore::setFontScale
-                )
-
-                SettingsSection("更多")
-                OutlinedButton(
-                    onClick = { uriHandler.openUri("https://ys.mihoyo.com/") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("下载原神")
-                }
-            }
+            AppSettingsContent()
         }
     )
+}
+
+@Composable
+fun AppSettingsContent(modifier: Modifier = Modifier) {
+    val settings by AppSettingsStore.settings.collectAsState()
+    val uriHandler = LocalUriHandler.current
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SettingsSection("主题设置")
+        ChoiceRow(
+            title = "显示模式",
+            items = AppThemeMode.values().toList(),
+            selected = settings.themeMode,
+            label = { it.label },
+            onSelect = AppSettingsStore::setThemeMode
+        )
+        ChoiceRow(
+            title = "主题色",
+            items = ThemeAccentMode.values().toList(),
+            selected = settings.accentMode,
+            label = { it.label },
+            onSelect = AppSettingsStore::setAccentMode
+        )
+        if (settings.accentMode == ThemeAccentMode.CUSTOM) {
+            ChoiceRow(
+                title = "自定义色",
+                items = ThemeAccent.values().toList(),
+                selected = settings.accent,
+                label = { it.label },
+                onSelect = AppSettingsStore::setAccent
+            )
+        }
+
+        SettingsSection("考试设置")
+        ChoiceRow(
+            title = "答题展示",
+            items = ExamDisplayMode.values().toList(),
+            selected = settings.examDisplayMode,
+            label = { it.label },
+            onSelect = AppSettingsStore::setExamDisplayMode
+        )
+
+        SettingsSection("字体大小")
+        Text(
+            text = "较大的字号可能导致部分密集页面出现换行或滚动增多。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        ChoiceRow(
+            title = "字号",
+            items = FontScaleLevel.values().toList(),
+            selected = settings.fontScaleLevel,
+            label = { it.label },
+            onSelect = AppSettingsStore::setFontScale
+        )
+
+        SettingsSection("更多")
+        OutlinedButton(
+            onClick = { uriHandler.openUri("https://ys.mihoyo.com/") },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("下载原神")
+        }
+    }
 }
 
 @Composable

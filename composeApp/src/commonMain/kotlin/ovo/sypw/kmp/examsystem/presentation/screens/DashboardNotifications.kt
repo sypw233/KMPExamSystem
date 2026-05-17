@@ -170,8 +170,6 @@ private fun DashboardNotificationStack(
                     DashboardNotificationCard(
                         notification = notifications.first(),
                         onClick = {
-                            onMarkRead(notifications.first().id)
-                            onNotificationClick(notifications.first())
                             expanded = true
                         },
                         config = config,

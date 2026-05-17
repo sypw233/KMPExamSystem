@@ -43,7 +43,6 @@ fun ProfileScreen() {
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         notificationViewModel.loadUnreadCount(force = false)
@@ -56,6 +55,7 @@ fun ProfileScreen() {
     when (currentSubScreen) {
         "grades" -> GradeHistoryScreen(onBack = { currentSubScreen = null })
         "notifications" -> NotificationScreen(onBack = { currentSubScreen = null })
+        "settings" -> AppSettingsScreen(onBack = { currentSubScreen = null })
         else -> {
             Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
                 ProfileMainScreen(
@@ -68,7 +68,7 @@ fun ProfileScreen() {
                     onLogout = { scope.launch { authRepository.logout() } },
                     onOpenEditProfile = { showEditProfileDialog = true },
                     onOpenHelp = { showHelpDialog = true },
-                    onOpenSettings = { showSettingsDialog = true }
+                    onOpenSettings = { currentSubScreen = "settings" }
                 )
             }
         }
@@ -134,9 +134,5 @@ fun ProfileScreen() {
 
     if (showHelpDialog) {
         HelpDialog(onDismiss = { showHelpDialog = false })
-    }
-
-    if (showSettingsDialog) {
-        AppSettingsDialog(onDismiss = { showSettingsDialog = false })
     }
 }
