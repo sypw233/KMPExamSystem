@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamListUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.utils.ResponsiveLayoutConfig
@@ -22,8 +23,10 @@ internal fun DesktopDashboardLayout(
     upcomingExamsState: ExamListUiState,
     onNavigateToExams: () -> Unit,
     onMarkRead: (Long) -> Unit,
+    onNotificationClick: (NotificationResponse) -> Unit,
     onRetryNotifications: () -> Unit,
     onRetryExams: () -> Unit,
+    showExamSection: Boolean,
     config: ResponsiveLayoutConfig
 ) {
     Row(
@@ -32,7 +35,9 @@ internal fun DesktopDashboardLayout(
             .padding(horizontal = config.screenPadding, vertical = config.contentPadding)
     ) {
         Column(
-            modifier = Modifier.weight(1f).fillMaxHeight(),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
         ) {
             GreetingSection(userName = userName, unreadCount = unreadCount, config = config)
@@ -40,22 +45,27 @@ internal fun DesktopDashboardLayout(
                 notificationState = notificationState,
                 config = config,
                 onMarkRead = onMarkRead,
+                onNotificationClick = onNotificationClick,
                 onRetry = onRetryNotifications
             )
         }
 
-        Spacer(modifier = Modifier.width(config.screenPadding))
+        if (showExamSection) {
+            Spacer(modifier = Modifier.width(config.screenPadding))
 
-        Column(
-            modifier = Modifier.weight(1.2f).fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
-        ) {
-            DashboardExamsSection(
-                upcomingExamsState = upcomingExamsState,
-                config = config,
-                onNavigateToExams = onNavigateToExams,
-                onRetry = onRetryExams
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1.2f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
+            ) {
+                DashboardExamsSection(
+                    upcomingExamsState = upcomingExamsState,
+                    config = config,
+                    onNavigateToExams = onNavigateToExams,
+                    onRetry = onRetryExams
+                )
+            }
         }
     }
 }

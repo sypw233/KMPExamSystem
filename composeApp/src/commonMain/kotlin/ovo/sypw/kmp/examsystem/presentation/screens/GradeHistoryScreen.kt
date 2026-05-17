@@ -52,7 +52,7 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
     var detailSubmissionId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(userId) {
-        userId?.let { viewModel.loadStudentStatistics(it) }
+        userId?.let { viewModel.loadStudentStatistics(it, force = false) }
     }
 
     detailSubmissionId?.let { id ->
@@ -92,7 +92,7 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
                 is StatisticsUiState.Error -> {
                     ErrorContent(
                         message = state.message,
-                        onRetry = { userId?.let { viewModel.loadStudentStatistics(it) } }
+                        onRetry = { userId?.let { viewModel.loadStudentStatistics(it, force = true) } }
                     )
                 }
                 is StatisticsUiState.Success -> {

@@ -211,17 +211,26 @@ private fun GradeRecordCard(record: StudentScoreRecord, clickable: Boolean, onCl
             }
 
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "${record.score}",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "分",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+                if (record.score != null) {
+                    Text(
+                        "${record.score}",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "分",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                } else {
+                    Text(
+                        "待批改",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

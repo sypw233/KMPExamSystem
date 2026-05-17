@@ -42,6 +42,9 @@ class GradeSubmissionViewModel(
     private val _currentQuestions = MutableStateFlow<List<ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse>>(emptyList())
     val currentQuestions: StateFlow<List<ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse>> = _currentQuestions.asStateFlow()
 
+    private val _detailError = MutableStateFlow<String?>(null)
+    val detailError: StateFlow<String?> = _detailError.asStateFlow()
+
     fun loadSubmissions(examId: Long) {
         _uiState.value = SubmissionsUiState.Loading
         viewModelScope.launch {
@@ -53,6 +56,9 @@ class GradeSubmissionViewModel(
     }
 
     fun loadSubmissionDetail(submissionId: Long) {
+        _currentSubmission.value = null
+        _currentQuestions.value = emptyList()
+        _detailError.value = null
         viewModelScope.launch {
             submissionRepository.getSubmissionDetail(submissionId).fold(
                 onSuccess = { sub ->
@@ -60,10 +66,15 @@ class GradeSubmissionViewModel(
                     // Load exam questions
                     examRepository.getExamQuestions(sub.examId).fold(
                         onSuccess = { _currentQuestions.value = it },
-                        onFailure = { _currentQuestions.value = emptyList() }
+                        onFailure = {
+                            examRepository.getExamPaperQuestions(sub.examId).fold(
+                                onSuccess = { paperQuestions -> _currentQuestions.value = paperQuestions },
+                                onFailure = { _currentQuestions.value = emptyList() }
+                            )
+                        }
                     )
                 },
-                onFailure = { _actionState.value = GradeActionState.Error("加载答卷失败: ${it.message}") }
+                onFailure = { _detailError.value = "加载答卷失败: ${it.message}" }
             )
         }
     }
@@ -92,5 +103,7 @@ class GradeSubmissionViewModel(
 
     fun clearSubmissionDetail() {
         _currentSubmission.value = null
+        _currentQuestions.value = emptyList()
+        _detailError.value = null
     }
 }

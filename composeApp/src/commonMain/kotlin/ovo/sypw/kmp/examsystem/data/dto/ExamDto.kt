@@ -18,6 +18,7 @@ data class ExamResponse(
     val endTime: String? = null,
     val duration: Int? = null,
     val totalScore: Int,
+    val studentScore: Int? = null,
     val status: Int = 0,                   // 0-草稿, 1-已发布, 2-已结束
     val statusDescription: String? = null,
     val needsGrading: Boolean = false,
@@ -163,4 +164,3 @@ data class ComposeRandomExamRequest(
 
 /** 分页题目响应 */
 typealias PageQuestionResponse = PageResponse<QuestionResponse>
-

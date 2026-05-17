@@ -25,6 +25,12 @@ class ExamRepository(
     private val _myExams = MutableStateFlow<List<ExamResponse>>(emptyList())
     val myExams: StateFlow<List<ExamResponse>> = _myExams.asStateFlow()
 
+    private val _availableExams = MutableStateFlow<List<ExamResponse>>(emptyList())
+    val availableExams: StateFlow<List<ExamResponse>> = _availableExams.asStateFlow()
+
+    private val _completedExams = MutableStateFlow<List<ExamResponse>>(emptyList())
+    val completedExams: StateFlow<List<ExamResponse>> = _completedExams.asStateFlow()
+
     suspend fun loadPublishedExams(): Result<List<ExamResponse>> = runWithToken { token ->
         fetchAllPages(
             requestPage = { page, size -> examApi.getExamsByStatus(token, 1, page, size) },
@@ -129,7 +135,9 @@ class ExamRepository(
             last = { it.last },
             totalPages = { it.totalPages },
             distinctKey = { it.id }
-        )
+        ).also {
+            _availableExams.value = it
+        }
     }
 
     /** 学生：获取已完成的考试 */
@@ -140,7 +148,9 @@ class ExamRepository(
             last = { it.last },
             totalPages = { it.totalPages },
             distinctKey = { it.id }
-        )
+        ).also {
+            _completedExams.value = it
+        }
     }
 
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->

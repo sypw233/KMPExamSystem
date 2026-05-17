@@ -3,13 +3,15 @@ package ovo.sypw.kmp.examsystem.presentation.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import ovo.sypw.kmp.examsystem.presentation.theme.AppShapes
-import ovo.sypw.kmp.examsystem.presentation.theme.AppTypography
+import androidx.compose.ui.text.TextStyle
+import ovo.sypw.kmp.examsystem.presentation.settings.ThemeAccent
+import ovo.sypw.kmp.examsystem.presentation.settings.ThemeAccentMode
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -93,21 +95,109 @@ private val DarkColors = darkColorScheme(
 @Composable
 fun AppTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
+    accentMode: ThemeAccentMode = ThemeAccentMode.SYSTEM,
+    accent: ThemeAccent = ThemeAccent.BLUE,
+    fontScale: Float = 1f,
     content: @Composable() () -> Unit
 ) {
-    val colors = if (!useDarkTheme) {
+    val baseColors = if (!useDarkTheme) {
         LightColors
     } else {
         DarkColors
     }
+    val colors = if (accentMode == ThemeAccentMode.CUSTOM) {
+        baseColors.withAccent(accent, useDarkTheme)
+    } else {
+        baseColors
+    }
 
     MaterialTheme(
         colorScheme = colors,
-        typography = AppTypography,
+        typography = AppTypography.scaled(fontScale),
         shapes = AppShapes,
         content = content
     )
 }
+
+private fun ColorScheme.withAccent(accent: ThemeAccent, dark: Boolean): ColorScheme {
+    val palette = when (accent) {
+        ThemeAccent.BLUE -> if (dark) AccentPalette(
+            primary = Color(0xFF8BD3DD),
+            onPrimary = Color(0xFF00363D),
+            primaryContainer = Color(0xFF004F58),
+            onPrimaryContainer = Color(0xFFA8EFF8)
+        ) else AccentPalette(
+            primary = Color(0xFF006D77),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFBCEBEF),
+            onPrimaryContainer = Color(0xFF001F23)
+        )
+        ThemeAccent.GREEN -> if (dark) AccentPalette(
+            primary = Color(0xFFAAD8AA),
+            onPrimary = Color(0xFF143A19),
+            primaryContainer = Color(0xFF2B522E),
+            onPrimaryContainer = Color(0xFFC5F4C5)
+        ) else AccentPalette(
+            primary = Color(0xFF2E6B35),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFC9EBCB),
+            onPrimaryContainer = Color(0xFF09210D)
+        )
+        ThemeAccent.ROSE -> if (dark) AccentPalette(
+            primary = Color(0xFFFFB1C4),
+            onPrimary = Color(0xFF5E112B),
+            primaryContainer = Color(0xFF7C2941),
+            onPrimaryContainer = Color(0xFFFFD9E2)
+        ) else AccentPalette(
+            primary = Color(0xFF9B4057),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFFFD9E2),
+            onPrimaryContainer = Color(0xFF3F0017)
+        )
+    }
+    return copy(
+        primary = palette.primary,
+        onPrimary = palette.onPrimary,
+        primaryContainer = palette.primaryContainer,
+        onPrimaryContainer = palette.onPrimaryContainer,
+        secondary = palette.primary,
+        secondaryContainer = palette.primaryContainer,
+        surfaceTint = palette.primary,
+        inversePrimary = palette.primary
+    )
+}
+
+private data class AccentPalette(
+    val primary: Color,
+    val onPrimary: Color,
+    val primaryContainer: Color,
+    val onPrimaryContainer: Color
+)
+
+private fun Typography.scaled(scale: Float): Typography =
+    if (scale == 1f) this else copy(
+        displayLarge = displayLarge.scaled(scale),
+        displayMedium = displayMedium.scaled(scale),
+        displaySmall = displaySmall.scaled(scale),
+        headlineLarge = headlineLarge.scaled(scale),
+        headlineMedium = headlineMedium.scaled(scale),
+        headlineSmall = headlineSmall.scaled(scale),
+        titleLarge = titleLarge.scaled(scale),
+        titleMedium = titleMedium.scaled(scale),
+        titleSmall = titleSmall.scaled(scale),
+        bodyLarge = bodyLarge.scaled(scale),
+        bodyMedium = bodyMedium.scaled(scale),
+        bodySmall = bodySmall.scaled(scale),
+        labelLarge = labelLarge.scaled(scale),
+        labelMedium = labelMedium.scaled(scale),
+        labelSmall = labelSmall.scaled(scale)
+    )
+
+private fun TextStyle.scaled(scale: Float): TextStyle =
+    copy(
+        fontSize = fontSize * scale,
+        lineHeight = lineHeight * scale
+    )
 
 /**
  * 语义颜色扩展属性

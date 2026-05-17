@@ -5,18 +5,22 @@ import ovo.sypw.kmp.examsystem.data.dto.FileUploadResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 /**
- * 文件管理仓库
+ * 鏂囦欢绠＄悊浠撳簱
  */
 class FileRepository(
     private val fileApi: FileApi,
     tokenStorage: TokenStorage
 ) : BaseRepository(tokenStorage) {
 
-    suspend fun uploadImage(imageBytes: ByteArray, fileName: String): Result<FileUploadResponse> {
+    suspend fun uploadImage(
+        imageBytes: ByteArray,
+        fileName: String,
+        category: String = "temp"
+    ): Result<FileUploadResponse> {
         return runWithToken { token ->
-            val r = fileApi.uploadImage(token, imageBytes, fileName)
+            val r = fileApi.uploadImage(token, imageBytes, fileName, category)
             if (r.code == 200 && r.data != null) r.data
-            else throw Exception(r.message ?: "上传失败")
+            else throw Exception(r.message ?: "涓婁紶澶辫触")
         }
     }
 
@@ -24,7 +28,7 @@ class FileRepository(
         return runWithToken { token ->
             val r = fileApi.uploadDocument(token, docBytes, fileName)
             if (r.code == 200 && r.data != null) r.data
-            else throw Exception(r.message ?: "上传失败")
+            else throw Exception(r.message ?: "涓婁紶澶辫触")
         }
     }
 
@@ -43,5 +47,4 @@ class FileRepository(
             else throw Exception(r.message)
         }
     }
-
 }

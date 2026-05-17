@@ -51,19 +51,35 @@ class ExamViewModel(
     private val _userRole = MutableStateFlow(UserRole.UNKNOWN)
 
     // 管理视角：全部考试列表（管理员/教师用 "我的考试" vs "全部考试"）
-    private val _allExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
+    private val _allExams = MutableStateFlow<ExamListUiState>(
+        examRepository.myExams.value.takeIf { it.isNotEmpty() }
+            ?.let { ExamListUiState.Success(it) }
+            ?: ExamListUiState.Loading
+    )
     val allExams: StateFlow<ExamListUiState> = _allExams.asStateFlow()
 
     // 学生视角：未开始（已发布）
-    private val _notStartedExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
+    private val _notStartedExams = MutableStateFlow<ExamListUiState>(
+        examRepository.availableExams.value.takeIf { it.isNotEmpty() }
+            ?.let { ExamListUiState.Success(it) }
+            ?: ExamListUiState.Loading
+    )
     val notStartedExams: StateFlow<ExamListUiState> = _notStartedExams.asStateFlow()
 
     // 已结束
-    private val _endedExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
+    private val _endedExams = MutableStateFlow<ExamListUiState>(
+        examRepository.completedExams.value.takeIf { it.isNotEmpty() }
+            ?.let { ExamListUiState.Success(it) }
+            ?: ExamListUiState.Loading
+    )
     val endedExams: StateFlow<ExamListUiState> = _endedExams.asStateFlow()
 
     // 学生首页 - 即将开始
-    private val _upcomingExams = MutableStateFlow<ExamListUiState>(ExamListUiState.Loading)
+    private val _upcomingExams = MutableStateFlow<ExamListUiState>(
+        examRepository.availableExams.value.takeIf { it.isNotEmpty() }
+            ?.let { ExamListUiState.Success(it.take(3)) }
+            ?: ExamListUiState.Loading
+    )
     val upcomingExams: StateFlow<ExamListUiState> = _upcomingExams.asStateFlow()
 
     // 考试详情
@@ -116,6 +132,10 @@ class ExamViewModel(
     /** 管理员/教师视角：加载考试列表（管理员看全部，教师看我的） */
     fun loadManagerExams(force: Boolean = true) {
         if (!force && _allExams.value is ExamListUiState.Success) return
+        if (!force && _userRole.value == UserRole.TEACHER && examRepository.myExams.value.isNotEmpty()) {
+            _allExams.value = ExamListUiState.Success(examRepository.myExams.value)
+            return
+        }
         if (isLoadingManagerExams) return
         isLoadingManagerExams = true
         _allExams.value = ExamListUiState.Loading
@@ -134,6 +154,17 @@ class ExamViewModel(
 
     /** 加载已发布的考试（学生用可参加接口，教师/管理员用状态筛选） */
     fun loadPublishedExams(force: Boolean = true) {
+        if (!force && _userRole.value == UserRole.STUDENT && examRepository.availableExams.value.isNotEmpty()) {
+            val cached = examRepository.availableExams.value
+            _notStartedExams.value = ExamListUiState.Success(cached)
+            _upcomingExams.value = ExamListUiState.Success(cached.take(3))
+            return
+        }
+        if (!force && _upcomingExams.value is ExamListUiState.Success && _notStartedExams.value !is ExamListUiState.Success) {
+            val cachedUpcoming = (_upcomingExams.value as ExamListUiState.Success).exams
+            _notStartedExams.value = ExamListUiState.Success(cachedUpcoming)
+            return
+        }
         if (!force && _notStartedExams.value is ExamListUiState.Success) return
         if (isLoadingPublishedExams) return
         isLoadingPublishedExams = true
@@ -157,6 +188,10 @@ class ExamViewModel(
 
     /** 加载已结束的考试（学生用已完成接口，教师/管理员用状态筛选） */
     fun loadEndedExams(force: Boolean = true) {
+        if (!force && _userRole.value == UserRole.STUDENT && examRepository.completedExams.value.isNotEmpty()) {
+            _endedExams.value = ExamListUiState.Success(examRepository.completedExams.value)
+            return
+        }
         if (!force && _endedExams.value is ExamListUiState.Success) return
         if (isLoadingEndedExams) return
         isLoadingEndedExams = true

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
@@ -24,11 +24,11 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
-import org.koin.compose.koinInject
 
 /**
- * 仪表盘/首页界面
- * 通知和考试列表均对接真实 API
+ * 首页：
+ * - 学生：通知 + 即将开始的考试
+ * - 教师：通知
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,31 +43,32 @@ fun DashboardScreen(
 
     val authState by authRepository.authState.collectAsState()
     val user = (authState as? AuthState.Authenticated)?.user
+    val role = when (user?.role?.lowercase()) {
+        "admin" -> UserRole.ADMIN
+        "teacher" -> UserRole.TEACHER
+        "student" -> UserRole.STUDENT
+        else -> UserRole.UNKNOWN
+    }
+    val showExamSection = role == UserRole.STUDENT
 
     val upcomingExamsState by examViewModel.upcomingExams.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val config = LocalResponsiveConfig.current
 
-    // 认证状态变化时按需加载；显式刷新/重试仍会强制请求。
-    LaunchedEffect(authState) {
-        val authenticated = authState as? AuthState.Authenticated
-        if (authenticated != null) {
-            val role = when (authenticated.user.role.lowercase()) {
-                "admin" -> UserRole.ADMIN
-                "teacher" -> UserRole.TEACHER
-                "student" -> UserRole.STUDENT
-                else -> UserRole.UNKNOWN
-            }
+    LaunchedEffect(role) {
+        if (role != UserRole.UNKNOWN) {
             examViewModel.setRole(role, loadData = false)
-            examViewModel.loadPublishedExams(force = false)
+            if (showExamSection) {
+                examViewModel.loadPublishedExams(force = false)
+            }
             notificationViewModel.loadNotifications(force = false)
             notificationViewModel.loadUnreadCount(force = false)
         }
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -83,8 +84,16 @@ fun DashboardScreen(
                     upcomingExamsState = upcomingExamsState,
                     onNavigateToExams = onNavigateToExams,
                     onMarkRead = { id -> notificationViewModel.markAsRead(id) },
+                    onNotificationClick = { notification ->
+                        if (notification.type in setOf("EXAM_PUBLISHED", "EXAM_REMINDER", "GRADE_RELEASED")) {
+                            onNavigateToExams()
+                        } else {
+                            onNavigateToNotifications()
+                        }
+                    },
                     onRetryNotifications = { notificationViewModel.loadNotifications() },
                     onRetryExams = { examViewModel.loadPublishedExams() },
+                    showExamSection = showExamSection,
                     config = config
                 )
             } else {
@@ -107,20 +116,31 @@ fun DashboardScreen(
                             notificationState = notificationState,
                             config = config,
                             onMarkRead = { id -> notificationViewModel.markAsRead(id) },
+                            onNotificationClick = { notification ->
+                                if (notification.type in setOf("EXAM_PUBLISHED", "EXAM_REMINDER", "GRADE_RELEASED")) {
+                                    onNavigateToExams()
+                                } else {
+                                    onNavigateToNotifications()
+                                }
+                            },
                             onRetry = { notificationViewModel.loadNotifications() }
                         )
                     }
 
-                    item {
-                        DashboardExamsSection(
-                            upcomingExamsState = upcomingExamsState,
-                            config = config,
-                            onNavigateToExams = onNavigateToExams,
-                            onRetry = { examViewModel.loadPublishedExams() }
-                        )
+                    if (showExamSection) {
+                        item {
+                            DashboardExamsSection(
+                                upcomingExamsState = upcomingExamsState,
+                                config = config,
+                                onNavigateToExams = onNavigateToExams,
+                                onRetry = { examViewModel.loadPublishedExams() }
+                            )
+                        }
                     }
 
-                    item { Spacer(modifier = Modifier.height(config.verticalSpacing * 2)) }
+                    item {
+                        Spacer(modifier = Modifier.height(config.verticalSpacing * 2))
+                    }
                 }
             }
         }

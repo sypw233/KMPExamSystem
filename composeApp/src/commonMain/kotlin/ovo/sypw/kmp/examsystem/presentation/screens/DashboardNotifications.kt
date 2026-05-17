@@ -55,6 +55,7 @@ internal fun DashboardNotificationSection(
     notificationState: NotificationUiState,
     config: ResponsiveLayoutConfig,
     onMarkRead: (Long) -> Unit,
+    onNotificationClick: (NotificationResponse) -> Unit,
     onRetry: () -> Unit
 ) {
     Column {
@@ -95,6 +96,7 @@ internal fun DashboardNotificationSection(
                     DashboardNotificationStack(
                         notifications = notifications.take(6),
                         onMarkRead = onMarkRead,
+                        onNotificationClick = onNotificationClick,
                         config = config
                     )
                 }
@@ -107,6 +109,7 @@ internal fun DashboardNotificationSection(
 private fun DashboardNotificationStack(
     notifications: List<NotificationResponse>,
     onMarkRead: (Long) -> Unit,
+    onNotificationClick: (NotificationResponse) -> Unit,
     config: ResponsiveLayoutConfig
 ) {
     var expanded by remember(notifications.map { it.id }) { mutableStateOf(false) }
@@ -166,7 +169,11 @@ private fun DashboardNotificationStack(
 
                     DashboardNotificationCard(
                         notification = notifications.first(),
-                        onClick = { expanded = true },
+                        onClick = {
+                            onMarkRead(notifications.first().id)
+                            onNotificationClick(notifications.first())
+                            expanded = true
+                        },
                         config = config,
                         modifier = Modifier.zIndex(10f),
                         trailingContent = {
@@ -227,7 +234,10 @@ private fun DashboardNotificationStack(
                 ) { notification ->
                     DashboardNotificationCard(
                         notification = notification,
-                        onClick = { onMarkRead(notification.id) },
+                        onClick = {
+                            onMarkRead(notification.id)
+                            onNotificationClick(notification)
+                        },
                         config = config
                     )
                 }

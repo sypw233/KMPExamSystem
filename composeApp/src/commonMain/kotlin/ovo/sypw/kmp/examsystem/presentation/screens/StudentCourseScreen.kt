@@ -119,7 +119,12 @@ internal fun StudentCourseScreen(courseViewModel: CourseViewModel) {
                     Tab(selected = selectedTab == index, onClick = { selectedTab = index }, text = { Text(title) })
                 }
             }
-            AnimatedContent(targetState = selectedTab) { tab ->
+            AnimatedContent(
+                targetState = selectedTab,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) { tab ->
                 val state = if (tab == 0) allCoursesState else myCoursesState
                 StudentCourseList(
                     state = state,

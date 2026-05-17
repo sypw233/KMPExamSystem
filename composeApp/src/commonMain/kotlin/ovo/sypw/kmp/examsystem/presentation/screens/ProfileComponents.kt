@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,20 +39,19 @@ import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
     val config = LocalResponsiveConfig.current
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 132.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = config.cardPadding, vertical = config.cardPadding + 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
+            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing + 4.dp)
         ) {
-            // 头像
             val avatarUrl = user?.avatar
             Box(
-                modifier = Modifier.size(56.dp),
+                modifier = Modifier.size(72.dp),
                 contentAlignment = Alignment.Center
             ) {
                 if (!avatarUrl.isNullOrBlank()) {
@@ -59,13 +59,13 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                         model = avatarUrl,
                         contentDescription = "头像",
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary),
                     )
                 } else {
                     Surface(
-                        modifier = Modifier.size(56.dp),
+                        modifier = Modifier.size(72.dp),
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primary
                     ) {
@@ -82,8 +82,10 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                // 真实姓名
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
                     text = user?.realName ?: user?.username ?: "未登录",
                     style = MaterialTheme.typography.titleLarge,
@@ -104,15 +106,24 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                         "ADMIN" -> "管理员"
                         else -> user.role
                     }
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(roleLabel) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        border = null
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        SuggestionChip(
+                            onClick = { },
+                            label = { Text(roleLabel) },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
+                                labelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            border = null
+                        )
+                        if (!user.email.isNullOrBlank()) {
+                            Text(
+                                text = user.email,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
                 } else {
                     Text(
                         text = "请登录后查看个人信息",
@@ -122,7 +133,6 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "编辑资料",

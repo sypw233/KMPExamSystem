@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
@@ -22,7 +23,7 @@ import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.EnrollState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveScrollableGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 
 @Composable
@@ -49,12 +50,12 @@ internal fun StudentCourseList(
                     Text("暂无课程")
                 }
             } else {
-                ResponsiveLazyVerticalGrid(
+                ResponsiveScrollableGrid(
                     items = state.courses,
                     key = { it.id },
                     modifier = Modifier
                         .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
-                        .fillMaxSize(),
+                        .fillMaxWidth(),
                     contentPadding = PaddingValues(config.screenPadding),
                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                     horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)

@@ -44,7 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveScrollableGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
@@ -111,7 +111,7 @@ fun ExamSubmissionsScreen(
                             Text("暂无学生提交答卷", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
-                        ResponsiveLazyVerticalGrid(
+                        ResponsiveScrollableGrid(
                             items = state.submissions,
                             key = { it.id },
                             contentPadding = PaddingValues(config.screenPadding),
@@ -119,7 +119,7 @@ fun ExamSubmissionsScreen(
                             horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
                             modifier = Modifier
                                 .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
-                                .fillMaxSize()
+                                .fillMaxWidth()
                         ) { submission ->
                             SubmissionCard(
                                 submission = submission,

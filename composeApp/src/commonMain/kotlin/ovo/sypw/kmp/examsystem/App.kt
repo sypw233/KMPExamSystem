@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,8 @@ import ovo.sypw.kmp.examsystem.presentation.navigation.rememberNavigationManager
 import ovo.sypw.kmp.examsystem.presentation.screens.ExamTakingScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.LoginScreen
 import ovo.sypw.kmp.examsystem.presentation.screens.auth.RegisterScreen
+import ovo.sypw.kmp.examsystem.presentation.settings.AppSettingsStore
+import ovo.sypw.kmp.examsystem.presentation.settings.AppThemeMode
 import ovo.sypw.kmp.examsystem.presentation.theme.AppTheme
 import ovo.sypw.kmp.examsystem.utils.DialogManager
 import ovo.sypw.kmp.examsystem.utils.Logger
@@ -65,7 +68,19 @@ fun App() {
             .build()
     }
     PlatformKoinApplication {
-        AppTheme {
+        val appSettings by AppSettingsStore.settings.collectAsState()
+        val systemDark = isSystemInDarkTheme()
+        val useDarkTheme = when (appSettings.themeMode) {
+            AppThemeMode.SYSTEM -> systemDark
+            AppThemeMode.LIGHT -> false
+            AppThemeMode.DARK -> true
+        }
+        AppTheme(
+            useDarkTheme = useDarkTheme,
+            accentMode = appSettings.accentMode,
+            accent = appSettings.accent,
+            fontScale = appSettings.fontScaleLevel.scale
+        ) {
             MainAppContent()
         }
     }

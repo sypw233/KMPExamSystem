@@ -99,6 +99,23 @@ internal fun ExamCard(
                 }
             }
 
+            if (showScore) {
+                Spacer(modifier = Modifier.height(10.dp))
+                val scoreText = exam.studentScore?.let { "我的成绩 $it/${exam.totalScore}" }
+                    ?: if (exam.needsGrading) "成绩待批改" else "未获取到成绩"
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = scoreText,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
+            }
+
             if (!exam.startTime.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
@@ -171,6 +188,14 @@ internal fun ExamPreviewCard(
                 InfoRow(Icons.Default.Timer, "考试时长", "${exam.duration ?: "-"} 分钟")
                 InfoRow(Icons.AutoMirrored.Filled.Assignment, "满分", "${exam.totalScore} 分")
                 InfoRow(Icons.Default.Schedule, "题目数量", "${exam.questionCount} 题")
+                if (!showStartButton) {
+                    InfoRow(
+                        Icons.AutoMirrored.Filled.Assignment,
+                        "我的成绩",
+                        exam.studentScore?.let { "$it/${exam.totalScore} 分" }
+                            ?: if (exam.needsGrading) "待批改" else "未获取"
+                    )
+                }
                 if (!exam.startTime.isNullOrBlank()) {
                     InfoRow(Icons.Default.Schedule, "开始时间", StringUtils.formatDateTime(exam.startTime))
                 }

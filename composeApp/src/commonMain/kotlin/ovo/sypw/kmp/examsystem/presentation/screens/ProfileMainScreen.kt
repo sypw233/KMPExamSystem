@@ -4,14 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -20,11 +17,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.SettingsApplications
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -47,14 +41,12 @@ internal fun ProfileMainScreen(
     user: UserInfo?,
     unreadCount: Long,
     isTeacherOrAdmin: Boolean,
-    isAdmin: Boolean,
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToSystemSettings: () -> Unit,
-    onOpenChangePassword: () -> Unit,
     onLogout: () -> Unit,
     onOpenEditProfile: () -> Unit,
-    onOpenHelp: () -> Unit
+    onOpenHelp: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val isStudent = user?.role?.uppercase() == "STUDENT"
     val config = LocalResponsiveConfig.current
@@ -67,7 +59,7 @@ internal fun ProfileMainScreen(
                 .padding(config.screenPadding),
             contentAlignment = Alignment.TopCenter
         ) {
-            Row(
+            androidx.compose.foundation.layout.Row(
                 modifier = Modifier
                     .widthIn(max = ResponsiveUtils.MaxWidths.STANDARD)
                     .fillMaxWidth(),
@@ -97,7 +89,7 @@ internal fun ProfileMainScreen(
                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
                 ) {
                     Text(
-                        text = "设置",
+                        text = "功能",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = config.verticalSpacing)
@@ -105,13 +97,11 @@ internal fun ProfileMainScreen(
                     ProfileMenuCards(
                         isStudent = isStudent,
                         isTeacherOrAdmin = isTeacherOrAdmin,
-                        isAdmin = isAdmin,
                         unreadCount = unreadCount,
                         onNavigateToGrades = onNavigateToGrades,
                         onNavigateToNotifications = onNavigateToNotifications,
-                        onNavigateToSystemSettings = onNavigateToSystemSettings,
-                        onOpenChangePassword = onOpenChangePassword,
-                        onOpenHelp = onOpenHelp
+                        onOpenHelp = onOpenHelp,
+                        onOpenSettings = onOpenSettings
                     )
                 }
             }
@@ -129,13 +119,11 @@ internal fun ProfileMainScreen(
             ProfileMenuCards(
                 isStudent = isStudent,
                 isTeacherOrAdmin = isTeacherOrAdmin,
-                isAdmin = isAdmin,
                 unreadCount = unreadCount,
                 onNavigateToGrades = onNavigateToGrades,
                 onNavigateToNotifications = onNavigateToNotifications,
-                onNavigateToSystemSettings = onNavigateToSystemSettings,
-                onOpenChangePassword = onOpenChangePassword,
-                onOpenHelp = onOpenHelp
+                onOpenHelp = onOpenHelp,
+                onOpenSettings = onOpenSettings
             )
             OutlinedActionButton(
                 text = "退出登录",
@@ -152,13 +140,11 @@ internal fun ProfileMainScreen(
 private fun ProfileMenuCards(
     isStudent: Boolean,
     isTeacherOrAdmin: Boolean,
-    isAdmin: Boolean,
     unreadCount: Long,
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToSystemSettings: () -> Unit,
-    onOpenChangePassword: () -> Unit,
-    onOpenHelp: () -> Unit
+    onOpenHelp: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -169,22 +155,16 @@ private fun ProfileMenuCards(
                 MenuItem(
                     icon = Icons.Default.DateRange,
                     title = "考试历史",
-                    subtitle = "查看我的成绩记录",
+                    subtitle = "查看历史成绩与提交详情",
                     onClick = onNavigateToGrades
                 )
             }
             MenuItem(
                 icon = Icons.Default.Notifications,
                 title = "通知中心",
-                subtitle = if (unreadCount > 0) "未读 ${unreadCount}" else "查看全部通知",
+                subtitle = if (unreadCount > 0) "未读通知 $unreadCount 条" else "查看全部通知",
                 badge = if (unreadCount > 0) unreadCount.toString() else null,
                 onClick = onNavigateToNotifications
-            )
-            MenuItem(
-                icon = Icons.Default.Lock,
-                title = "密码管理",
-                subtitle = "修改登录密码",
-                onClick = onOpenChangePassword
             )
         }
     }
@@ -194,19 +174,17 @@ private fun ProfileMenuCards(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
-            if (isAdmin) {
-                MenuItem(
-                    icon = Icons.Default.Settings,
-                    title = "系统设置",
-                    subtitle = "AI 配置与系统参数",
-                    onClick = onNavigateToSystemSettings
-                )
-            }
             MenuItem(
                 icon = Icons.Default.Info,
-                title = if (isTeacherOrAdmin) "帮助中心" else "帮助与反馈",
-                subtitle = "功能使用说明",
+                title = if (isTeacherOrAdmin) "帮助中心" else "使用说明",
+                subtitle = "查看功能说明与使用提示",
                 onClick = onOpenHelp
+            )
+            MenuItem(
+                icon = Icons.Default.SettingsApplications,
+                title = "设置",
+                subtitle = "主题、考试展示、字体大小与外部链接",
+                onClick = onOpenSettings
             )
         }
     }
@@ -225,7 +203,7 @@ private fun OutlinedActionButton(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, color)
     ) {
-        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = color)
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, color = color)
     }

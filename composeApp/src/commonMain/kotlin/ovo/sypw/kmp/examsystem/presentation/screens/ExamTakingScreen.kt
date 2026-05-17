@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.navigation.NavigationManager
+import ovo.sypw.kmp.examsystem.presentation.settings.AppSettingsStore
+import ovo.sypw.kmp.examsystem.presentation.settings.ExamDisplayMode
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ExamTakingViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -168,6 +172,8 @@ private fun ExamContent(
     var lastLostFocusMark by remember { mutableStateOf<TimeMark?>(null) }
     var focusViolationCount by remember { mutableStateOf(0) }
     var showForceSubmitDialog by remember { mutableStateOf(false) }
+    var currentQuestionIndex by remember(exam.questions.size) { mutableIntStateOf(0) }
+    val appSettings by AppSettingsStore.settings.collectAsState()
     val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val config = LocalResponsiveConfig.current
@@ -282,15 +288,56 @@ private fun ExamContent(
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
-                itemsIndexed(exam.questions, key = { _, eq -> eq.questionId }) { index, examQuestion ->
-                    val question = examQuestion.question ?: return@itemsIndexed
-                    QuestionItem(
-                        number = index + 1,
-                        examQuestion = examQuestion,
-                        currentAnswer = answers[question.id] ?: "",
-                        onAnswerChange = { answer -> onAnswerChange(question.id, answer) },
-                        onToggleMultiple = { option -> onToggleMultiple(question.id, option) }
-                    )
+                if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION && exam.questions.isNotEmpty()) {
+                    item {
+                        val index = currentQuestionIndex.coerceIn(0, exam.questions.lastIndex)
+                        val examQuestion = exam.questions[index]
+                        val question = examQuestion.question
+                        if (question != null) {
+                            Column(verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)) {
+                                Text(
+                                    text = "第 ${index + 1} / ${exam.questions.size} 题",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                QuestionItem(
+                                    number = index + 1,
+                                    examQuestion = examQuestion,
+                                    currentAnswer = answers[question.id] ?: "",
+                                    onAnswerChange = { answer -> onAnswerChange(question.id, answer) },
+                                    onToggleMultiple = { option -> onToggleMultiple(question.id, option) }
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    TextButton(
+                                        onClick = { currentQuestionIndex = (currentQuestionIndex - 1).coerceAtLeast(0) },
+                                        enabled = currentQuestionIndex > 0
+                                    ) {
+                                        Text("上一题")
+                                    }
+                                    Button(
+                                        onClick = { currentQuestionIndex = (currentQuestionIndex + 1).coerceAtMost(exam.questions.lastIndex) },
+                                        enabled = currentQuestionIndex < exam.questions.lastIndex
+                                    ) {
+                                        Text("下一题")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    itemsIndexed(exam.questions, key = { _, eq -> eq.questionId }) { index, examQuestion ->
+                        val question = examQuestion.question ?: return@itemsIndexed
+                        QuestionItem(
+                            number = index + 1,
+                            examQuestion = examQuestion,
+                            currentAnswer = answers[question.id] ?: "",
+                            onAnswerChange = { answer -> onAnswerChange(question.id, answer) },
+                            onToggleMultiple = { option -> onToggleMultiple(question.id, option) }
+                        )
+                    }
                 }
                 item { Spacer(modifier = Modifier.height(16.dp)) }
             }

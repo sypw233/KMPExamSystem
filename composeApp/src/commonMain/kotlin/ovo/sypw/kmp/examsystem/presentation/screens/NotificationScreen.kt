@@ -51,7 +51,7 @@ import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
-import ovo.sypw.kmp.examsystem.utils.ResponsiveLazyVerticalGrid
+import ovo.sypw.kmp.examsystem.utils.ResponsiveScrollableGrid
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
 
@@ -166,7 +166,7 @@ fun NotificationScreen(onBack: () -> Unit) {
                             add(NotificationGridItem.FooterSpacer)
                         }
 
-                        ResponsiveLazyVerticalGrid(
+                        ResponsiveScrollableGrid(
                             items = listItems,
                             key = {
                                 when (it) {
@@ -177,7 +177,7 @@ fun NotificationScreen(onBack: () -> Unit) {
                             },
                             modifier = Modifier
                                 .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.NARROW) else Modifier)
-                                .fillMaxSize(),
+                                .fillMaxWidth(),
                             contentPadding = PaddingValues(
                                 horizontal = config.screenPadding,
                                 vertical = config.verticalSpacing

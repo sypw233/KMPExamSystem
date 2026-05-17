@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 data class StudentScoreRecord(
     val examId: Long,
     val examTitle: String,
-    val score: Int = 0,
+    val score: Int? = null,
     val submitTime: String? = null,
     val submissionId: Long? = null
 )

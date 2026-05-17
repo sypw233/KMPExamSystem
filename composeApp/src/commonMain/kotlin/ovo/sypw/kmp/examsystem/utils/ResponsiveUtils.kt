@@ -470,3 +470,29 @@ fun <T> ResponsiveLazyVerticalGrid(
         }
     }
 }
+
+@Composable
+fun <T> ResponsiveScrollableGrid(
+    items: List<T>,
+    key: ((T) -> Any)? = null,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(0.dp),
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(0.dp),
+    columnCountOverride: Int? = null,
+    minItemWidth: Dp = 200.dp,
+    itemContent: @Composable (T) -> Unit
+) {
+    val scrollState = rememberScrollState()
+    ResponsiveLazyVerticalGrid(
+        items = items,
+        key = key,
+        modifier = modifier.verticalScroll(scrollState),
+        contentPadding = contentPadding,
+        verticalArrangement = verticalArrangement,
+        horizontalArrangement = horizontalArrangement,
+        columnCountOverride = columnCountOverride,
+        minItemWidth = minItemWidth,
+        itemContent = itemContent
+    )
+}

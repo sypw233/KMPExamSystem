@@ -29,15 +29,21 @@ class FileApi(httpClient: HttpClient) : BaseApiService(httpClient) {
     /**
      * 上传图片（multipart/form-data）
      */
-    suspend fun uploadImage(token: String, imageBytes: ByteArray, fileName: String): ApiResponse<FileUploadResponse> {
+    suspend fun uploadImage(
+        token: String,
+        imageBytes: ByteArray,
+        fileName: String,
+        category: String = "temp"
+    ): ApiResponse<FileUploadResponse> {
         return try {
             val response = httpClient.post(HttpClientConfig.getApiUrl("$FILE_ENDPOINT/image")) {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 setBody(
                     MultiPartFormDataContent(formData {
+                        append("category", category)
                         append("file", imageBytes, Headers.build {
                             append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
-                            append(HttpHeaders.ContentType, "image/*")
+                            append(HttpHeaders.ContentType, resolveImageContentType(fileName))
                         })
                     })
                 )
@@ -50,6 +56,18 @@ class FileApi(httpClient: HttpClient) : BaseApiService(httpClient) {
             }
         } catch (e: Exception) {
             ApiResponse(500, e.message ?: "上传异常", null)
+        }
+    }
+
+    private fun resolveImageContentType(fileName: String): String {
+        return when (fileName.substringAfterLast('.', "").lowercase()) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "gif" -> "image/gif"
+            "webp" -> "image/webp"
+            "bmp" -> "image/bmp"
+            "svg" -> "image/svg+xml"
+            else -> "application/octet-stream"
         }
     }
 

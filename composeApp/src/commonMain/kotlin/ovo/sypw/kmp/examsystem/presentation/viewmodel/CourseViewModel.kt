@@ -81,6 +81,11 @@ class CourseViewModel(
         teacherId: Long? = null,
         force: Boolean = true
     ) {
+        val cachedCourses = courseRepository.allCourses.value
+        if (!force && keyword == null && status == null && teacherId == null && cachedCourses.isNotEmpty()) {
+            _allCoursesState.value = CourseUiState.Success(cachedCourses)
+            return
+        }
         if (!force && _allCoursesState.value is CourseUiState.Success) return
         if (isLoadingAllCourses) return
         isLoadingAllCourses = true
@@ -100,6 +105,11 @@ class CourseViewModel(
 
     /** 加载我的课程 */
     fun loadMyCourses(force: Boolean = true) {
+        val cachedCourses = courseRepository.myCourses.value
+        if (!force && cachedCourses.isNotEmpty()) {
+            _myCoursesState.value = CourseUiState.Success(cachedCourses)
+            return
+        }
         if (!force && _myCoursesState.value is CourseUiState.Success) return
         if (isLoadingMyCourses) return
         isLoadingMyCourses = true

@@ -19,15 +19,7 @@ import ovo.sypw.kmp.examsystem.presentation.screens.teacher.TeacherExamManageScr
 import ovo.sypw.kmp.examsystem.utils.Logger
 
 /**
- * 主路由分发组件
- *
- * 注意：路由内容根据角色有语义差异：
- *   - HOME:      管理员 = 数据图表总览 / 教师&学生 = 首页(通知+即将考试)
- *   - COURSES:   管理员&教师 = 课程管理(增删改) / 学生 = 浏览选课
- *   - EXAMS:     管理员&教师 = 考试管理 / 学生 = 参加考试
- *   - QUESTIONS: 教师/管理员专属
- *   - USERS:     管理员专属
- *   - PROFILE:   所有角色
+ * 主路由分发。
  */
 @Composable
 fun NavigationScreen(
@@ -43,69 +35,73 @@ fun NavigationScreen(
         },
         label = "NavigationTransition"
     ) { targetRoute ->
-    when (targetRoute) {
-
-        // ── 首页 ──────────────────────────────────────────────────────────
-        AppRoutes.HOME -> {
-            if (role == UserRole.ADMIN) {
-                AdminDashboardScreen()
-            } else {
-                DashboardScreen()
-            }
-        }
-
-        // ── 课程 ──────────────────────────────────────────────────────────
-        AppRoutes.COURSES -> {
-            // 教师和管理员看课程管理（增删改），学生看课程列表/选课
-            CoursesScreen(role = role)
-        }
-
-        // ── 考试 ──────────────────────────────────────────────────────────
-        AppRoutes.EXAMS -> {
-            when (role) {
-                UserRole.TEACHER, UserRole.ADMIN -> {
-                    TeacherExamManageScreen(
-                        onBack = { /* 顶层无返回 */ },
-                        userRole = role
-                    )
-                }
-                else -> {
-                    ExamsScreen(
-                        navigationManager = navigationManager,
-                        onStartExam = { examId -> navigationManager.enterExamMode(examId) }
+        when (targetRoute) {
+            AppRoutes.HOME -> {
+                if (role == UserRole.ADMIN) {
+                    AdminDashboardScreen()
+                } else {
+                    DashboardScreen(
+                        onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
+                        onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
+                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
                     )
                 }
             }
-        }
 
-        // ── 题目 ──────────────────────────────────────────────────────────
-        AppRoutes.QUESTION_BANKS -> {
-            QuestionBankScreen()
-        }
+            AppRoutes.COURSES -> {
+                CoursesScreen(role = role)
+            }
 
-        // ── 用户（管理员） ──────────────────────────────────────────────────
-        AppRoutes.USERS -> {
-            UserManageScreen()
-        }
+            AppRoutes.EXAMS -> {
+                when (role) {
+                    UserRole.TEACHER, UserRole.ADMIN -> {
+                        TeacherExamManageScreen(
+                            onBack = {},
+                            userRole = role
+                        )
+                    }
 
-        // ── 我的 ──────────────────────────────────────────────────────────
-        AppRoutes.PROFILE -> {
-            ProfileScreen()
-        }
+                    else -> {
+                        ExamsScreen(
+                            navigationManager = navigationManager,
+                            onStartExam = { examId -> navigationManager.enterExamMode(examId) }
+                        )
+                    }
+                }
+            }
 
-        AppRoutes.SYSTEM_SETTINGS -> {
-            if (role == UserRole.ADMIN) {
-                SystemSettingsScreen()
-            } else {
-                Logger.w("NavigationScreen: 非管理员角色($role)访问 SYSTEM_SETTINGS 路由，已重定向到首页")
-                DashboardScreen()
+            AppRoutes.QUESTION_BANKS -> {
+                QuestionBankScreen()
+            }
+
+            AppRoutes.USERS -> {
+                UserManageScreen()
+            }
+
+            AppRoutes.PROFILE -> {
+                ProfileScreen()
+            }
+
+            AppRoutes.SYSTEM_SETTINGS -> {
+                if (role == UserRole.ADMIN) {
+                    SystemSettingsScreen()
+                } else {
+                    Logger.w("NavigationScreen", "非管理员角色($role)访问 SYSTEM_SETTINGS，已重定向到首页")
+                    DashboardScreen(
+                        onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
+                        onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
+                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
+                    )
+                }
+            }
+
+            else -> {
+                DashboardScreen(
+                    onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
+                    onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
+                    onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
+                )
             }
         }
-
-        // 兜底
-        else -> {
-            DashboardScreen()
-        }
-    }
     }
 }

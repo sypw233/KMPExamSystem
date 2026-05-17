@@ -195,8 +195,13 @@ class AuthRepository(
             val token = tokenStorage.getAccessToken() ?: throw Exception("未登录")
             val response = authApi.updateProfile(token, UserProfileRequest(nickname, email, avatar))
             if (response.code == 200) {
-                checkAuthState()
-                Result.success(Unit)
+                val currentUserResponse = authApi.getCurrentUser(token)
+                if (currentUserResponse.code == 200 && currentUserResponse.data != null) {
+                    _authState.value = AuthState.Authenticated(currentUserResponse.data)
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception(currentUserResponse.message))
+                }
             } else {
                 Result.failure(Exception(response.message))
             }

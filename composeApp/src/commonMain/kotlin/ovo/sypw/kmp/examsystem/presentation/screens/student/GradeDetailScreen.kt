@@ -8,13 +8,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPane
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import androidx.compose.foundation.layout.Arrangement
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
@@ -46,6 +48,7 @@ import ovo.sypw.kmp.examsystem.data.dto.QuestionType
 import ovo.sypw.kmp.examsystem.data.dto.SubjectiveGradeDetail
 import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
+import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,7 @@ fun GradeDetailScreen(
 ) {
     val submission by viewModel.currentSubmission.collectAsState()
     val questions by viewModel.currentQuestions.collectAsState()
+    val detailError by viewModel.detailError.collectAsState()
     val config = LocalResponsiveConfig.current
     val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
@@ -65,9 +69,14 @@ fun GradeDetailScreen(
 
     val currentSubmission = submission
     if (currentSubmission == null) {
+        val error = detailError
         if (isDesktop) {
             Box(modifier = Modifier.fillMaxSize().padding(config.screenPadding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                if (error == null) {
+                    CircularProgressIndicator()
+                } else {
+                    DetailErrorContent(error, onRetry = { viewModel.loadSubmissionDetail(submissionId) }, onBack = onBack)
+                }
             }
         } else {
             Scaffold(
@@ -85,7 +94,11 @@ fun GradeDetailScreen(
                 containerColor = MaterialTheme.colorScheme.background
             ) { padding ->
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    if (error == null) {
+                        CircularProgressIndicator()
+                    } else {
+                        DetailErrorContent(error, onRetry = { viewModel.loadSubmissionDetail(submissionId) }, onBack = onBack)
+                    }
                 }
             }
         }
@@ -102,16 +115,10 @@ fun GradeDetailScreen(
         }
     }
 
-    // 解析批改详情 (JSON 字符串 -> List)
-    val submitDetailList: List<SubjectiveGradeDetail> = remember(currentSubmission.submitDetail) {
-        try {
-            val jsonStr = currentSubmission.submitDetail ?: return@remember emptyList()
-            if (jsonStr.isNotBlank()) Json.decodeFromString(jsonStr) else emptyList()
-        } catch (e: Exception) {
-            emptyList()
-        }
+    // 兼容新旧两种 submitDetail 结构：列表结构，以及后端按 questionId 分组的对象结构。
+    val detailMap: Map<Long, SubjectiveGradeDetail> = remember(currentSubmission.submitDetail) {
+        parseSubmitDetail(currentSubmission.submitDetail)
     }
-    val detailMap = submitDetailList.associateBy { it.questionId }
 
     if (isDesktop) {
         // 桌面端布局
@@ -200,6 +207,21 @@ fun GradeDetailScreen(
 }
 
 @Composable
+private fun DetailErrorContent(message: String, onRetry: () -> Unit, onBack: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(message, color = MaterialTheme.colorScheme.error)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onRetry) {
+                Text("重试")
+            }
+            TextButton(onClick = onBack) {
+                Text("返回")
+            }
+        }
+    }
+}
+
+@Composable
 private fun DetailQuestionItem(
     examQuestion: ExamQuestionResponse,
     studentAnswer: String,
@@ -235,7 +257,7 @@ private fun DetailQuestionItem(
         Column(modifier = Modifier.padding(16.dp)) {
             // 题型与编号
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween) {
-                Text("题目 ${examQuestion.orderNum} [${q.type}]", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("题目 ${examQuestion.orderNum} [${QuestionUtils.questionTypeLabel(q.type)}]", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text("${examQuestion.score} 分", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -284,8 +306,8 @@ private fun DetailQuestionItem(
                 }
             }
 
-            // 主观题得分与批语
-            if (!isObjective && gradeDetail != null) {
+            // 本题得分与批语
+            if (gradeDetail != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.primaryContainer,
@@ -293,7 +315,7 @@ private fun DetailQuestionItem(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text("得分: ${gradeDetail.score}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                        Text("本题得分: ${gradeDetail.score}", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                         if (!gradeDetail.comment.isNullOrBlank()) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text("教师批语: ${gradeDetail.comment}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -301,6 +323,37 @@ private fun DetailQuestionItem(
                     }
                 }
             }
+        }
+    }
+}
+
+@Serializable
+private data class SubmissionQuestionDetail(
+    val score: Int? = null,
+    val comment: String? = null,
+    val answer: String? = null,
+    val maxScore: Int? = null
+)
+
+private fun parseSubmitDetail(jsonStr: String?): Map<Long, SubjectiveGradeDetail> {
+    if (jsonStr.isNullOrBlank()) return emptyMap()
+    return try {
+        Json.decodeFromString<List<SubjectiveGradeDetail>>(jsonStr).associateBy { it.questionId }
+    } catch (_: Exception) {
+        try {
+            Json.decodeFromString<Map<String, SubmissionQuestionDetail>>(jsonStr)
+                .mapNotNull { (questionIdText, detail) ->
+                    val questionId = questionIdText.toLongOrNull() ?: return@mapNotNull null
+                    val score = detail.score ?: return@mapNotNull null
+                    questionId to SubjectiveGradeDetail(
+                        questionId = questionId,
+                        score = score,
+                        comment = detail.comment
+                    )
+                }
+                .toMap()
+        } catch (_: Exception) {
+            emptyMap()
         }
     }
 }
