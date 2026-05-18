@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HourglassEmpty
@@ -75,7 +76,10 @@ internal fun QuestionItem(
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onAnswerChange(letter) }
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -93,7 +97,10 @@ internal fun QuestionItem(
                     options.forEachIndexed { index, option ->
                         val letter = ('A' + index).toString()
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onToggleMultiple(letter) }
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
@@ -107,11 +114,17 @@ internal fun QuestionItem(
                 }
                 "true_false" -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.clickable { onAnswerChange("true") },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             RadioButton(selected = currentAnswer == "true", onClick = { onAnswerChange("true") })
                             Text("正确", style = MaterialTheme.typography.bodyMedium)
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            modifier = Modifier.clickable { onAnswerChange("false") },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             RadioButton(selected = currentAnswer == "false", onClick = { onAnswerChange("false") })
                             Text("错误", style = MaterialTheme.typography.bodyMedium)
                         }
