@@ -20,4 +20,5 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 .claude
+.claude/worktrees
 .agent

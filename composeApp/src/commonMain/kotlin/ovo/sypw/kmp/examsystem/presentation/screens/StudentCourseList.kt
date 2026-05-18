@@ -56,8 +56,13 @@ internal fun StudentCourseList(
                     modifier = Modifier
                         .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
                         .fillMaxWidth(),
-                    contentPadding = PaddingValues(config.screenPadding),
-                    verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
+                    contentPadding = PaddingValues(
+                        start = config.screenPadding,
+                        end = config.screenPadding,
+                        top = config.screenPadding,
+                        bottom = config.screenPadding + 104.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing)
                 ) { course ->
                     StudentCourseCard(

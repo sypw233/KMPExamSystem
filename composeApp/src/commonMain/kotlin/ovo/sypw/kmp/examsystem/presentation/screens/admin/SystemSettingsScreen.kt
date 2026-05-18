@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -199,9 +200,7 @@ private fun SystemSettingsForm(
                 }
             )
 
-            if (form.mode == AiModelMode.DEFAULT) {
-                FixedPresetCard()
-            } else {
+            if (form.mode == AiModelMode.CUSTOM) {
                 Text(
                     text = "兼容 OpenAI Compatible 格式",
                     style = MaterialTheme.typography.bodySmall,
@@ -217,7 +216,7 @@ private fun SystemSettingsForm(
                 OutlinedTextField(
                     value = form.customModelName,
                     onValueChange = { form = form.copy(customModelName = it) },
-                    label = { Text("Model Name") },
+                    label = { Text("模型名称") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -240,19 +239,20 @@ private fun SystemSettingsForm(
                 onValueChange = { form = form.copy(systemPrompt = it) },
                 label = { Text("系统提示词") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 6
+                minLines = 4,
+                maxLines = 6
             )
-            OutlinedTextField(
-                value = form.temperature,
-                onValueChange = { form = form.copy(temperature = it) },
-                label = { Text("Temperature") },
+                OutlinedTextField(
+                    value = form.temperature,
+                    onValueChange = { form = form.copy(temperature = it) },
+                    label = { Text("温度") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            OutlinedTextField(
-                value = form.maxTokens,
-                onValueChange = { form = form.copy(maxTokens = it) },
-                label = { Text("Max Tokens") },
+                OutlinedTextField(
+                    value = form.maxTokens,
+                    onValueChange = { form = form.copy(maxTokens = it) },
+                    label = { Text("最大输出 Token") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -285,6 +285,8 @@ private fun SystemSettingsForm(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(104.dp))
     }
 }
 

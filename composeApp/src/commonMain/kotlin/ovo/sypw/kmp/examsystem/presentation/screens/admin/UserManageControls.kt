@@ -74,7 +74,7 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                     }
                 )
                 .fillMaxWidth()
-                .padding(horizontal = config.screenPadding, vertical = 8.dp)
+                .padding(horizontal = config.screenPadding, vertical = 6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -86,7 +86,7 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                     onValueChange = { keyword = it },
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
+                        .height(44.dp),
                     placeholder = { Text("搜索用户名/姓名/邮箱", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -123,7 +123,7 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                 )
                 OutlinedButton(
                     onClick = { filtersExpanded = !filtersExpanded },
-                    modifier = Modifier.height(48.dp),
+                    modifier = Modifier.height(44.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp)
                 ) {
                     Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))

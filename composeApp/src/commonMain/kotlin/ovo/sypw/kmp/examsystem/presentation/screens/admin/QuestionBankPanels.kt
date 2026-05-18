@@ -91,8 +91,8 @@ internal fun BankListPanel(
                     onValueChange = { searchKeyword = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .height(48.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                        .height(44.dp),
                     placeholder = { Text("搜索题库", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -149,7 +149,7 @@ internal fun BankListPanel(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 120.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(banks, key = { it.id }) { bank ->
                         Card(
@@ -161,9 +161,9 @@ internal fun BankListPanel(
                             ),
                             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                             onClick = { onSelectBank(bank) },
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp)
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
+                            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                                 Text(
                                     bank.name,
                                     style = MaterialTheme.typography.titleSmall,
@@ -175,7 +175,7 @@ internal fun BankListPanel(
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                                Spacer(modifier = Modifier.height(6.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(
                                         "题目数: ${bank.questionCount}",

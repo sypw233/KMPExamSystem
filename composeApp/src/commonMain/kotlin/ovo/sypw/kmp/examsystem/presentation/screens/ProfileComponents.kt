@@ -19,8 +19,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,15 +38,15 @@ import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
     val config = LocalResponsiveConfig.current
     Card(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 132.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 112.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = MaterialTheme.shapes.large,
         onClick = onClick
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = config.cardPadding, vertical = config.cardPadding + 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing + 4.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             val avatarUrl = user?.avatar
             val roleLabel = user?.role?.uppercase()?.let {
@@ -61,7 +59,7 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Box(
-                    modifier = Modifier.size(72.dp),
+                    modifier = Modifier.size(58.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!avatarUrl.isNullOrBlank()) {
@@ -69,13 +67,13 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                             model = avatarUrl,
                             contentDescription = "头像",
                             modifier = Modifier
-                                .size(72.dp)
+                                .size(58.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primary),
                         )
                     } else {
                         Surface(
-                            modifier = Modifier.size(72.dp),
+                            modifier = Modifier.size(58.dp),
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary
                         ) {
@@ -84,7 +82,7 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                                     text = user?.realName?.take(1)?.uppercase()
                                         ?: user?.username?.take(1)?.uppercase()
                                         ?: "?",
-                                    style = MaterialTheme.typography.headlineMedium,
+                                    style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                             }
@@ -92,28 +90,32 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                     }
                 }
                 if (roleLabel != null) {
-                    SuggestionChip(
-                        onClick = { },
-                        label = { Text(roleLabel, maxLines = 1) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f),
-                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        border = null
-                    )
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.45f)
+                    ) {
+                        Text(
+                            text = roleLabel,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = user?.realName ?: user?.username ?: "未登录",
                         modifier = Modifier.weight(1f, fill = false),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -121,7 +123,7 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                     if (user != null) {
                         Text(
                             text = "@${user.username}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -133,7 +135,7 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
                     if (!user.email.isNullOrBlank()) {
                         Text(
                             text = user.email,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -151,6 +153,7 @@ fun UserInfoCard(user: UserInfo?, onClick: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "编辑资料",
+                modifier = Modifier.size(22.dp),
                 tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
             )
         }

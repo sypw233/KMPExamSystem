@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -68,7 +69,7 @@ fun UserCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(config.contentPadding)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = config.contentPadding, vertical = 10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -97,6 +98,7 @@ fun UserCard(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 标签和操作按钮行
             Row(
@@ -120,45 +122,45 @@ fun UserCard(
                     ) {
                         IconButton(
                             onClick = onToggleStatus,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 if (isEnabled) Icons.Default.Block else Icons.Default.CheckCircle,
                                 contentDescription = if (isEnabled) "禁用" else "启用",
                                 tint = if (isEnabled) MaterialTheme.colorScheme.error
                                        else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                         IconButton(
                             onClick = onResetPassword,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Default.LockReset,
                                 contentDescription = "重置密码",
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                         IconButton(
                             onClick = onEdit,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = "编辑",
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                         IconButton(
                             onClick = onDelete,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "删除",
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }

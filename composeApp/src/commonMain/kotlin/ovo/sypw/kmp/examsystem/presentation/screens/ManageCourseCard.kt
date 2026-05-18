@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,12 +49,12 @@ fun ManageCourseCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(config.cardPadding)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = config.cardPadding, vertical = 14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
                     color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(Icons.AutoMirrored.Filled.LibraryBooks, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -67,29 +68,36 @@ fun ManageCourseCard(
             }
 
             if (!course.description.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(course.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    course.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                TextButton(onClick = onManageEnrollments) {
+                TextButton(onClick = onManageEnrollments, contentPadding = PaddingValues(horizontal = 8.dp)) {
                     Icon(Icons.Default.People, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("选课管理")
                 }
-                TextButton(onClick = onEdit) {
+                TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 8.dp)) {
                     Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("编辑")
                 }
                 TextButton(
                     onClick = onDelete,
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
