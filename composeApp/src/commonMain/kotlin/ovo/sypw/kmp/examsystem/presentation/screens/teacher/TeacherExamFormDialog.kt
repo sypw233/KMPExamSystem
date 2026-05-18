@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,6 +98,8 @@ fun ExamFormDialog(
     Column {
         AlertDialog(
             onDismissRequest = onDismiss,
+            modifier = adaptiveDialogModifier(),
+            properties = adaptiveDialogProperties(),
             title = { Text(title) },
             text = {
                 Column(

@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Schedule
@@ -34,6 +37,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 internal fun formatDateTimeForDisplay(isoDateTime: String): String {
@@ -84,25 +89,35 @@ internal fun DateTimePickerDialog(
     val initialDateMillis = LocalDate(
         components[0], components[1], components[2]
     ).atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
+    val hasInitialSelection = initialDateTime.isNotBlank()
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDateMillis
+        initialSelectedDateMillis = initialDateMillis.takeIf { hasInitialSelection },
+        initialDisplayedMonthMillis = initialDateMillis
     )
     val timePickerState = rememberTimePickerState(
         initialHour = components[3],
         initialMinute = components[4],
         is24Hour = true
     )
-    var showClockFace by remember { mutableStateOf(false) }
+    var showClockFace by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
         title = { Text("选择日期时间") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 620.dp)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DatePicker(state = datePickerState)
+                DatePicker(
+                    state = datePickerState,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -112,9 +127,15 @@ internal fun DateTimePickerDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (showClockFace) {
-                        TimePicker(state = timePickerState)
+                        TimePicker(
+                            state = timePickerState,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     } else {
-                        TimeInput(state = timePickerState)
+                        TimeInput(
+                            state = timePickerState,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
 
