@@ -83,22 +83,30 @@ fun EditProfileDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm(
-                        realName.trim(),
-                        email.trim().ifBlank { null },
-                        avatarUrl
-                    )
-                },
-                enabled = realName.isNotBlank() && !isUploading
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
+                OutlinedButton(onClick = onOpenChangePassword) {
+                    Text("修改密码")
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(onClick = onDismiss) {
+                    Text("取消")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        onConfirm(
+                            realName.trim(),
+                            email.trim().ifBlank { null },
+                            avatarUrl
+                        )
+                    },
+                    enabled = realName.isNotBlank() && !isUploading
+                ) {
+                    Text("保存")
+                }
             }
         },
         modifier = adaptiveDialogModifier(),
@@ -182,12 +190,6 @@ fun EditProfileDialog(
                     singleLine = true
                 )
 
-                OutlinedButton(
-                    onClick = onOpenChangePassword,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("修改密码")
-                }
             }
         }
     )
