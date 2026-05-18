@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -86,7 +85,7 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                     onValueChange = { keyword = it },
                     modifier = Modifier
                         .weight(1f)
-                        .height(44.dp),
+                        .heightIn(min = 52.dp),
                     placeholder = { Text("搜索用户名/姓名/邮箱", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -123,7 +122,7 @@ internal fun FilterBar(params: UserQueryParams, onParamsChange: (UserQueryParams
                 )
                 OutlinedButton(
                     onClick = { filtersExpanded = !filtersExpanded },
-                    modifier = Modifier.height(44.dp),
+                    modifier = Modifier.heightIn(min = 52.dp),
                     contentPadding = PaddingValues(horizontal = 10.dp)
                 ) {
                     Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))

@@ -12,6 +12,7 @@ import ovo.sypw.kmp.examsystem.data.dto.UserQueryParams
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 
 /**
  * 用户管理仓库（管理员专属）
@@ -29,7 +30,15 @@ class UserManageRepository(
     /** 分页查询用户 */
     suspend fun loadUsers(params: UserQueryParams): Result<PageUserResponse> = runWithToken { token ->
         val r = userManageApi.getUsers(token, params)
-        if (r.code == 200 && r.data != null) { _userPage.value = r.data; r.data }
+        if (r.code == 200 && r.data != null) {
+            val sortedPage = r.data.copy(
+                content = SearchUtils.sortByPriority(r.data.content, params.keyword) { user ->
+                    listOf(user.username, user.realName, user.nickname, user.email)
+                }
+            )
+            _userPage.value = sortedPage
+            sortedPage
+        }
         else throw Exception(r.message)
     }
 

@@ -8,6 +8,7 @@ import ovo.sypw.kmp.examsystem.data.dto.QuestionBankRequest
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 
 /**
  * 题库管理仓库
@@ -29,7 +30,11 @@ class QuestionBankRepository(
             last = { it.last },
             totalPages = { it.totalPages },
             distinctKey = { it.id }
-        ).also {
+        ).let {
+            SearchUtils.sortByPriority(it, keyword) { bank ->
+                listOf(bank.name, bank.description, bank.creatorName)
+            }
+        }.also {
             _myBanks.value = it
         }
     }

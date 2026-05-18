@@ -43,6 +43,7 @@ import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.repository.UserManageRepository
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 
 @Composable
 fun StudentSelector(
@@ -72,13 +73,8 @@ fun StudentSelector(
     val retryLoad: () -> Unit = { loadVersion++ }
 
     val filteredStudents = remember(students, searchKeyword) {
-        if (searchKeyword.isBlank()) {
-            students
-        } else {
-            students.filter {
-                it.realName?.contains(searchKeyword, ignoreCase = true) == true ||
-                    it.username.contains(searchKeyword, ignoreCase = true)
-            }
+        SearchUtils.filterAndSort(students, searchKeyword) { student ->
+            listOf(student.username, student.realName, student.nickname, student.email)
         }
     }
     val loadError = errorMessage
@@ -95,7 +91,7 @@ fun StudentSelector(
                     onValueChange = { searchKeyword = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(48.dp),
+                        .heightIn(min = 52.dp),
                     placeholder = { Text("搜索学生", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(

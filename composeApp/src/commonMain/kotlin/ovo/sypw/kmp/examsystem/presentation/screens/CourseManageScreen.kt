@@ -144,7 +144,7 @@ internal fun CourseManageScreen(courseViewModel: CourseViewModel, userRole: User
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 8.dp)
-                            .height(48.dp),
+                            .heightIn(min = 52.dp),
                         placeholder = { Text("搜索课程名称", style = MaterialTheme.typography.bodySmall) },
                         leadingIcon = {
                             Icon(

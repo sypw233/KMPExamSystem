@@ -64,6 +64,7 @@ import ovo.sypw.kmp.examsystem.utils.DesktopDataTableRow
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 
 @Composable
 internal fun BankListPanel(
@@ -92,7 +93,7 @@ internal fun BankListPanel(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 6.dp)
-                        .height(44.dp),
+                        .heightIn(min = 52.dp),
                     placeholder = { Text("搜索题库", style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(
@@ -276,12 +277,15 @@ internal fun QuestionListPanel(
                 val typeChips = QuestionUtils.questionTypeOptions
                 val diffChips = QuestionUtils.difficultyOptions
 
-                val filteredQuestions = bankQuestions.filter { q ->
-                    val matchSearch = searchText.isBlank() || q.content.contains(searchText, ignoreCase = true)
-                    val matchType = filterType == null || q.type == filterType
-                    val matchDiff = filterDifficulty == null || q.difficulty == filterDifficulty
-                    matchSearch && matchType && matchDiff
-                }
+                val filteredQuestions = SearchUtils
+                    .filterAndSort(bankQuestions, searchText) { q ->
+                        listOf(q.content, q.category, q.answer, q.analysis, q.creatorName)
+                    }
+                    .filter { q ->
+                        val matchType = filterType == null || q.type == filterType
+                        val matchDiff = filterDifficulty == null || q.difficulty == filterDifficulty
+                        matchType && matchDiff
+                    }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -293,7 +297,7 @@ internal fun QuestionListPanel(
                         onValueChange = { searchText = it },
                         modifier = Modifier
                             .weight(1f)
-                            .height(48.dp),
+                            .heightIn(min = 52.dp),
                         placeholder = { Text("搜索题目内容", style = MaterialTheme.typography.bodySmall) },
                         leadingIcon = {
                             Icon(
@@ -307,7 +311,7 @@ internal fun QuestionListPanel(
                     )
                     OutlinedButton(
                         onClick = { filtersExpanded = !filtersExpanded },
-                        modifier = Modifier.height(48.dp),
+                        modifier = Modifier.heightIn(min = 52.dp),
                         contentPadding = PaddingValues(horizontal = if (isCompact) 10.dp else 14.dp)
                     ) {
                         Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))

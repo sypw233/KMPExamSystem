@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -71,6 +72,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.RandomComposeState
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -442,11 +444,11 @@ private fun QuestionBankPanel(
 
     val filteredQuestions by remember(allQuestions, searchKeyword, filterType) {
         derivedStateOf {
-            allQuestions.filter { q ->
-                val matchSearch = searchKeyword.isBlank() || q.content.contains(searchKeyword, ignoreCase = true)
-                val matchType = filterType == null || q.type == filterType
-                matchSearch && matchType
-            }
+            SearchUtils
+                .filterAndSort(allQuestions, searchKeyword) { q ->
+                    listOf(q.content, q.category, q.answer, q.analysis, q.creatorName)
+                }
+                .filter { q -> filterType == null || q.type == filterType }
         }
     }
 
@@ -461,7 +463,7 @@ private fun QuestionBankPanel(
             OutlinedTextField(
                 value = searchKeyword,
                 onValueChange = { searchKeyword = it },
-                modifier = Modifier.weight(1f).height(48.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
                 placeholder = { Text("搜索题目内容...", style = MaterialTheme.typography.bodySmall) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
                 singleLine = true,
@@ -469,7 +471,7 @@ private fun QuestionBankPanel(
             )
             OutlinedButton(
                 onClick = { filtersExpanded = !filtersExpanded },
-                modifier = Modifier.height(48.dp),
+                modifier = Modifier.heightIn(min = 52.dp),
                 contentPadding = PaddingValues(horizontal = 10.dp)
             ) {
                 Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(18.dp))

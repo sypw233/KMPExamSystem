@@ -10,6 +10,7 @@ import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 import ovo.sypw.kmp.examsystem.utils.Logger
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
 
 /**
  * 课程仓库
@@ -46,7 +47,11 @@ class CourseRepository(
             last = { it.last },
             totalPages = { it.totalPages },
             distinctKey = { it.id }
-        ).also {
+        ).let {
+            SearchUtils.sortByPriority(it, keyword) { course ->
+                listOf(course.courseName, course.teacherName, course.description)
+            }
+        }.also {
             _allCourses.value = it
         }
     }
