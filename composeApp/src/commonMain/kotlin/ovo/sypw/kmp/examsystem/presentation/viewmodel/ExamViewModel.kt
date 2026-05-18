@@ -154,7 +154,9 @@ class ExamViewModel(
 
     /** 加载已发布的考试（学生用可参加接口，教师/管理员用状态筛选） */
     fun loadPublishedExams(force: Boolean = true) {
-        if (!force && _userRole.value == UserRole.STUDENT && examRepository.availableExams.value.isNotEmpty()) {
+        if (!force && _userRole.value == UserRole.STUDENT &&
+            (examRepository.availableExams.value.isNotEmpty() || _notStartedExams.value is ExamListUiState.Success)
+        ) {
             val cached = examRepository.availableExams.value
             _notStartedExams.value = ExamListUiState.Success(cached)
             _upcomingExams.value = ExamListUiState.Success(cached.take(3))
@@ -188,7 +190,9 @@ class ExamViewModel(
 
     /** 加载已结束的考试（学生用已完成接口，教师/管理员用状态筛选） */
     fun loadEndedExams(force: Boolean = true) {
-        if (!force && _userRole.value == UserRole.STUDENT && examRepository.completedExams.value.isNotEmpty()) {
+        if (!force && _userRole.value == UserRole.STUDENT &&
+            (examRepository.completedExams.value.isNotEmpty() || _endedExams.value is ExamListUiState.Success)
+        ) {
             _endedExams.value = ExamListUiState.Success(examRepository.completedExams.value)
             return
         }
@@ -202,7 +206,14 @@ class ExamViewModel(
             } else {
                 examRepository.loadExamsByStatus(2)
             }
-            result.onSuccess { _endedExams.value = ExamListUiState.Success(it) }
+            result.onSuccess {
+                _endedExams.value = ExamListUiState.Success(it)
+                if (_userRole.value == UserRole.STUDENT && _notStartedExams.value is ExamListUiState.Success) {
+                    val cachedAvailable = examRepository.availableExams.value
+                    _notStartedExams.value = ExamListUiState.Success(cachedAvailable)
+                    _upcomingExams.value = ExamListUiState.Success(cachedAvailable.take(3))
+                }
+            }
                 .onFailure { e -> _endedExams.value = ExamListUiState.Error(e.message ?: "加载历史考试失败") }
             isLoadingEndedExams = false
         }

@@ -26,7 +26,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
@@ -40,7 +42,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.StatisticsViewModel
  * 成绩历史页面
  * 展示学生的考试统计和每次成绩记录
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun GradeHistoryScreen(onBack: () -> Unit) {
     val viewModel: StatisticsViewModel = koinInject()
@@ -50,6 +52,10 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
     val userId = (authState as? AuthState.Authenticated)?.user?.id
     val uiState by viewModel.uiState.collectAsState()
     var detailSubmissionId by remember { mutableStateOf<Long?>(null) }
+
+    BackHandler(enabled = detailSubmissionId != null) {
+        detailSubmissionId = null
+    }
 
     LaunchedEffect(userId) {
         userId?.let { viewModel.loadStudentStatistics(it, force = false) }

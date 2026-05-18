@@ -120,6 +120,11 @@ fun ExamTakingScreen(
                 LaunchedEffect(state.submission.id) {
                     localStorage.remove(ActiveExamSession.ACTIVE_EXAM_ID)
                     localStorage.remove(ActiveExamSession.FOCUS_LOST_AT)
+                    if (state.exitAfterSubmit) {
+                        navigationManager.exitExamMode()
+                        viewModel.reset()
+                        onExitExam()
+                    }
                 }
                 // 【修复 BUG-06】needsGrading 改为检查 submission.status < 2（未批改）
                 // 而非依赖 totalScore == 0 && subjectiveScore == null（客观 0 分会误判）
@@ -144,7 +149,7 @@ fun ExamTakingScreen(
                     onAnswerChange = { qId, ans -> viewModel.updateAnswer(qId, ans) },
                     onToggleMultiple = { qId, opt -> viewModel.toggleMultipleChoice(qId, opt) },
                     onRecordProctoringEvent = { event, desc -> viewModel.recordProctoringEvent(event, desc) },
-                    onSubmit = { viewModel.submitExam() },
+                    onSubmit = { exitAfterSubmit -> viewModel.submitExam(exitAfterSubmit) },
                     localStorage = localStorage,
                     onExit = {
                         navigationManager.exitExamMode()
@@ -172,7 +177,7 @@ private fun ExamContent(
     onAnswerChange: (Long, String) -> Unit,
     onToggleMultiple: (Long, String) -> Unit,
     onRecordProctoringEvent: (String, String?) -> Unit,
-    onSubmit: () -> Unit,
+    onSubmit: (Boolean) -> Unit,
     localStorage: LocalStorage,
     onExit: () -> Unit
 ) {
@@ -186,7 +191,7 @@ private fun ExamContent(
     var violationWarningMessage by remember { mutableStateOf("") }
     var currentQuestionIndex by remember(exam.questions.size) { mutableIntStateOf(0) }
     val appSettings by AppSettingsStore.settings.collectAsState()
-    val strictThreshold = exam.exam.maxSwitchCount?.takeIf { it > 0 }
+    val switchLimit = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val config = LocalResponsiveConfig.current
 
@@ -205,7 +210,7 @@ private fun ExamContent(
                 val elapsed = startMark.elapsedNow().inWholeSeconds
                 remainingSeconds = maxOf(0, initialSeconds - elapsed.toInt())
             }
-            onSubmit()
+            onSubmit(true)
         }
     }
 
@@ -221,8 +226,8 @@ private fun ExamContent(
                     "考试窗口失焦，第 $focusViolationCount 次"
                 )
                 violationWarningMessage = "检测到离开考试界面或应用失焦，本次行为已上报服务器。当前记录 $focusViolationCount 次。"
-                if (exam.exam.strictMode && strictThreshold != null && focusViolationCount >= strictThreshold) {
-                    onSubmit()
+                if (focusViolationCount >= switchLimit) {
+                    onSubmit(false)
                 }
             }
             return@LaunchedEffect
@@ -231,7 +236,7 @@ private fun ExamContent(
         if (!hasPendingFocusWarning && persistedViolation <= 0L) return@LaunchedEffect
         hasPendingFocusWarning = false
         localStorage.remove(ActiveExamSession.FOCUS_LOST_AT)
-        if (!(exam.exam.strictMode && strictThreshold != null && focusViolationCount >= strictThreshold)) {
+        if (focusViolationCount < switchLimit) {
             showViolationWarning = true
         }
     }
@@ -260,7 +265,7 @@ private fun ExamContent(
                             Text(
                                 text = "监考: 切屏 $focusViolationCount 次",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (strictThreshold != null && focusViolationCount >= strictThreshold) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (focusViolationCount >= switchLimit) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -389,7 +394,7 @@ private fun ExamContent(
                 Button(
                     onClick = {
                         showExitDialog = false
-                        onSubmit()
+                        onSubmit(true)
                     },
                     colors = if (unanswered > 0)
                         ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

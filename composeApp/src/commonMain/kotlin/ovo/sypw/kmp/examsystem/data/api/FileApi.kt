@@ -36,14 +36,16 @@ class FileApi(httpClient: HttpClient) : BaseApiService(httpClient) {
         category: String = "temp"
     ): ApiResponse<FileUploadResponse> {
         return try {
+            val contentType = detectImageContentType(imageBytes) ?: resolveImageContentType(fileName)
+            val uploadFileName = normalizeImageFileName(fileName, contentType)
             val response = httpClient.post(HttpClientConfig.getApiUrl("$FILE_ENDPOINT/image")) {
                 header(HttpHeaders.Authorization, "Bearer $token")
                 setBody(
                     MultiPartFormDataContent(formData {
                         append("category", category)
                         append("file", imageBytes, Headers.build {
-                            append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
-                            append(HttpHeaders.ContentType, resolveImageContentType(fileName))
+                            append(HttpHeaders.ContentDisposition, "filename=\"${uploadFileName.replace("\"", "")}\"")
+                            append(HttpHeaders.ContentType, contentType)
                         })
                     })
                 )
@@ -68,6 +70,51 @@ class FileApi(httpClient: HttpClient) : BaseApiService(httpClient) {
             "bmp" -> "image/bmp"
             "svg" -> "image/svg+xml"
             else -> "application/octet-stream"
+        }
+    }
+
+    private fun detectImageContentType(bytes: ByteArray): String? {
+        if (bytes.size >= 12) {
+            val isJpeg = bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte()
+            val isPng = bytes[0] == 0x89.toByte() && bytes[1] == 0x50.toByte() && bytes[2] == 0x4E.toByte() && bytes[3] == 0x47.toByte()
+            val isGif = bytes[0] == 'G'.code.toByte() && bytes[1] == 'I'.code.toByte() && bytes[2] == 'F'.code.toByte()
+            val isBmp = bytes[0] == 'B'.code.toByte() && bytes[1] == 'M'.code.toByte()
+            val isWebp = bytes[0] == 'R'.code.toByte() && bytes[1] == 'I'.code.toByte() && bytes[2] == 'F'.code.toByte() &&
+                bytes[3] == 'F'.code.toByte() && bytes[8] == 'W'.code.toByte() && bytes[9] == 'E'.code.toByte() &&
+                bytes[10] == 'B'.code.toByte() && bytes[11] == 'P'.code.toByte()
+            when {
+                isJpeg -> return "image/jpeg"
+                isPng -> return "image/png"
+                isGif -> return "image/gif"
+                isBmp -> return "image/bmp"
+                isWebp -> return "image/webp"
+            }
+        }
+        val head = bytes.take(256).map { it.toInt().toChar() }.joinToString("").trimStart()
+        return if (head.startsWith("<svg", ignoreCase = true) || head.contains("<svg", ignoreCase = true)) {
+            "image/svg+xml"
+        } else {
+            null
+        }
+    }
+
+    private fun normalizeImageFileName(fileName: String, contentType: String): String {
+        val cleanName = fileName.substringAfterLast('/').substringAfterLast('\\').takeIf { it.isNotBlank() && it != "image/*" }
+            ?: "avatar"
+        val expectedExtension = when (contentType) {
+            "image/jpeg", "image/jpg" -> "jpg"
+            "image/png" -> "png"
+            "image/gif" -> "gif"
+            "image/webp" -> "webp"
+            "image/bmp" -> "bmp"
+            "image/svg+xml" -> "svg"
+            else -> null
+        } ?: return cleanName
+        val currentExtension = cleanName.substringAfterLast('.', "").lowercase()
+        return if (currentExtension in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg")) {
+            cleanName
+        } else {
+            "$cleanName.$expectedExtension"
         }
     }
 

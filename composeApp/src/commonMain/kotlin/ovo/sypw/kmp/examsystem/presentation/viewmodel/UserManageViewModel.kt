@@ -81,8 +81,13 @@ class UserManageViewModel(
             userManageRepository.loadUsers(nextParams).fold(
                 onSuccess = { nextPage ->
                     _queryParams.value = nextParams
+                    val mergedUsers = (current.page.content + nextPage.content).distinctBy { it.id }
                     _listState.value = UserListState.Success(
-                        nextPage.copy(content = current.page.content + nextPage.content)
+                        nextPage.copy(
+                            content = mergedUsers,
+                            numberOfElements = mergedUsers.size,
+                            last = nextPage.last || mergedUsers.size >= nextPage.totalElements
+                        )
                     )
                 },
                 onFailure = { _actionState.value = UserActionState.Error(it.message ?: "加载更多失败") }

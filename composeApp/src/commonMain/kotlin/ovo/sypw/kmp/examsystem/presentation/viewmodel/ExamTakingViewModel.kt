@@ -7,6 +7,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
@@ -24,7 +30,10 @@ sealed interface ExamTakingUiState {
         val questions: List<ExamQuestionResponse>,
         val submissionId: Long
     ) : ExamTakingUiState
-    data class Submitted(val submission: SubmissionResponse) : ExamTakingUiState
+    data class Submitted(
+        val submission: SubmissionResponse,
+        val exitAfterSubmit: Boolean = false
+    ) : ExamTakingUiState
     data class Error(val message: String) : ExamTakingUiState
 }
 
@@ -88,17 +97,7 @@ class ExamTakingViewModel(
                     _answers.value = emptyMap()
                 }
 
-                if (currentSubmissionId <= 0) {
-                    val startResult = submissionRepository.startExam(examId)
-                    val submission = startResult.getOrNull()
-                    if (submission == null) {
-                        _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
-                        return@withLock
-                    }
-                    currentSubmissionId = submission.id
-                }
-
-                // 加载考试详情
+                // 每次进入考试页都先确认考试仍可作答，避免结束后继续创建/进入提交。
                 val examResult = examRepository.getExamDetail(examId)
                 val exam = examResult.getOrNull()
                 if (exam == null) {
@@ -106,6 +105,28 @@ class ExamTakingViewModel(
                         examResult.exceptionOrNull()?.message ?: "加载考试信息失败，请重试"
                     )
                     return@withLock
+                }
+                if (isExamEnded(exam)) {
+                    examRepository.markExamUnavailable(examId)
+                    currentSubmissionId = -1
+                    _answers.value = emptyMap()
+                    _uiState.value = ExamTakingUiState.Error("考试已结束，无法进入答题")
+                    return@withLock
+                }
+
+                if (currentSubmissionId <= 0) {
+                    val startResult = submissionRepository.startExam(examId)
+                    val submission = startResult.getOrNull()
+                    if (submission == null) {
+                        _uiState.value = ExamTakingUiState.Error(startResult.exceptionOrNull()?.message ?: "开始考试失败")
+                        return@withLock
+                    }
+                    if (submission.status > 0) {
+                        examRepository.markExamSubmitted(submission)
+                        _uiState.value = ExamTakingUiState.Submitted(submission, exitAfterSubmit = true)
+                        return@withLock
+                    }
+                    currentSubmissionId = submission.id
                 }
 
                 // 使用学生试卷接口，确保答题端不会拿到标准答案和解析
@@ -170,7 +191,7 @@ class ExamTakingViewModel(
      * 【修复 BUG-01】提交失败时不覆盖 uiState（保留 Ready），仅通过 submitErrorMessage 上报，
      * 让用户可以重试，避免进入 Error 状态后答案无法再次提交的僵局。
      */
-    fun submitExam() {
+    fun submitExam(exitAfterSubmit: Boolean = true) {
         if (_isSubmitting.value) return
         // 确保在 Ready 状态才允许提交，防止 Error 状态下的意外调用
         if (_uiState.value !is ExamTakingUiState.Ready) return
@@ -187,12 +208,14 @@ class ExamTakingViewModel(
                 val answers = _answers.value.filterValues { it.isNotBlank() }
                 val result = submissionRepository.submitExam(currentExamId, answers)
                 result.onSuccess { submission ->
-                    _uiState.value = ExamTakingUiState.Submitted(submission)
+                    examRepository.markExamSubmitted(submission)
+                    _isSubmitting.value = false
+                    _uiState.value = ExamTakingUiState.Submitted(submission, exitAfterSubmit)
                 }.onFailure { e ->
                     // 提交失败：保留 Ready 状态，用 submitErrorMessage 通知 UI 显示 Snackbar
                     _submitErrorMessage.value = e.message ?: "提交失败，请重试"
+                    _isSubmitting.value = false
                 }
-                _isSubmitting.value = false
             }
         }
     }
@@ -223,5 +246,26 @@ class ExamTakingViewModel(
         _submitErrorMessage.value = null
         currentExamId = -1
         currentSubmissionId = -1
+    }
+
+    @OptIn(ExperimentalTime::class)
+    private fun isExamEnded(exam: ExamResponse): Boolean {
+        if (exam.status >= 2) return true
+        val endTimeMs = parseExamEndEpochMs(exam.endTime) ?: return false
+        return endTimeMs <= Clock.System.now().toEpochMilliseconds()
+    }
+
+    private fun parseExamEndEpochMs(value: String?): Long? {
+        val raw = value?.trim().orEmpty()
+        if (raw.isBlank()) return null
+        return runCatching {
+            if (raw.endsWith("Z") || raw.matches(Regex(".*[+-]\\d{2}:?\\d{2}$"))) {
+                Instant.parse(raw).toEpochMilliseconds()
+            } else {
+                LocalDateTime.parse(raw.substringBefore('.'))
+                    .toInstant(TimeZone.currentSystemDefault())
+                    .toEpochMilliseconds()
+            }
+        }.getOrNull()
     }
 }

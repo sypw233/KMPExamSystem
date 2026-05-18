@@ -220,15 +220,10 @@ internal fun ComposeQuestionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 0.dp else 1.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.Top
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                checked = isSelected,
-                onCheckedChange = onToggle,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            Column(modifier = Modifier.weight(1f).padding(top = 12.dp, bottom = 8.dp, end = 8.dp)) {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -248,6 +243,10 @@ internal fun ComposeQuestionCard(
                     )
                 }
             }
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = onToggle
+            )
         }
     }
 }

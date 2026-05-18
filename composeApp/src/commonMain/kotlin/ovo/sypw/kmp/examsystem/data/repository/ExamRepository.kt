@@ -13,6 +13,7 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.storage.TokenStorage
 
 class ExamRepository(
@@ -136,7 +137,7 @@ class ExamRepository(
             totalPages = { it.totalPages },
             distinctKey = { it.id }
         ).also {
-            _availableExams.value = it
+            _availableExams.value = filterSubmittedExams(it)
         }
     }
 
@@ -150,7 +151,32 @@ class ExamRepository(
             distinctKey = { it.id }
         ).also {
             _completedExams.value = it
+            _availableExams.value = filterSubmittedExams(_availableExams.value)
         }
+    }
+
+    fun markExamSubmitted(submission: SubmissionResponse) {
+        val submittedExamId = submission.examId
+        val existingAvailable = _availableExams.value.firstOrNull { it.id == submittedExamId }
+        _availableExams.value = _availableExams.value.filterNot { it.id == submittedExamId }
+        if (existingAvailable != null && _completedExams.value.none { it.id == submittedExamId }) {
+            _completedExams.value = listOf(
+                existingAvailable.copy(
+                    studentScore = submission.totalScore,
+                    needsGrading = submission.status < 2 && submission.subjectiveScore == null
+                )
+            ) + _completedExams.value
+        }
+    }
+
+    fun markExamUnavailable(examId: Long) {
+        _availableExams.value = _availableExams.value.filterNot { it.id == examId }
+    }
+
+    private fun filterSubmittedExams(exams: List<ExamResponse>): List<ExamResponse> {
+        val submittedExamIds = _completedExams.value.map { it.id }.toSet()
+        if (submittedExamIds.isEmpty()) return exams
+        return exams.filterNot { it.id in submittedExamIds }
     }
 
     suspend fun getExamsByCourse(courseId: Long): Result<List<ExamResponse>> = runWithToken { token ->

@@ -45,7 +45,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
@@ -71,7 +73,7 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
  * Tab 1: 进行中(已发布 status=1)
  * Tab 2: 已结束(status=2)
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun TeacherExamManageScreen(
     onBack: () -> Unit,
@@ -106,6 +108,19 @@ fun TeacherExamManageScreen(
     var isBatchMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = composeExam != null) {
+        composeExam = null
+    }
+
+    BackHandler(enabled = viewSubmissionsExam != null) {
+        viewSubmissionsExam = null
+    }
+
+    BackHandler(enabled = isBatchMode) {
+        isBatchMode = false
+        selectedIds = emptySet()
+    }
 
     LaunchedEffect(userRole) {
         viewModel.setRole(userRole)

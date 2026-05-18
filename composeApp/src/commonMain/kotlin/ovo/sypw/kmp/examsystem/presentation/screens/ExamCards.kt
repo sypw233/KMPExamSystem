@@ -57,7 +57,8 @@ internal fun ExamCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.Start
         ) {
             Surface(
                 color = if (isSelected)
@@ -129,7 +130,7 @@ internal fun ExamCard(
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onClick,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.align(Alignment.End),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )

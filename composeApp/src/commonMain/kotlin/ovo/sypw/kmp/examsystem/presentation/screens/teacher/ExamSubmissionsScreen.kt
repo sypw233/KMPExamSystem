@@ -47,7 +47,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.JsonArray
@@ -71,7 +73,7 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.ProctoringUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.SubmissionsUiState
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ExamSubmissionsScreen(
     examId: Long,
@@ -84,6 +86,11 @@ fun ExamSubmissionsScreen(
 
     var selectedSubmissionId by remember { mutableStateOf<Long?>(null) }
     var proctoringSubmission by remember { mutableStateOf<SubmissionResponse?>(null) }
+
+    BackHandler(enabled = selectedSubmissionId != null) {
+        selectedSubmissionId = null
+        viewModel.loadSubmissions(examId)
+    }
 
     LaunchedEffect(examId) {
         viewModel.loadSubmissions(examId)

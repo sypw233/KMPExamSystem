@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -58,7 +59,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,7 +87,7 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
  * 管理员用户管理界面
  * 支持：分页列表、角色筛选、关键字搜索、启用/禁用、新建、编辑、删除、重置密码
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun UserManageScreen() {
     val viewModel: UserManageViewModel = koinInject()
@@ -105,6 +108,11 @@ fun UserManageScreen() {
     var isBatchMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = isBatchMode) {
+        isBatchMode = false
+        selectedIds = emptySet()
+    }
 
     ActionEffect(
         actionState = viewModel.actionState.collectAsState(),
@@ -297,11 +305,12 @@ fun UserManageScreen() {
                     }
                     is UserListState.Success -> {
                         val page = state.page
+                        val users = page.content.distinctBy { it.id }
                         val userListState = rememberLazyListState()
                         LaunchedEffect(userListState, page.number, page.last, isLoadingMore) {
                             snapshotFlow {
                                 val lastVisible = userListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                                lastVisible >= page.content.lastIndex - 3
+                                lastVisible >= users.lastIndex - 3
                             }
                                 .map { it && !page.last && !isLoadingMore }
                                 .distinctUntilChanged()
@@ -311,7 +320,7 @@ fun UserManageScreen() {
                         }
                         Column(modifier = Modifier.then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier).fillMaxSize()) {
                             Text(
-                                "共 ${page.totalElements} 位用户，已加载 ${page.content.size} 位",
+                                "共 ${page.totalElements} 位用户，已加载 ${users.size} 位",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -323,9 +332,9 @@ fun UserManageScreen() {
                                     if (isBatchMode) {
                                         add(0.3f to @Composable {
                                             Checkbox(
-                                                checked = selectedIds == (page.content.map { it.id }.toSet()),
+                                                checked = selectedIds == (users.map { it.id }.toSet()),
                                                 onCheckedChange = {
-                                                    val allIds = page.content.map { it.id }.toSet()
+                                                    val allIds = users.map { it.id }.toSet()
                                                     selectedIds = if (selectedIds == allIds) emptySet() else allIds
                                                 }
                                             )
@@ -348,7 +357,7 @@ fun UserManageScreen() {
                                     modifier = Modifier.weight(1f),
                                     contentPadding = PaddingValues(bottom = 80.dp)
                                 ) {
-                                    items(page.content, key = { it.id }) { user ->
+                                    itemsIndexed(users, key = { index, user -> "${user.id}-$index" }) { _, user ->
                                         val isSelected = user.id in selectedIds
                                         val rowColumns: List<Pair<Float, @Composable () -> Unit>> = buildList {
                                             if (isBatchMode) {
@@ -442,7 +451,7 @@ fun UserManageScreen() {
                                     contentPadding = PaddingValues(top = 8.dp, bottom = 160.dp),
                                     verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                                 ) {
-                                    items(page.content, key = { it.id }) { user ->
+                                    itemsIndexed(users, key = { index, user -> "${user.id}-$index" }) { _, user ->
                                         val isSelected = user.id in selectedIds
                                         UserCard(
                                             user = user,

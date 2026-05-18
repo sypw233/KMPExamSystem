@@ -176,20 +176,26 @@ internal fun BankListPanel(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
                                         "题目数: ${bank.questionCount}",
                                         style = MaterialTheme.typography.labelSmall
                                     )
-                                    TextButton(onClick = { onEditBank(bank) }) {
-                                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text("编辑")
-                                    }
-                                    TextButton(onClick = { onDeleteBank(bank) }) {
-                                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Text("删除")
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        TextButton(onClick = { onEditBank(bank) }) {
+                                            Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("编辑")
+                                        }
+                                        TextButton(onClick = { onDeleteBank(bank) }) {
+                                            Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text("删除")
+                                        }
                                     }
                                 }
                             }

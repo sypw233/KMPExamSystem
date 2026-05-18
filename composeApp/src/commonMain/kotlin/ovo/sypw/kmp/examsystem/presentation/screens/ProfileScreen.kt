@@ -102,6 +102,10 @@ fun ProfileScreen() {
                         val file = fileUtils.selectImage()
                         if (file != null) {
                             val bytes = fileUtils.readBytes(file)
+                            if (bytes.isEmpty()) {
+                                onError("读取头像失败，请重新选择图片")
+                                return@launch
+                            }
                             fileRepository.uploadImage(bytes, file.name, "avatars")
                                 .onSuccess { response -> onSuccess(response.fileUrl) }
                                 .onFailure { onError(it.message ?: "头像上传失败") }

@@ -1,5 +1,6 @@
 package ovo.sypw.kmp.examsystem
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -23,6 +24,8 @@ import io.github.vinceglb.filekit.dialogs.init
 
 class MainActivity : ComponentActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var splashContainer: FrameLayout? = null
+    private var splashLoadingOrShowing = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -40,7 +43,7 @@ class MainActivity : ComponentActivity() {
                 App()
             }
         }
-        val splashContainer = FrameLayout(this).apply {
+        splashContainer = FrameLayout(this).apply {
             visibility = View.GONE
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -52,17 +55,38 @@ class MainActivity : ComponentActivity() {
         root.addView(splashContainer)
         setContentView(root)
 
-        showColdStartSplashAd(splashContainer)
+        splashContainer?.let { showSplashAd(it, "cold_start") }
     }
 
-    private fun showColdStartSplashAd(container: FrameLayout) {
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (isLauncherIntent(intent)) {
+            splashContainer?.let { showSplashAd(it, "launcher_reentry") }
+        }
+    }
+
+    private fun showSplashAd(container: FrameLayout, reason: String) {
         val appId = BuildConfig.PANGLE_APP_ID
         val splashAdId = BuildConfig.PANGLE_SPLASH_AD_ID
-        if (appId.isBlank() || splashAdId.isBlank()) return
-        if (!isPangleNativeAbiSupported()) {
-            Log.w(TAG, "Skip Pangle splash: unsupported ABI ${Build.SUPPORTED_ABIS.joinToString()}")
+        if (splashLoadingOrShowing) {
+            Log.i(TAG, "Skip Pangle splash: already loading or showing, reason=$reason")
             return
         }
+        if (appId.isBlank() || splashAdId.isBlank()) {
+            Log.w(TAG, "Skip Pangle splash: blank appId or splashAdId, reason=$reason")
+            return
+        }
+        if (hasActiveExamSession()) {
+            Log.i(TAG, "Skip Pangle splash: active exam session, reason=$reason")
+            return
+        }
+        if (!isPangleNativeAbiSupported()) {
+            Log.w(TAG, "Skip Pangle splash: unsupported ABI ${Build.SUPPORTED_ABIS.joinToString()}, reason=$reason")
+            return
+        }
+        Log.i(TAG, "Start Pangle splash request, reason=$reason, appId=$appId, splashAdId=$splashAdId")
+        splashLoadingOrShowing = true
 
         val dismissRunnable = Runnable { dismissSplash(container) }
         mainHandler.postDelayed(dismissRunnable, SPLASH_TIMEOUT_MS + 800L)
@@ -157,14 +181,27 @@ class MainActivity : ComponentActivity() {
         return primaryAbi == "arm64-v8a" || primaryAbi == "armeabi-v7a"
     }
 
+    private fun isLauncherIntent(intent: Intent?): Boolean {
+        return intent?.action == Intent.ACTION_MAIN &&
+            intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+    }
+
+    private fun hasActiveExamSession(): Boolean {
+        return getSharedPreferences(LOCAL_STORAGE_PREFS_NAME, MODE_PRIVATE)
+            .getLong(ACTIVE_EXAM_ID_KEY, -1L) > 0L
+    }
+
     private fun dismissSplash(container: FrameLayout) {
         mainHandler.removeCallbacksAndMessages(null)
         container.removeAllViews()
         container.visibility = View.GONE
+        splashLoadingOrShowing = false
     }
 
     companion object {
         private const val TAG = "PangleSplash"
         private const val SPLASH_TIMEOUT_MS = 3500
+        private const val LOCAL_STORAGE_PREFS_NAME = "bsp_local_storage"
+        private const val ACTIVE_EXAM_ID_KEY = "active_exam_id"
     }
 }

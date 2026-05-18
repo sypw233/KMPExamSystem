@@ -16,6 +16,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,11 +32,11 @@ fun QuestionCard(
 ) {
     val config = LocalResponsiveConfig.current
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(modifier = Modifier.fillMaxWidth().padding(config.cardPadding)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(config.cardPadding),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(QuestionUtils.questionTypeLabel(question.type), style = MaterialTheme.typography.labelSmall)
                     if (!question.difficulty.isNullOrBlank()) {
@@ -43,16 +44,16 @@ fun QuestionCard(
                         Text(diffLabel, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
                 }
-                Row {
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "编辑", modifier = Modifier.size(18.dp))
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "移除", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                    }
+                Text(question.content, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "编辑", modifier = Modifier.size(18.dp))
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "删除", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
             }
-            Text(question.content, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }

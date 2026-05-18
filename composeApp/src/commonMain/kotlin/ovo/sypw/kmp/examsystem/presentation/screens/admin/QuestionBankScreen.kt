@@ -36,8 +36,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
@@ -55,7 +57,7 @@ import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun QuestionBankScreen() {
     val viewModel: QuestionBankViewModel = koinInject()
@@ -77,6 +79,10 @@ fun QuestionBankScreen() {
     val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     var mobileShowQuestions by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = !isDesktop && mobileShowQuestions) {
+        mobileShowQuestions = false
+    }
 
     fun importQuestionsFromFile(bankId: Long) {
         scope.launch {

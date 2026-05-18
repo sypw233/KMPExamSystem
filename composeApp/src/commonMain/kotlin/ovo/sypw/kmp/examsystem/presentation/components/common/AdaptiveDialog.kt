@@ -14,7 +14,7 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 @Composable
 fun adaptiveDialogModifier(): Modifier {
     val config = LocalResponsiveConfig.current
-    val horizontalInset = with(LocalDensity.current) { 10.toDp() }
+    val horizontalInset = with(LocalDensity.current) { 6.toDp() }
     return when (config.screenSize) {
         ResponsiveUtils.ScreenSize.COMPACT -> Modifier
             .fillMaxWidth()
@@ -22,12 +22,12 @@ fun adaptiveDialogModifier(): Modifier {
 
         ResponsiveUtils.ScreenSize.MEDIUM -> Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = horizontalInset)
             .widthIn(max = 640.dp)
 
         ResponsiveUtils.ScreenSize.EXPANDED -> Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = horizontalInset)
             .widthIn(max = 720.dp)
     }
 }

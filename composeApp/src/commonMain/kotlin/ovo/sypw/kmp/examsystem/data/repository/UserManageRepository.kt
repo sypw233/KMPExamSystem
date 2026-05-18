@@ -58,9 +58,9 @@ class UserManageRepository(
         if (r.code == 200 && r.data != null) {
             // 同步更新本地缓存
             _userPage.value = _userPage.value?.let { page ->
-                page.copy(content = page.content + r.data)
+                page.copy(content = (listOf(r.data) + page.content).distinctBy { it.id })
             }
-            _usersByRole.value = _usersByRole.value + r.data
+            _usersByRole.value = (listOf(r.data) + _usersByRole.value).distinctBy { it.id }
             r.data
         } else throw Exception(r.message)
     }
@@ -115,7 +115,7 @@ class UserManageRepository(
 
     private fun updateLocalUser(updated: UserResponse) {
         _userPage.value = _userPage.value?.let { page ->
-            page.copy(content = page.content.map { if (it.id == updated.id) updated else it })
+            page.copy(content = page.content.map { if (it.id == updated.id) updated else it }.distinctBy { it.id })
         }
     }
 

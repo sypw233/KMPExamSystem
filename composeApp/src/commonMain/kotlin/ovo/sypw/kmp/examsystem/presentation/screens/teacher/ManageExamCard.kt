@@ -147,7 +147,8 @@ fun ManageExamCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 // 操作按钮，使用 FlowRow 避免挤压
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Button(
