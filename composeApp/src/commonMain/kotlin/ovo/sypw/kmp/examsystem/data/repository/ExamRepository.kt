@@ -109,7 +109,23 @@ class ExamRepository(
 
     suspend fun addQuestionToExam(examId: Long, request: ExamQuestionRequest): Result<ExamQuestionResponse> = runWithToken { token ->
         val r = examApi.addQuestionToExam(token, examId, request)
-        if (r.code == 200 && r.data != null) normalizeExamQuestion(r.data) else throw Exception(r.message)
+        if (r.code == 200) {
+            r.data?.let { return@runWithToken normalizeExamQuestion(it) }
+
+            val questionsResponse = examApi.getExamQuestions(token, examId)
+            val addedQuestion = questionsResponse.data
+                ?.map { normalizeExamQuestion(it) }
+                ?.firstOrNull { it.questionId == request.questionId }
+            addedQuestion ?: ExamQuestionResponse(
+                examId = examId,
+                questionId = request.questionId,
+                score = request.score,
+                sequence = request.sequence,
+                orderNum = request.sequence
+            )
+        } else {
+            throw Exception(r.message)
+        }
     }
 
     suspend fun removeQuestionFromExam(examId: Long, questionId: Long): Result<Unit> = runWithToken { token ->

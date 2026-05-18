@@ -13,23 +13,24 @@ import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SectionRule
-import ovo.sypw.kmp.examsystem.utils.Logger
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.data.repository.QuestionBankRepository
-import ovo.sypw.kmp.examsystem.data.repository.QuestionRepository
+import ovo.sypw.kmp.examsystem.utils.Logger
 
 sealed interface ExamComposeUiState {
     data object Loading : ExamComposeUiState
     data class Success(
         val exam: ExamResponse,
         val examQuestions: List<ExamQuestionResponse>,
-        val courseQuestions: List<QuestionResponse>,
-        val myBanks: List<QuestionBankResponse> = emptyList()
+        val bankQuestions: List<QuestionResponse> = emptyList(),
+        val myBanks: List<QuestionBankResponse> = emptyList(),
+        val selectedBankId: Long? = null,
+        val bankQuestionsLoading: Boolean = false,
+        val bankQuestionsError: String? = null
     ) : ExamComposeUiState
     data class Error(val message: String) : ExamComposeUiState
 }
 
-/** 智能组卷配置状态 */
 sealed interface RandomComposeState {
     data object Idle : RandomComposeState
     data object Loading : RandomComposeState
@@ -48,7 +49,6 @@ sealed interface RandomComposeState {
 
 class ExamComposeViewModel(
     private val examRepository: ExamRepository,
-    private val questionRepository: QuestionRepository,
     private val questionBankRepository: QuestionBankRepository
 ) : ViewModel() {
 
@@ -61,7 +61,6 @@ class ExamComposeViewModel(
     private val _randomComposeState = MutableStateFlow<RandomComposeState>(RandomComposeState.Idle)
     val randomComposeState: StateFlow<RandomComposeState> = _randomComposeState.asStateFlow()
 
-    // 使用 StateFlow 保证并发可见性
     private val _currentExamId = MutableStateFlow<Long?>(null)
     private val _currentCourseId = MutableStateFlow<Long?>(null)
 
@@ -73,43 +72,80 @@ class ExamComposeViewModel(
 
     private fun refreshData() {
         val examId = _currentExamId.value ?: return
-        val courseId = _currentCourseId.value ?: return
+        _currentCourseId.value ?: return
+        val previousBankId = (_uiState.value as? ExamComposeUiState.Success)?.selectedBankId
 
         _uiState.value = ExamComposeUiState.Loading
         viewModelScope.launch {
-            // 1. Load exam detail
             val exam = examRepository.getExamDetail(examId).getOrElse {
                 _uiState.value = ExamComposeUiState.Error(it.message ?: "加载考试详情失败")
                 return@launch
             }
-            // 2. Load questions currently in exam
+
             val examQuestions = examRepository.getExamQuestions(examId).getOrElse {
                 Logger.w("ExamComposeViewModel", "加载考试题目失败: ${it.message}")
                 emptyList()
-            }
-            // 3. Load my questions for exam composition
-            val courseQuestions = questionRepository.loadMyQuestions().getOrElse {
-                Logger.w("ExamComposeViewModel", "加载课程题目失败: ${it.message}")
-                emptyList()
-            }
-            // 4. Load my banks for random compose
+            }.distinctBy { it.questionId }
+
             val banks = questionBankRepository.loadMyBanks().getOrElse {
                 Logger.w("ExamComposeViewModel", "加载题库失败: ${it.message}")
                 emptyList()
             }
 
+            val selectedBankId = previousBankId?.takeIf { id -> banks.any { it.id == id } }
+            val bankQuestions = selectedBankId?.let { bankId ->
+                questionBankRepository.loadBankQuestions(bankId).getOrElse {
+                    Logger.w("ExamComposeViewModel", "加载题库题目失败: ${it.message}")
+                    emptyList()
+                }.distinctBy { it.id }
+            }.orEmpty()
+
             _uiState.value = ExamComposeUiState.Success(
                 exam = exam,
                 examQuestions = examQuestions,
-                courseQuestions = courseQuestions,
-                myBanks = banks
+                bankQuestions = bankQuestions,
+                myBanks = banks,
+                selectedBankId = selectedBankId
             )
         }
     }
 
-    /**
-     * 打开智能随机组卷配置面板
-     */
+    fun selectQuestionBank(bankId: Long) {
+        val currentState = _uiState.value as? ExamComposeUiState.Success ?: return
+        if (currentState.selectedBankId == bankId && currentState.bankQuestions.isNotEmpty()) return
+
+        _uiState.value = currentState.copy(
+            selectedBankId = bankId,
+            bankQuestions = emptyList(),
+            bankQuestionsLoading = true,
+            bankQuestionsError = null
+        )
+
+        viewModelScope.launch {
+            questionBankRepository.loadBankQuestions(bankId)
+                .onSuccess { questions ->
+                    val latestState = _uiState.value as? ExamComposeUiState.Success ?: return@onSuccess
+                    if (latestState.selectedBankId == bankId) {
+                        _uiState.value = latestState.copy(
+                            bankQuestions = questions.distinctBy { it.id },
+                            bankQuestionsLoading = false,
+                            bankQuestionsError = null
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    val latestState = _uiState.value as? ExamComposeUiState.Success ?: return@onFailure
+                    if (latestState.selectedBankId == bankId) {
+                        _uiState.value = latestState.copy(
+                            bankQuestions = emptyList(),
+                            bankQuestionsLoading = false,
+                            bankQuestionsError = error.message ?: "题库题目加载失败"
+                        )
+                    }
+                }
+        }
+    }
+
     fun openRandomComposeConfig() {
         val currentState = _uiState.value as? ExamComposeUiState.Success ?: return
         _randomComposeState.value = RandomComposeState.Configuring(
@@ -122,16 +158,10 @@ class ExamComposeViewModel(
         )
     }
 
-    /**
-     * 更新智能组卷配置
-     */
     fun updateRandomComposeConfig(config: RandomComposeState.Configuring) {
         _randomComposeState.value = config
     }
 
-    /**
-     * 执行智能随机组卷
-     */
     fun composeRandomExam(
         bankId: Long,
         expectedTotalScore: Int? = null,
@@ -141,6 +171,7 @@ class ExamComposeViewModel(
     ) {
         val examId = _currentExamId.value ?: return
         if (_randomComposeState.value is RandomComposeState.Loading) return
+
         _randomComposeState.value = RandomComposeState.Loading
         viewModelScope.launch {
             val request = ComposeRandomExamRequest(
@@ -155,7 +186,6 @@ class ExamComposeViewModel(
                     refreshData()
                 }
                 .onFailure { e ->
-                    // 失败时回到配置状态并显示错误, 不关闭弹窗
                     val currentConfig = _randomComposeState.value
                     _randomComposeState.value = if (currentConfig is RandomComposeState.Configuring) {
                         currentConfig.copy(errorMessage = e.message ?: "智能组卷失败")
@@ -173,17 +203,29 @@ class ExamComposeViewModel(
     fun addQuestionToExam(questionId: Long, score: Int) {
         val examId = _currentExamId.value ?: return
         if (_actionState.value is ExamActionState.Loading) return
+
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             val currentState = _uiState.value as? ExamComposeUiState.Success ?: return@launch
             val nextSequence = (currentState.examQuestions.maxOfOrNull { it.orderNum } ?: 0) + 1
-            
+
             examRepository.addQuestionToExam(
                 examId = examId,
                 request = ExamQuestionRequest(questionId = questionId, sequence = nextSequence, score = score)
-            ).onSuccess {
+            ).onSuccess { addedQuestion ->
+                val latestState = _uiState.value as? ExamComposeUiState.Success
+                if (latestState != null) {
+                    val sourceQuestion = latestState.bankQuestions.firstOrNull { it.id == questionId }
+                    val normalized = addedQuestion.copy(
+                        question = addedQuestion.question ?: sourceQuestion,
+                        score = if (addedQuestion.score > 0) addedQuestion.score else score,
+                        orderNum = if (addedQuestion.orderNum > 0) addedQuestion.orderNum else nextSequence
+                    )
+                    _uiState.value = latestState.copy(
+                        examQuestions = (latestState.examQuestions + normalized).distinctBy { it.questionId }
+                    )
+                }
                 _actionState.value = ExamActionState.Success("已添加")
-                refreshData() // Reload visually
             }.onFailure {
                 _actionState.value = ExamActionState.Error(it.message ?: "添加失败")
             }
@@ -193,11 +235,17 @@ class ExamComposeViewModel(
     fun removeQuestionFromExam(questionId: Long) {
         val examId = _currentExamId.value ?: return
         if (_actionState.value is ExamActionState.Loading) return
+
         _actionState.value = ExamActionState.Loading
         viewModelScope.launch {
             examRepository.removeQuestionFromExam(examId, questionId).onSuccess {
+                val latestState = _uiState.value as? ExamComposeUiState.Success
+                if (latestState != null) {
+                    _uiState.value = latestState.copy(
+                        examQuestions = latestState.examQuestions.filterNot { it.questionId == questionId }
+                    )
+                }
                 _actionState.value = ExamActionState.Success("已移除")
-                refreshData() // Reload visually
             }.onFailure {
                 _actionState.value = ExamActionState.Error(it.message ?: "移除失败")
             }

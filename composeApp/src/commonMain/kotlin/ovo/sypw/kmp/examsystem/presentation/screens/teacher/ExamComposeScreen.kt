@@ -21,14 +21,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -61,7 +65,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
+import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
@@ -200,6 +207,11 @@ private fun DesktopComposeLayout(
     viewModel: ExamComposeViewModel,
     modifier: Modifier = Modifier
 ) {
+    var detailQuestion by remember { mutableStateOf<QuestionResponse?>(null) }
+    detailQuestion?.let { question ->
+        QuestionDetailDialog(question = question, onDismiss = { detailQuestion = null })
+    }
+
     Row(modifier = modifier) {
         // 左侧: 考试信息 + 已选题目
         Column(
@@ -230,6 +242,7 @@ private fun DesktopComposeLayout(
                     items(state.examQuestions, key = { it.questionId }) { examQuestion ->
                         SelectedQuestionCard(
                             examQuestion = examQuestion,
+                            onView = { detailQuestion = it },
                             onRemove = { viewModel.removeQuestionFromExam(examQuestion.questionId) }
                         )
                     }
@@ -251,10 +264,16 @@ private fun DesktopComposeLayout(
             )
             Spacer(modifier = Modifier.height(8.dp))
             QuestionBankPanel(
-                allQuestions = state.courseQuestions,
+                banks = state.myBanks,
+                selectedBankId = state.selectedBankId,
+                questions = state.bankQuestions,
+                isLoading = state.bankQuestionsLoading,
+                errorMessage = state.bankQuestionsError,
                 selectedQuestionIds = state.examQuestions.map { it.questionId }.toSet(),
+                onSelectBank = { viewModel.selectQuestionBank(it) },
                 onAdd = { questionId -> viewModel.addQuestionToExam(questionId, 5) },
-                onRemove = { questionId -> viewModel.removeQuestionFromExam(questionId) }
+                onRemove = { questionId -> viewModel.removeQuestionFromExam(questionId) },
+                onViewQuestion = { detailQuestion = it }
             )
         }
     }
@@ -271,6 +290,11 @@ private fun MobileComposeLayout(
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var detailQuestion by remember { mutableStateOf<QuestionResponse?>(null) }
+
+    detailQuestion?.let { question ->
+        QuestionDetailDialog(question = question, onDismiss = { detailQuestion = null })
+    }
 
     Column(modifier = modifier) {
         ExamScoreHeader(state)
@@ -308,6 +332,7 @@ private fun MobileComposeLayout(
                         items(state.examQuestions, key = { it.questionId }) { examQuestion ->
                             SelectedQuestionCard(
                                 examQuestion = examQuestion,
+                                onView = { detailQuestion = it },
                                 onRemove = { viewModel.removeQuestionFromExam(examQuestion.questionId) }
                             )
                         }
@@ -316,10 +341,16 @@ private fun MobileComposeLayout(
             }
             1 -> {
                 QuestionBankPanel(
-                    allQuestions = state.courseQuestions,
+                    banks = state.myBanks,
+                    selectedBankId = state.selectedBankId,
+                    questions = state.bankQuestions,
+                    isLoading = state.bankQuestionsLoading,
+                    errorMessage = state.bankQuestionsError,
                     selectedQuestionIds = state.examQuestions.map { it.questionId }.toSet(),
+                    onSelectBank = { viewModel.selectQuestionBank(it) },
                     onAdd = { questionId -> viewModel.addQuestionToExam(questionId, 5) },
                     onRemove = { questionId -> viewModel.removeQuestionFromExam(questionId) },
+                    onViewQuestion = { detailQuestion = it },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -383,11 +414,12 @@ private fun ExamScoreHeader(state: ExamComposeUiState.Success) {
 @Composable
 private fun SelectedQuestionCard(
     examQuestion: ExamQuestionResponse,
+    onView: (QuestionResponse) -> Unit,
     onRemove: () -> Unit
 ) {
     val question = examQuestion.question ?: return
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onView(question) },
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         tonalElevation = 1.dp
@@ -432,20 +464,26 @@ private fun SelectedQuestionCard(
  */
 @Composable
 private fun QuestionBankPanel(
-    allQuestions: List<QuestionResponse>,
+    banks: List<QuestionBankResponse>,
+    selectedBankId: Long?,
+    questions: List<QuestionResponse>,
+    isLoading: Boolean,
+    errorMessage: String?,
     selectedQuestionIds: Set<Long>,
+    onSelectBank: (Long) -> Unit,
     onAdd: (Long) -> Unit,
     onRemove: (Long) -> Unit,
+    onViewQuestion: (QuestionResponse) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var searchKeyword by remember { mutableStateOf("") }
-    var filterType by remember { mutableStateOf<String?>(null) }
+    var searchKeyword by remember(selectedBankId) { mutableStateOf("") }
+    var filterType by remember(selectedBankId) { mutableStateOf<String?>(null) }
     var filtersExpanded by remember { mutableStateOf(false) }
 
-    val filteredQuestions by remember(allQuestions, searchKeyword, filterType) {
+    val filteredQuestions by remember(questions, searchKeyword, filterType) {
         derivedStateOf {
             SearchUtils
-                .filterAndSort(allQuestions, searchKeyword) { q ->
+                .filterAndSort(questions, searchKeyword) { q ->
                     listOf(q.content, q.category, q.answer, q.analysis, q.creatorName)
                 }
                 .filter { q -> filterType == null || q.type == filterType }
@@ -453,6 +491,34 @@ private fun QuestionBankPanel(
     }
 
     Column(modifier = modifier) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+        ) {
+            banks.forEach { bank ->
+                FilterChip(
+                    selected = selectedBankId == bank.id,
+                    onClick = { onSelectBank(bank.id) },
+                    label = { Text(bank.name, maxLines = 1) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (banks.isEmpty()) {
+            EmptyComposeHint("暂无可用题库，请先创建题库并添加题目")
+            return@Column
+        }
+
+        if (selectedBankId == null) {
+            EmptyComposeHint("请先选择题库，再进入题目选择")
+            return@Column
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -504,14 +570,13 @@ private fun QuestionBankPanel(
                         label = { Text(label) }
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "共 ${filteredQuestions.size} 题, 已选 ${selectedQuestionIds.size} 题",
+            "共 ${filteredQuestions.size} 题，已选 ${selectedQuestionIds.size} 题",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -519,33 +584,91 @@ private fun QuestionBankPanel(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 题目列表
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (filteredQuestions.isEmpty()) {
-                item {
-                    Text(
-                        "没有匹配的题目",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(16.dp)
-                    )
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
                 }
-            } else {
-                items(filteredQuestions, key = { it.id }) { question ->
-                    val isSelected = question.id in selectedQuestionIds
-                    ComposeQuestionCard(
-                        question = question,
-                        isSelected = isSelected,
-                        onToggle = { selected ->
-                            if (selected) onAdd(question.id) else onRemove(question.id)
+            }
+            errorMessage != null -> EmptyComposeHint(errorMessage)
+            questions.isEmpty() -> EmptyComposeHint("当前题库暂无题目，请选择其他题库或先完善题库")
+            else -> {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (filteredQuestions.isEmpty()) {
+                        item { EmptyComposeHint("没有匹配的题目") }
+                    } else {
+                        items(filteredQuestions, key = { it.id }) { question ->
+                            val isSelected = question.id in selectedQuestionIds
+                            ComposeQuestionCard(
+                                question = question,
+                                isSelected = isSelected,
+                                onToggle = { selected ->
+                                    if (selected) onAdd(question.id) else onRemove(question.id)
+                                },
+                                onView = { onViewQuestion(question) }
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun EmptyComposeHint(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(16.dp)
+    )
+}
+
+@Composable
+private fun QuestionDetailDialog(
+    question: QuestionResponse,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = adaptiveDialogModifier(),
+        properties = adaptiveDialogProperties(),
+        title = { Text("题目详情") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(question.content, style = MaterialTheme.typography.bodyLarge)
+                Text("题型：${QuestionUtils.questionTypeLabel(question.type)}", style = MaterialTheme.typography.bodyMedium)
+                Text("分值：${question.score} 分", style = MaterialTheme.typography.bodyMedium)
+                question.difficulty?.takeIf { it.isNotBlank() }?.let {
+                    Text("难度：$it", style = MaterialTheme.typography.bodyMedium)
+                }
+                question.category?.takeIf { it.isNotBlank() }?.let {
+                    Text("分类：$it", style = MaterialTheme.typography.bodyMedium)
+                }
+                question.options?.takeIf { it.isNotBlank() }?.let {
+                    Text("选项：$it", style = MaterialTheme.typography.bodyMedium)
+                }
+                question.answer?.takeIf { it.isNotBlank() }?.let {
+                    Text("答案：$it", style = MaterialTheme.typography.bodyMedium)
+                }
+                question.analysis?.takeIf { it.isNotBlank() }?.let {
+                    Text("解析：$it", style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("关闭") }
+        }
+    )
+}
+
