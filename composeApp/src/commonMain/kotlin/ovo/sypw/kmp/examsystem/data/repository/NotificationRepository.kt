@@ -22,6 +22,16 @@ class NotificationRepository(
     private val _unreadCount = MutableStateFlow(0L)
     val unreadCount: StateFlow<Long> = _unreadCount.asStateFlow()
 
+    private var activeUserId: Long? = null
+
+    fun ensureActiveUser(userId: Long?): Boolean {
+        if (activeUserId == userId) return false
+        activeUserId = userId
+        _notifications.value = emptyList()
+        _unreadCount.value = 0L
+        return true
+    }
+
     /**
      * 加载通知列表
      */

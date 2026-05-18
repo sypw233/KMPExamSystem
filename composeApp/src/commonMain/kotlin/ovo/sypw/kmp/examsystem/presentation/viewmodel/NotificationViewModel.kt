@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.data.dto.CreateNotificationRequest
 import ovo.sypw.kmp.examsystem.data.dto.NotificationResponse
+import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.NotificationRepository
+import ovo.sypw.kmp.examsystem.domain.AuthState
 
 sealed interface NotificationUiState {
     data object Loading : NotificationUiState
@@ -22,7 +24,8 @@ sealed interface NotificationActionState {
 }
 
 class NotificationViewModel(
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NotificationUiState>(
@@ -49,6 +52,7 @@ class NotificationViewModel(
     private var hasLoadedUnreadCount = unreadCount.value > 0
 
     init {
+        ensureActiveUserCache()
         if (notificationRepository.notifications.value.isEmpty()) {
             loadNotifications(force = false)
         }
@@ -58,6 +62,7 @@ class NotificationViewModel(
     }
 
     fun loadNotifications(page: Int = 0, force: Boolean = true) {
+        ensureActiveUserCache()
         val cachedNotifications = notificationRepository.notifications.value
         if (page == 0) {
             if (!force && cachedNotifications.isNotEmpty()) {
@@ -98,6 +103,7 @@ class NotificationViewModel(
     }
 
     fun loadUnreadCount(force: Boolean = true) {
+        ensureActiveUserCache()
         if (!force && hasLoadedUnreadCount) return
         if (isLoadingUnreadCount) return
         isLoadingUnreadCount = true
@@ -110,6 +116,7 @@ class NotificationViewModel(
     }
 
     fun markAsRead(notificationId: Long) {
+        ensureActiveUserCache()
         viewModelScope.launch {
             notificationRepository.markAsRead(notificationId)
                 .onSuccess {
@@ -123,6 +130,7 @@ class NotificationViewModel(
     }
 
     fun markAllAsRead() {
+        ensureActiveUserCache()
         viewModelScope.launch {
             notificationRepository.markAllAsRead()
                 .onSuccess {
@@ -136,6 +144,7 @@ class NotificationViewModel(
     }
 
     fun deleteNotification(notificationId: Long) {
+        ensureActiveUserCache()
         viewModelScope.launch {
             notificationRepository.deleteNotification(notificationId)
                 .onSuccess {
@@ -149,6 +158,7 @@ class NotificationViewModel(
     }
 
     fun sendNotification(title: String, content: String, type: String = "SYSTEM_ANNOUNCEMENT") {
+        ensureActiveUserCache()
         if (title.isBlank() || content.isBlank()) {
             _actionState.value = NotificationActionState.Error("标题和内容不能为空")
             return
@@ -178,6 +188,18 @@ class NotificationViewModel(
         if (currentList.size < expectedSize) {
             _currentPage.value = if (currentList.isEmpty()) 0 else (currentList.size - 1) / pageSize
             _hasMore.value = currentList.isNotEmpty()
+        }
+    }
+
+    private fun ensureActiveUserCache() {
+        val userId = (authRepository.authState.value as? AuthState.Authenticated)?.user?.id
+        if (notificationRepository.ensureActiveUser(userId)) {
+            _currentPage.value = 0
+            _hasMore.value = true
+            hasLoadedUnreadCount = false
+            isLoadingFirstPage = false
+            isLoadingUnreadCount = false
+            _uiState.value = NotificationUiState.Loading
         }
     }
 }

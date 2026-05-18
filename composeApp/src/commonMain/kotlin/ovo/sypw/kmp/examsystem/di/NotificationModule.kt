@@ -11,5 +11,5 @@ import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 val notificationModule = module {
     single { NotificationApi(get()) }
     single { NotificationRepository(get(), get()) }
-    factory { NotificationViewModel(get()) }
+    factory { NotificationViewModel(get(), get()) }
 }
