@@ -655,8 +655,42 @@ private fun QuestionDetailDialog(
                 question.category?.takeIf { it.isNotBlank() }?.let {
                     Text("分类：$it", style = MaterialTheme.typography.bodyMedium)
                 }
-                question.options?.takeIf { it.isNotBlank() }?.let {
-                    Text("选项：$it", style = MaterialTheme.typography.bodyMedium)
+                question.options?.takeIf { it.isNotBlank() }?.let { optionsText ->
+                    val options = remember(optionsText) { QuestionUtils.parseOptionsJson(optionsText) }
+                    if (options.isNotEmpty()) {
+                        Text("选项", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            options.forEachIndexed { index, option ->
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.Top
+                                    ) {
+                                        Text(
+                                            text = "${('A'.code + index).toChar()}.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = option,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Text("选项：$optionsText", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
                 question.answer?.takeIf { it.isNotBlank() }?.let {
                     Text("答案：$it", style = MaterialTheme.typography.bodyMedium)
