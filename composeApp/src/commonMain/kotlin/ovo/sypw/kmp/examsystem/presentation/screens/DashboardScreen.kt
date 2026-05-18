@@ -35,7 +35,8 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 fun DashboardScreen(
     onNavigateToExams: () -> Unit = {},
     onNavigateToCourses: () -> Unit = {},
-    onNavigateToNotifications: () -> Unit = {}
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToQuestionBanks: () -> Unit = {}
 ) {
     val authRepository: AuthRepository = koinInject()
     val examViewModel: ExamViewModel = koinInject()
@@ -50,6 +51,7 @@ fun DashboardScreen(
         else -> UserRole.UNKNOWN
     }
     val showExamSection = role == UserRole.STUDENT
+    val showTeacherWorkbench = role == UserRole.TEACHER
 
     val upcomingExamsState by examViewModel.upcomingExams.collectAsState()
     val notificationState by notificationViewModel.uiState.collectAsState()
@@ -88,6 +90,9 @@ fun DashboardScreen(
                     onRetryNotifications = { notificationViewModel.loadNotifications() },
                     onRetryExams = { examViewModel.loadPublishedExams() },
                     showExamSection = showExamSection,
+                    showTeacherWorkbench = showTeacherWorkbench,
+                    onNavigateToCourses = onNavigateToCourses,
+                    onNavigateToQuestionBanks = onNavigateToQuestionBanks,
                     config = config
                 )
             } else {
@@ -113,6 +118,17 @@ fun DashboardScreen(
                             onNotificationClick = {},
                             onRetry = { notificationViewModel.loadNotifications() }
                         )
+                    }
+
+                    if (showTeacherWorkbench) {
+                        item {
+                            TeacherWorkbenchSection(
+                                config = config,
+                                onNavigateToCourses = onNavigateToCourses,
+                                onNavigateToExams = onNavigateToExams,
+                                onNavigateToQuestionBanks = onNavigateToQuestionBanks
+                            )
+                        }
                     }
 
                     if (showExamSection) {

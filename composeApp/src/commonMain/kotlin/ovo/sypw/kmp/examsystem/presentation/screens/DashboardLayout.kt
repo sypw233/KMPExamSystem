@@ -27,6 +27,9 @@ internal fun DesktopDashboardLayout(
     onRetryNotifications: () -> Unit,
     onRetryExams: () -> Unit,
     showExamSection: Boolean,
+    showTeacherWorkbench: Boolean,
+    onNavigateToCourses: () -> Unit,
+    onNavigateToQuestionBanks: () -> Unit,
     config: ResponsiveLayoutConfig
 ) {
     Row(
@@ -50,7 +53,7 @@ internal fun DesktopDashboardLayout(
             )
         }
 
-        if (showExamSection) {
+        if (showExamSection || showTeacherWorkbench) {
             Spacer(modifier = Modifier.width(config.screenPadding))
 
             Column(
@@ -59,12 +62,22 @@ internal fun DesktopDashboardLayout(
                     .fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
-                DashboardExamsSection(
-                    upcomingExamsState = upcomingExamsState,
-                    config = config,
-                    onNavigateToExams = onNavigateToExams,
-                    onRetry = onRetryExams
-                )
+                if (showExamSection) {
+                    DashboardExamsSection(
+                        upcomingExamsState = upcomingExamsState,
+                        config = config,
+                        onNavigateToExams = onNavigateToExams,
+                        onRetry = onRetryExams
+                    )
+                }
+                if (showTeacherWorkbench) {
+                    TeacherWorkbenchSection(
+                        config = config,
+                        onNavigateToCourses = onNavigateToCourses,
+                        onNavigateToExams = onNavigateToExams,
+                        onNavigateToQuestionBanks = onNavigateToQuestionBanks
+                    )
+                }
             }
         }
     }

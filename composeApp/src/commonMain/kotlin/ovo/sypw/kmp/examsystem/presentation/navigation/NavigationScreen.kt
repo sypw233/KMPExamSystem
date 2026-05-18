@@ -43,7 +43,8 @@ fun NavigationScreen(
                     DashboardScreen(
                         onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
                         onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
-                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
+                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) },
+                        onNavigateToQuestionBanks = { navigationManager.navigateTo(AppRoutes.QUESTION_BANKS) }
                     )
                 }
             }
@@ -90,7 +91,8 @@ fun NavigationScreen(
                     DashboardScreen(
                         onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
                         onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
-                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
+                        onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) },
+                        onNavigateToQuestionBanks = { navigationManager.navigateTo(AppRoutes.QUESTION_BANKS) }
                     )
                 }
             }
@@ -99,7 +101,8 @@ fun NavigationScreen(
                 DashboardScreen(
                     onNavigateToExams = { navigationManager.navigateTo(AppRoutes.EXAMS) },
                     onNavigateToCourses = { navigationManager.navigateTo(AppRoutes.COURSES) },
-                    onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) }
+                    onNavigateToNotifications = { navigationManager.navigateTo(AppRoutes.PROFILE) },
+                    onNavigateToQuestionBanks = { navigationManager.navigateTo(AppRoutes.QUESTION_BANKS) }
                 )
             }
         }
