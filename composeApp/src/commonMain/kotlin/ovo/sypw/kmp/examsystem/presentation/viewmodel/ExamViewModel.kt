@@ -1,6 +1,8 @@
 package ovo.sypw.kmp.examsystem.presentation.viewmodel
 
 import com.hoc081098.kmp.viewmodel.ViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -8,8 +10,10 @@ import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
+import ovo.sypw.kmp.examsystem.data.dto.ExamStatisticsResponse
 import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
+import ovo.sypw.kmp.examsystem.data.repository.StatisticsRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.navigation.UserRole
 import ovo.sypw.kmp.examsystem.utils.Logger
@@ -43,7 +47,8 @@ sealed interface ExamActionState {
  */
 class ExamViewModel(
     private val examRepository: ExamRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val statisticsRepository: StatisticsRepository
 ) : ViewModel() {
 
     // 当前角色（影响调用哪套 API），使用 StateFlow 保证并发可见性
@@ -89,9 +94,12 @@ class ExamViewModel(
     // 操作反馈
     private val _actionState = MutableStateFlow<ExamActionState>(ExamActionState.Idle)
     val actionState: StateFlow<ExamActionState> = _actionState.asStateFlow()
+    private val _examStatistics = MutableStateFlow<Map<Long, ExamStatisticsResponse>>(emptyMap())
+    val examStatistics: StateFlow<Map<Long, ExamStatisticsResponse>> = _examStatistics.asStateFlow()
     private var isLoadingManagerExams = false
     private var isLoadingPublishedExams = false
     private var isLoadingEndedExams = false
+    private val loadingStatisticsIds = mutableSetOf<Long>()
 
     init {
         // 自动从 AuthState 检测用户角色
@@ -134,6 +142,7 @@ class ExamViewModel(
         if (!force && _allExams.value is ExamListUiState.Success) return
         if (!force && _userRole.value == UserRole.TEACHER && examRepository.myExams.value.isNotEmpty()) {
             _allExams.value = ExamListUiState.Success(examRepository.myExams.value)
+            loadExamStatistics(examRepository.myExams.value)
             return
         }
         if (isLoadingManagerExams) return
@@ -145,10 +154,37 @@ class ExamViewModel(
             else
                 examRepository.loadMyExams()
             result.fold(
-                onSuccess = { _allExams.value = ExamListUiState.Success(it) },
+                onSuccess = {
+                    _allExams.value = ExamListUiState.Success(it)
+                    loadExamStatistics(it)
+                },
                 onFailure = { _allExams.value = ExamListUiState.Error(it.message ?: "加载失败") }
             )
             isLoadingManagerExams = false
+        }
+    }
+
+    private fun loadExamStatistics(exams: List<ExamResponse>) {
+        val cachedIds = _examStatistics.value.keys
+        val pendingIds = exams.map { it.id }
+            .filterNot { it in cachedIds || it in loadingStatisticsIds }
+            .take(30)
+        if (pendingIds.isEmpty()) return
+
+        loadingStatisticsIds += pendingIds
+        viewModelScope.launch {
+            val loaded = pendingIds.map { examId ->
+                async {
+                    examId to statisticsRepository.getExamStatistics(examId).getOrNull()
+                }
+            }.awaitAll()
+                .mapNotNull { (examId, statistics) -> statistics?.let { examId to it } }
+                .toMap()
+
+            if (loaded.isNotEmpty()) {
+                _examStatistics.value = _examStatistics.value + loaded
+            }
+            loadingStatisticsIds -= pendingIds.toSet()
         }
     }
 

@@ -83,6 +83,7 @@ fun TeacherExamManageScreen(
     val viewModel: ExamViewModel = koinInject()
     val courseViewModel: CourseViewModel = koinInject()
     val allExamsState by viewModel.allExams.collectAsState()
+    val examStatistics by viewModel.examStatistics.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
     val courseUiState by courseViewModel.allCoursesState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -334,6 +335,7 @@ fun TeacherExamManageScreen(
                                     val isSelected = exam.id in selectedIds
                                     ManageExamCard(
                                         exam = exam,
+                                        statistics = examStatistics[exam.id],
                                         canEdit = exam.examStatus == ExamStatus.DRAFT && !isBatchMode,
                                         isBatchMode = isBatchMode && exam.examStatus == ExamStatus.DRAFT,
                                         isSelected = isSelected,

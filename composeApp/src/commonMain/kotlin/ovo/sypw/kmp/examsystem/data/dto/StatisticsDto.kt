@@ -37,6 +37,8 @@ data class ExamStatisticsResponse(
     val examTitle: String,
     val totalStudents: Int = 0,
     val submittedCount: Int = 0,
+    val gradedCount: Int = 0,
+    val pendingGradingCount: Int = 0,
     val completionRate: Double = 0.0,
     val averageScore: Double? = null,
     val highestScore: Int? = null,
