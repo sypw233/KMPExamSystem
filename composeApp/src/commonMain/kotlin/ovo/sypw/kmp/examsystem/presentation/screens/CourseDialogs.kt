@@ -44,11 +44,15 @@ import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.CourseRequest
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.EnrollmentResponse
+import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.CourseRepository
+import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.StudentSelector
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.CourseViewModel
+import ovo.sypw.kmp.examsystem.utils.SearchUtils
+import ovo.sypw.kmp.examsystem.utils.StringUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,7 +90,8 @@ fun CourseFormDialog(
                         { Text("${normalizedName.length}/100") }
                     },
                     isError = (nameInteracted && normalizedName.isBlank()) || normalizedName.length > 100,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .onFocusChanged { if (!it.isFocused) nameInteracted = true },
                     singleLine = true
                 )
@@ -100,7 +105,8 @@ fun CourseFormDialog(
                         { Text("${normalizedDescription.length}/500") }
                     },
                     isError = descriptionInteracted && normalizedDescription.length > 500,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
                         .onFocusChanged { if (!it.isFocused) descriptionInteracted = true },
                     minLines = 3
                 )
@@ -120,7 +126,9 @@ fun CourseFormDialog(
                     )
                 },
                 enabled = isValid
-            ) { Text("保存") }
+            ) {
+                Text("保存")
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
@@ -134,10 +142,20 @@ fun EnrollmentManageDialog(
     onDismiss: () -> Unit
 ) {
     val courseRepository: CourseRepository = koinInject()
+    val authRepository: AuthRepository = koinInject()
     val scope = rememberCoroutineScope()
     val students by courseViewModel.courseStudents.collectAsState()
+    val authState by authRepository.authState.collectAsState()
+    val currentRole = (authState as? AuthState.Authenticated)?.user?.role?.lowercase()
+    val canBatchAddStudents = currentRole != "teacher"
     var showStudentSelector by remember { mutableStateOf(false) }
     var selectedStudentIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var searchKeyword by remember { mutableStateOf("") }
+    val filteredStudents = remember(students, searchKeyword) {
+        SearchUtils.filterAndSort(students, searchKeyword) {
+            listOf(it.studentName, it.studentId.toString(), it.courseName)
+        }
+    }
 
     LaunchedEffect(course.id) {
         courseViewModel.loadCourseStudents(course.id)
@@ -169,30 +187,48 @@ fun EnrollmentManageDialog(
         title = { Text("选课管理: ${course.courseName}") },
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (students.isEmpty()) {
-                    Text("暂无学生")
-                } else {
-                    LazyColumn(modifier = Modifier.fillMaxWidth().height(240.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(students, key = { it.id }) { student ->
-                            EnrollmentCard(
-                                enrollment = student,
-                                onRemove = {
-                                    scope.launch {
-                                        courseRepository.removeStudentFromCourse(course.id, student.studentId)
-                                        courseViewModel.loadCourseStudents(course.id)
+                OutlinedTextField(
+                    value = searchKeyword,
+                    onValueChange = { searchKeyword = it },
+                    label = { Text("搜索学生") },
+                    placeholder = { Text("姓名或学生 ID") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                when {
+                    students.isEmpty() -> Text("暂无学生")
+                    filteredStudents.isEmpty() -> Text("未找到匹配的学生")
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(240.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            items(filteredStudents, key = { it.id }) { student ->
+                                EnrollmentCard(
+                                    enrollment = student,
+                                    onRemove = {
+                                        scope.launch {
+                                            courseRepository.removeStudentFromCourse(course.id, student.studentId)
+                                            courseViewModel.loadCourseStudents(course.id)
+                                        }
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { showStudentSelector = true }) {
-                Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("批量添加学生")
+            if (canBatchAddStudents) {
+                TextButton(onClick = { showStudentSelector = true }) {
+                    Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("批量添加学生")
+                }
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("关闭") } }
@@ -206,13 +242,18 @@ fun EnrollmentCard(
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(enrollment.studentName.ifBlank { "学生" }, fontWeight = FontWeight.Bold)
-                Text("选课时间: ${enrollment.enrollmentTime ?: "-"}", style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = "选课时间: ${enrollment.enrollmentTime?.let(StringUtils::formatDateTime) ?: "-"}",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
             TextButton(
                 onClick = onRemove,
