@@ -21,7 +21,7 @@ object StringUtils {
      *
      * @param format 格式化字符串, 支持以下占位符：
      *   - %s: 字符串
-     *   - %d: 整数
+     *   - %d/%02d/%04d: 整数
      *   - %f: 浮点数
      *   - %.1f: 保留1位小数的浮点数
      *   - %.2f: 保留2位小数的浮点数
@@ -32,37 +32,46 @@ object StringUtils {
         var result = format
         var argIndex = 0
 
-        val regex = Regex("%(\\.[0-9]+)?[sdfl]")
+        val regex = Regex("%(0\\d+)?(\\.[0-9]+)?[sdfl]")
         result = regex.replace(result) { matchResult ->
             if (argIndex >= args.size) {
                 matchResult.value
             } else {
                 val arg = args[argIndex++]
+                val placeholder = matchResult.value
                 when {
-                    matchResult.value == "%s" -> arg?.toString() ?: "null"
-                    matchResult.value == "%d" -> {
-                        when (arg) {
+                    placeholder == "%s" -> arg?.toString() ?: "null"
+                    placeholder.endsWith("d") -> {
+                        val value = when (arg) {
                             is Number -> arg.toLong().toString()
                             else -> arg?.toString() ?: "0"
                         }
+                        val width = placeholder
+                            .removePrefix("%")
+                            .removeSuffix("d")
+                            .takeIf { it.startsWith('0') }
+                            ?.drop(1)
+                            ?.toIntOrNull()
+                        if (width != null) value.padStart(width, '0') else value
                     }
 
-                    matchResult.value == "%f" -> {
+                    placeholder == "%f" -> {
                         when (arg) {
                             is Number -> arg.toDouble().toString()
                             else -> "0.0"
                         }
                     }
 
-                    matchResult.value.matches(Regex("%.([0-9]+)f")) -> {
+                    placeholder.matches(Regex("%.([0-9]+)f")) -> {
                         val decimals =
-                            matchResult.value.substring(2, matchResult.value.length - 1).toInt()
+                            placeholder.substring(2, placeholder.length - 1).toInt()
                         when (arg) {
                             is Number -> {
                                 val value = arg.toDouble()
                                 val multiplier = 10.0.pow(decimals.toDouble())
                                 val rounded = round(value * multiplier) / multiplier
                                 val intPart = rounded.toLong()
+                                if (decimals == 0) return@replace intPart.toString()
                                 val fracPart = ((rounded - intPart) * multiplier).toLong()
                                 "$intPart.${fracPart.toString().padStart(decimals, '0')}"
                             }
@@ -77,6 +86,10 @@ object StringUtils {
         }
 
         return result
+    }
+
+    fun String.format(vararg args: Any?): String {
+        return String.Companion.format(this, *args)
     }
 
     /**
