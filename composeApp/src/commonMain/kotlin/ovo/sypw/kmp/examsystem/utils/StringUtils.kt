@@ -3,6 +3,9 @@ package ovo.sypw.kmp.examsystem.utils
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.round
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -124,6 +127,26 @@ object StringUtils {
             }
         } catch (e: Exception) {
             dateTimeString
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    fun isFutureDateTime(dateTimeString: String?): Boolean {
+        val targetMs = parseDateTimeToEpochMs(dateTimeString) ?: return false
+        return targetMs > Clock.System.now().toEpochMilliseconds()
+    }
+
+    fun parseDateTimeToEpochMs(dateTimeString: String?): Long? {
+        val raw = dateTimeString?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        return try {
+            val normalized = raw
+                .substringBefore('.')
+                .replace(' ', 'T')
+            LocalDateTime.parse(normalized)
+                .toInstant(TimeZone.currentSystemDefault())
+                .toEpochMilliseconds()
+        } catch (e: Exception) {
+            parseIsoToEpochMs(raw)
         }
     }
 

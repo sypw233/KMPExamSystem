@@ -40,8 +40,9 @@ internal fun ExamCard(
     isSelected: Boolean = false,
     onClick: () -> Unit
 ) {
+    val isBeforeStart = showStartButton && StringUtils.isFutureDateTime(exam.startTime)
     Card(
-        onClick = onClick,
+        onClick = { if (!isBeforeStart) onClick() },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
@@ -126,18 +127,38 @@ internal fun ExamCard(
                 )
             }
 
+            if (isBeforeStart) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = "考试时间未到",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
+            }
+
             if (showStartButton) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = onClick,
+                    enabled = !isBeforeStart,
                     modifier = Modifier.align(Alignment.End),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        if (isBeforeStart) Icons.Default.Schedule else Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("开始考试")
+                    Text(if (isBeforeStart) "考试时间未到" else "开始考试")
                 }
             }
         }
@@ -150,6 +171,7 @@ internal fun ExamPreviewCard(
     showStartButton: Boolean,
     onStartExam: () -> Unit
 ) {
+    val isBeforeStart = showStartButton && StringUtils.isFutureDateTime(exam.startTime)
     Card(
         modifier = Modifier.fillMaxSize(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -200,6 +222,9 @@ internal fun ExamPreviewCard(
                 if (!exam.startTime.isNullOrBlank()) {
                     InfoRow(Icons.Default.Schedule, "开始时间", StringUtils.formatDateTime(exam.startTime))
                 }
+                if (isBeforeStart) {
+                    InfoRow(Icons.Default.Schedule, "当前状态", "考试时间未到")
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -207,12 +232,17 @@ internal fun ExamPreviewCard(
             if (showStartButton) {
                 Button(
                     onClick = onStartExam,
+                    enabled = !isBeforeStart,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(
+                        if (isBeforeStart) Icons.Default.Schedule else Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("开始考试", style = MaterialTheme.typography.labelLarge)
+                    Text(if (isBeforeStart) "考试时间未到" else "开始考试", style = MaterialTheme.typography.labelLarge)
                 }
             }
         }

@@ -63,20 +63,24 @@ fun ManageExamCard(
     onViewSubmissions: (() -> Unit)? = null
 ) {
     val config = LocalResponsiveConfig.current
-    val statusColor = when (exam.status) {
-        0 -> MaterialTheme.colorScheme.outlineVariant
-        1 -> MaterialTheme.colorScheme.primaryContainer
+    val isBeforeStart = exam.status == 1 && StringUtils.isFutureDateTime(exam.startTime)
+    val statusColor = when {
+        isBeforeStart -> MaterialTheme.colorScheme.tertiaryContainer
+        exam.status == 0 -> MaterialTheme.colorScheme.outlineVariant
+        exam.status == 1 -> MaterialTheme.colorScheme.primaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
-    val statusLabel = when (exam.status) {
-        0 -> "草稿"
-        1 -> "进行中"
-        2 -> "已结束"
+    val statusLabel = when {
+        isBeforeStart -> "考试时间未到"
+        exam.status == 0 -> "草稿"
+        exam.status == 1 -> "进行中"
+        exam.status == 2 -> "已结束"
         else -> "未知"
     }
-    val statusIcon = when (exam.status) {
-        0 -> Icons.Default.HourglassBottom
-        1 -> Icons.Default.PlayArrow
+    val statusIcon = when {
+        isBeforeStart -> Icons.Default.Schedule
+        exam.status == 0 -> Icons.Default.HourglassBottom
+        exam.status == 1 -> Icons.Default.PlayArrow
         else -> Icons.Default.Stop
     }
     val examTimeText = formatExamTime(exam)
