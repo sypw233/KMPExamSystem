@@ -29,7 +29,7 @@ struct ComposeView: UIViewControllerRepresentable {
 struct ContentView: View {
     var body: some View {
         ComposeView()
-            .ignoresSafeArea(.container, edges: .bottom) // 只忽略底部安全区域
+            .ignoresSafeArea(.all) // 忽略所有安全区域，由 Compose 内部处理键盘和safe area
             .statusBarHidden(false) // 保持状态栏可见
             .navigationBarHidden(true) // 隐藏默认导航栏
     }
