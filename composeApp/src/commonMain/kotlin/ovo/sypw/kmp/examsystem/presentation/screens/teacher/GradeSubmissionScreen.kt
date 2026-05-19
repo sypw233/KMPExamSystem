@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,6 +30,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +76,7 @@ import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
+import ovo.sypw.kmp.examsystem.presentation.screens.QuestionJumpPanel
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -97,6 +101,7 @@ fun GradeSubmissionScreen(
     val aiCommentMap = remember { mutableStateMapOf<Long, String>() }
     val aiCommentVisibleMap = remember { mutableStateMapOf<Long, Boolean>() }
     var batchAiLoading by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
 
     LaunchedEffect(submissionId) {
         scoreMap.clear()
@@ -178,6 +183,7 @@ fun GradeSubmissionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
+            state = listState,
             contentPadding = PaddingValues(
                 start = config.screenPadding,
                 end = config.screenPadding,
@@ -237,6 +243,18 @@ fun GradeSubmissionScreen(
                 )
             }
 
+            item {
+                QuestionJumpPanel(
+                    questions = gradeableQuestions,
+                    selectedIndex = null,
+                    onQuestionSelected = { questionIndex ->
+                        scope.launch {
+                            listState.animateScrollToItem(questionIndex + 1)
+                        }
+                    }
+                )
+            }
+
             if (gradeableQuestions.isEmpty()) {
                 item {
                     Box(
@@ -257,7 +275,6 @@ fun GradeSubmissionScreen(
                         currentAiComment = aiCommentMap[examQuestion.questionId].orEmpty(),
                         showAiComment = aiCommentVisibleMap[examQuestion.questionId] == true,
                         onScoreChange = { scoreMap[examQuestion.questionId] = it },
-                        onAiCommentChange = { aiCommentMap[examQuestion.questionId] = it },
                         onRequestAiGrade = { callback ->
                             scope.launch {
                                 val studentAnswer = userAnswers[examQuestion.questionId.toString()].orEmpty()
@@ -353,36 +370,43 @@ private fun GradeSubmissionHeader(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
-                    onClick = onBatchAiGrade,
-                    enabled = !batchAiLoading && !isSaving
-                ) {
-                    if (batchAiLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    } else {
-                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                ExtendedFloatingActionButton(
+                    text = { Text("AI 批量评分") },
+                    icon = {
+                        if (batchAiLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    },
+                    onClick = {
+                        if (!batchAiLoading && !isSaving) {
+                            onBatchAiGrade()
+                        }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("AI 批量评分")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(
-                    onClick = onSave,
-                    enabled = !isSaving && !batchAiLoading
-                ) {
-                    if (isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                )
+                ExtendedFloatingActionButton(
+                    text = { Text("保存批改") },
+                    icon = {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    },
+                    onClick = {
+                        if (!isSaving && !batchAiLoading) {
+                            onSave()
+                        }
                     }
-                    Text("保存批改")
-                }
+                )
             }
         }
     }
@@ -396,7 +420,6 @@ private fun GradeQuestionItem(
     currentAiComment: String,
     showAiComment: Boolean,
     onScoreChange: (String) -> Unit,
-    onAiCommentChange: (String) -> Unit,
     onRequestAiGrade: (() -> Unit) -> Unit
 ) {
     val question = examQuestion.question ?: return
@@ -514,14 +537,32 @@ private fun GradeQuestionItem(
             }
 
             if (showAiComment) {
-                OutlinedTextField(
-                    value = currentAiComment,
-                    onValueChange = onAiCommentChange,
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("AI 批语") },
-                    leadingIcon = { Icon(Icons.Default.Lightbulb, contentDescription = null) },
-                    minLines = 3
-                )
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Text("AI 批语", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        }
+                        SelectionContainer {
+                            Text(
+                                text = currentAiComment,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
             }
         }
     }

@@ -11,6 +11,17 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
 }
 
+val releaseKeystoreFile = providers.gradleProperty("ANDROID_RELEASE_KEYSTORE_FILE").orNull
+val releaseKeystorePassword = providers.gradleProperty("ANDROID_RELEASE_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.gradleProperty("ANDROID_RELEASE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.gradleProperty("ANDROID_RELEASE_KEY_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    releaseKeystoreFile,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword
+).all { !it.isNullOrBlank() }
+
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -106,8 +117,8 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         //noinspection OldTargetApi
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2333
-        versionName = "ovO2.333"
+        versionCode = 233
+        versionName = "ovO2.33"
         buildConfigField(
             "String",
             "PANGLE_APP_ID",
@@ -122,6 +133,16 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    signingConfigs {
+        create("release") {
+            if (hasReleaseSigning) {
+                storeFile = file(releaseKeystoreFile!!)
+                storePassword = releaseKeystorePassword!!
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
+            }
+        }
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -130,6 +151,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
     compileOptions {

@@ -64,9 +64,9 @@ fun getNavigationItemsForRole(role: UserRole): List<NavigationItem> = when (role
         NavigationItem(AppRoutes.HOME, "首页", Icons.Default.Dashboard, priority = 1),
         NavigationItem(AppRoutes.USERS, "用户管理", Icons.Default.ManageAccounts, priority = 2),
         NavigationItem(AppRoutes.COURSES, "课程管理", Icons.Default.Book, priority = 3),
-        NavigationItem(AppRoutes.PROFILE, "我的", Icons.Default.Person, priority = 4),
-        NavigationItem(AppRoutes.EXAMS, "考试管理", Icons.AutoMirrored.Filled.Assignment, priority = 5),
-        NavigationItem(AppRoutes.QUESTION_BANKS, "题库管理", Icons.Default.Quiz, priority = 6),
+        NavigationItem(AppRoutes.EXAMS, "考试管理", Icons.AutoMirrored.Filled.Assignment, priority = 4),
+        NavigationItem(AppRoutes.QUESTION_BANKS, "题库管理", Icons.Default.Quiz, priority = 5),
+        NavigationItem(AppRoutes.PROFILE, "我的", Icons.Default.Person, priority = 6),
         NavigationItem(AppRoutes.SYSTEM_SETTINGS, "系统设置", Icons.Default.SettingsApplications, priority = 10)
     )
     UserRole.UNKNOWN -> listOf(
@@ -80,6 +80,6 @@ fun getBottomNavigationItemsForRole(role: UserRole): BottomNavigationItems {
     return if (sortedItems.size <= 5) {
         BottomNavigationItems(primaryItems = sortedItems, overflowItems = emptyList())
     } else {
-        BottomNavigationItems(primaryItems = sortedItems.take(4), overflowItems = sortedItems.drop(4))
+        BottomNavigationItems(primaryItems = sortedItems.take(5), overflowItems = sortedItems.drop(5))
     }
 }

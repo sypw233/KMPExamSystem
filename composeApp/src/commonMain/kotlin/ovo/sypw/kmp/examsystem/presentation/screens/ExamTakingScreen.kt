@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
@@ -40,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -49,6 +51,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
@@ -194,6 +197,8 @@ private fun ExamContent(
     val switchLimit = exam.exam.maxSwitchCount?.takeIf { it > 0 } ?: 3
     val windowFocused = LocalWindowInfo.current.isWindowFocused
     val config = LocalResponsiveConfig.current
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     // 返回键处理：弹出交卷确认对话框
     BackHandler {
@@ -305,12 +310,29 @@ private fun ExamContent(
             contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.then(
                     if (LocalResponsiveConfig.current.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.EXAM_TAKING) else Modifier
                 ).fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
+                item {
+                    QuestionJumpPanel(
+                        questions = exam.questions,
+                        selectedIndex = if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) currentQuestionIndex else null,
+                        onQuestionSelected = { questionIndex ->
+                            if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) {
+                                currentQuestionIndex = questionIndex
+                            } else {
+                                scope.launch {
+                                    listState.animateScrollToItem(questionIndex + 1)
+                                }
+                            }
+                        }
+                    )
+                }
+
                 if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION && exam.questions.isNotEmpty()) {
                     item {
                         val index = currentQuestionIndex.coerceIn(0, exam.questions.lastIndex)
