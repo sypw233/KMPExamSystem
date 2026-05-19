@@ -18,7 +18,7 @@ enum class AppThemeMode(val label: String) {
 
 enum class ThemeAccentMode(val label: String) {
     SYSTEM("跟随系统"),
-    CUSTOM("自定义")
+    CUSTOM("手动颜色")
 }
 
 enum class ThemeAccent(val label: String, val seedHex: String) {
@@ -51,7 +51,11 @@ data class AppSettingsState(
     val useCustomAccentColor: Boolean = false,
     val customAccentHex: String = ThemeAccent.BLUE.seedHex,
     val examDisplayMode: ExamDisplayMode = ExamDisplayMode.LIST,
-    val fontScaleLevel: FontScaleLevel = FontScaleLevel.STANDARD
+    val fontScaleLevel: FontScaleLevel = FontScaleLevel.STANDARD,
+    val confirmBeforeSubmit: Boolean = true,
+    val timerWarningEnabled: Boolean = true,
+    val autoSaveAnswers: Boolean = true,
+    val compactListMode: Boolean = false
 ) {
     val resolvedAccentHex: String
         get() = if (useCustomAccentColor) customAccentHex else accent.seedHex
@@ -65,6 +69,10 @@ object AppSettingsStore {
     private const val KEY_CUSTOM_ACCENT_HEX = "app_settings_custom_accent_hex"
     private const val KEY_EXAM_DISPLAY_MODE = "app_settings_exam_display_mode"
     private const val KEY_FONT_SCALE = "app_settings_font_scale"
+    private const val KEY_CONFIRM_BEFORE_SUBMIT = "app_settings_confirm_before_submit"
+    private const val KEY_TIMER_WARNING = "app_settings_timer_warning"
+    private const val KEY_AUTO_SAVE_ANSWERS = "app_settings_auto_save_answers"
+    private const val KEY_COMPACT_LIST_MODE = "app_settings_compact_list_mode"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _settings = MutableStateFlow(AppSettingsState())
@@ -84,13 +92,25 @@ object AppSettingsStore {
             customAccentHex = storage.getString(KEY_CUSTOM_ACCENT_HEX)?.normalizeColorHex()
                 ?: ThemeAccent.BLUE.seedHex,
             examDisplayMode = storage.getString(KEY_EXAM_DISPLAY_MODE).toExamDisplayMode(),
-            fontScaleLevel = storage.getString(KEY_FONT_SCALE).toFontScaleLevel()
+            fontScaleLevel = storage.getString(KEY_FONT_SCALE).toFontScaleLevel(),
+            confirmBeforeSubmit = storage.getBoolean(KEY_CONFIRM_BEFORE_SUBMIT, true),
+            timerWarningEnabled = storage.getBoolean(KEY_TIMER_WARNING, true),
+            autoSaveAnswers = storage.getBoolean(KEY_AUTO_SAVE_ANSWERS, true),
+            compactListMode = storage.getBoolean(KEY_COMPACT_LIST_MODE, false)
         )
         initialized = true
     }
 
     fun setThemeMode(mode: AppThemeMode) {
         updateSettings { it.copy(themeMode = mode) }
+    }
+
+    fun setFollowSystemTheme(enabled: Boolean) {
+        updateSettings { it.copy(themeMode = if (enabled) AppThemeMode.SYSTEM else AppThemeMode.LIGHT) }
+    }
+
+    fun setDarkThemeEnabled(enabled: Boolean) {
+        updateSettings { it.copy(themeMode = if (enabled) AppThemeMode.DARK else AppThemeMode.LIGHT) }
     }
 
     fun setAccentMode(mode: ThemeAccentMode) {
@@ -122,8 +142,28 @@ object AppSettingsStore {
         updateSettings { it.copy(examDisplayMode = mode) }
     }
 
+    fun setSingleQuestionMode(enabled: Boolean) {
+        updateSettings { it.copy(examDisplayMode = if (enabled) ExamDisplayMode.SINGLE_QUESTION else ExamDisplayMode.LIST) }
+    }
+
     fun setFontScale(level: FontScaleLevel) {
         updateSettings { it.copy(fontScaleLevel = level) }
+    }
+
+    fun setConfirmBeforeSubmit(enabled: Boolean) {
+        updateSettings { it.copy(confirmBeforeSubmit = enabled) }
+    }
+
+    fun setTimerWarningEnabled(enabled: Boolean) {
+        updateSettings { it.copy(timerWarningEnabled = enabled) }
+    }
+
+    fun setAutoSaveAnswers(enabled: Boolean) {
+        updateSettings { it.copy(autoSaveAnswers = enabled) }
+    }
+
+    fun setCompactListMode(enabled: Boolean) {
+        updateSettings { it.copy(compactListMode = enabled) }
     }
 
     private fun updateSettings(transform: (AppSettingsState) -> AppSettingsState) {
@@ -142,6 +182,10 @@ object AppSettingsStore {
             storage.saveString(KEY_CUSTOM_ACCENT_HEX, current.customAccentHex)
             storage.saveString(KEY_EXAM_DISPLAY_MODE, current.examDisplayMode.name)
             storage.saveString(KEY_FONT_SCALE, current.fontScaleLevel.name)
+            storage.saveBoolean(KEY_CONFIRM_BEFORE_SUBMIT, current.confirmBeforeSubmit)
+            storage.saveBoolean(KEY_TIMER_WARNING, current.timerWarningEnabled)
+            storage.saveBoolean(KEY_AUTO_SAVE_ANSWERS, current.autoSaveAnswers)
+            storage.saveBoolean(KEY_COMPACT_LIST_MODE, current.compactListMode)
         }
     }
 }

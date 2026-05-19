@@ -5,10 +5,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ovo.sypw.kmp.examsystem.data.dto.AiBatchGradingResponse
 import ovo.sypw.kmp.examsystem.data.dto.AiGradingResponse
+import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringDataResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.repository.AiGradingRepository
+import ovo.sypw.kmp.examsystem.data.repository.ExamRepository
 import ovo.sypw.kmp.examsystem.data.repository.SubmissionRepository
 
 sealed interface SubmissionsUiState {
@@ -33,7 +36,7 @@ sealed interface ProctoringUiState {
 
 class GradeSubmissionViewModel(
     private val submissionRepository: SubmissionRepository,
-    private val examRepository: ovo.sypw.kmp.examsystem.data.repository.ExamRepository,
+    private val examRepository: ExamRepository,
     private val aiGradingRepository: AiGradingRepository
 ) : ViewModel() {
 
@@ -43,12 +46,11 @@ class GradeSubmissionViewModel(
     private val _actionState = MutableStateFlow<GradeActionState>(GradeActionState.Idle)
     val actionState: StateFlow<GradeActionState> = _actionState.asStateFlow()
 
-    // Cache submission details and its questions
     private val _currentSubmission = MutableStateFlow<SubmissionResponse?>(null)
     val currentSubmission: StateFlow<SubmissionResponse?> = _currentSubmission.asStateFlow()
 
-    private val _currentQuestions = MutableStateFlow<List<ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse>>(emptyList())
-    val currentQuestions: StateFlow<List<ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse>> = _currentQuestions.asStateFlow()
+    private val _currentQuestions = MutableStateFlow<List<ExamQuestionResponse>>(emptyList())
+    val currentQuestions: StateFlow<List<ExamQuestionResponse>> = _currentQuestions.asStateFlow()
 
     private val _detailError = MutableStateFlow<String?>(null)
     val detailError: StateFlow<String?> = _detailError.asStateFlow()
@@ -72,13 +74,12 @@ class GradeSubmissionViewModel(
         _detailError.value = null
         viewModelScope.launch {
             submissionRepository.getSubmissionDetail(submissionId).fold(
-                onSuccess = { sub ->
-                    _currentSubmission.value = sub
-                    // Load exam questions
-                    examRepository.getExamQuestions(sub.examId).fold(
+                onSuccess = { submission ->
+                    _currentSubmission.value = submission
+                    examRepository.getExamQuestions(submission.examId).fold(
                         onSuccess = { _currentQuestions.value = it },
                         onFailure = {
-                            examRepository.getExamPaperQuestions(sub.examId).fold(
+                            examRepository.getExamPaperQuestions(submission.examId).fold(
                                 onSuccess = { paperQuestions -> _currentQuestions.value = paperQuestions },
                                 onFailure = { _currentQuestions.value = emptyList() }
                             )
@@ -97,7 +98,7 @@ class GradeSubmissionViewModel(
             submissionRepository.gradeSubmission(submissionId, grades).fold(
                 onSuccess = {
                     _actionState.value = GradeActionState.Success("批改完成")
-                    _currentSubmission.value = it // Update current detail with graded info
+                    _currentSubmission.value = it
                 },
                 onFailure = { _actionState.value = GradeActionState.Error("批改保存失败: ${it.message}") }
             )
@@ -106,6 +107,10 @@ class GradeSubmissionViewModel(
 
     suspend fun requestAiGrade(questionId: Long, studentAnswer: String, maxScore: Int): Result<AiGradingResponse> {
         return aiGradingRepository.aiGrade(questionId, studentAnswer, maxScore)
+    }
+
+    suspend fun requestBatchAiGrade(submissionId: Long): Result<AiBatchGradingResponse> {
+        return aiGradingRepository.batchGrade(submissionId)
     }
 
     fun loadProctoringData(submissionId: Long) {

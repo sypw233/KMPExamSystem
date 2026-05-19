@@ -47,7 +47,7 @@ fun AppSettingsScreen(onBack: () -> Unit) {
                 .padding(config.screenPadding),
             contentAlignment = Alignment.TopCenter
         ) {
-            AppSettingsContent(
+            SettingsPageContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = ResponsiveUtils.MaxWidths.NARROW)

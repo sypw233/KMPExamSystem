@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -14,7 +13,7 @@ import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 @Composable
 fun adaptiveDialogModifier(): Modifier {
     val config = LocalResponsiveConfig.current
-    val horizontalInset = with(LocalDensity.current) { 6.toDp() }
+    val horizontalInset = 24.dp
     return when (config.screenSize) {
         ResponsiveUtils.ScreenSize.COMPACT -> Modifier
             .fillMaxWidth()
@@ -23,12 +22,12 @@ fun adaptiveDialogModifier(): Modifier {
         ResponsiveUtils.ScreenSize.MEDIUM -> Modifier
             .fillMaxWidth()
             .padding(horizontal = horizontalInset)
-            .widthIn(max = 640.dp)
+            .widthIn(max = 600.dp)
 
         ResponsiveUtils.ScreenSize.EXPANDED -> Modifier
             .fillMaxWidth()
             .padding(horizontal = horizontalInset)
-            .widthIn(max = 720.dp)
+            .widthIn(max = 680.dp)
     }
 }
 
