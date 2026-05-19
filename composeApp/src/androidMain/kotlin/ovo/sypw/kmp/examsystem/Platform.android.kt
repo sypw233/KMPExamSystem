@@ -7,3 +7,7 @@ class AndroidPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()
+
+actual fun updateSystemBarStyle(isDark: Boolean) {
+    // Android 通过 WindowInsetsControllerCompat 或 edgeToEdge 处理系统栏样式
+}

@@ -5,3 +5,7 @@ class JVMPlatform : Platform {
 }
 
 actual fun getPlatform(): Platform = JVMPlatform()
+
+actual fun updateSystemBarStyle(isDark: Boolean) {
+    // Desktop 平台无状态栏样式概念
+}

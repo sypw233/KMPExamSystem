@@ -87,6 +87,12 @@ fun App() {
             AppThemeMode.LIGHT -> false
             AppThemeMode.DARK -> true
         }
+
+        // 同步系统栏样式与当前主题（iOS 状态栏文字颜色等）
+        LaunchedEffect(useDarkTheme) {
+            updateSystemBarStyle(useDarkTheme)
+        }
+
         AppTheme(
             useDarkTheme = useDarkTheme,
             accentMode = appSettings.accentMode,
