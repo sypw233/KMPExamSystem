@@ -28,7 +28,6 @@ import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserUpdateRequest
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
-import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +35,6 @@ fun CreateUserDialog(
     onConfirm: (UserCreateRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val config = LocalResponsiveConfig.current
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var realName by remember { mutableStateOf("") }
@@ -66,7 +64,7 @@ fun CreateUserDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("密码 * (≥6位)") },
+                    label = { Text("密码 * (至少6位)") },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
@@ -95,9 +93,9 @@ fun CreateUserDialog(
                         readOnly = true,
                         label = { Text("角色 *") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
                         listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->
@@ -113,13 +111,15 @@ fun CreateUserDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    onConfirm(UserCreateRequest(
-                        username = username.trim(),
-                        password = password,
-                        realName = realName.takeIf { it.isNotBlank() },
-                        email = email.takeIf { it.isNotBlank() },
-                        role = role
-                    ))
+                    onConfirm(
+                        UserCreateRequest(
+                            username = username.trim(),
+                            password = password,
+                            realName = realName.takeIf { it.isNotBlank() },
+                            email = email.takeIf { it.isNotBlank() },
+                            role = role
+                        )
+                    )
                 },
                 enabled = isValid
             ) { Text("创建") }
@@ -135,11 +135,13 @@ fun EditUserDialog(
     onConfirm: (UserUpdateRequest) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val config = LocalResponsiveConfig.current
+    var username by remember { mutableStateOf(user.username) }
     var realName by remember { mutableStateOf(user.realName ?: "") }
     var email by remember { mutableStateOf(user.email ?: "") }
     var role by remember { mutableStateOf(user.role) }
     var roleExpanded by remember { mutableStateOf(false) }
+
+    val isValid = username.length >= 3
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -151,6 +153,13 @@ fun EditUserDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("用户名 *") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 OutlinedTextField(
                     value = realName,
                     onValueChange = { realName = it },
@@ -175,9 +184,9 @@ fun EditUserDialog(
                         readOnly = true,
                         label = { Text("角色") },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(roleExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(expanded = roleExpanded, onDismissRequest = { roleExpanded = false }) {
                         listOf("student" to "学生", "teacher" to "教师", "admin" to "管理员").forEach { (v, label) ->
@@ -191,20 +200,26 @@ fun EditUserDialog(
             }
         },
         confirmButton = {
-            Button(onClick = {
-                onConfirm(UserUpdateRequest(
-                    realName = realName.takeIf { it.isNotBlank() },
-                    email = email.takeIf { it.isNotBlank() },
-                    role = role
-                ))
-            }) { Text("保存") }
+            Button(
+                onClick = {
+                    onConfirm(
+                        UserUpdateRequest(
+                            username = username.trim(),
+                            realName = realName.takeIf { it.isNotBlank() },
+                            email = email.takeIf { it.isNotBlank() },
+                            role = role
+                        )
+                    )
+                },
+                enabled = isValid
+            ) { Text("保存") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }
 
 fun roleDisplayName(role: String) = when (role.lowercase()) {
-    "admin"   -> "管理员"
+    "admin" -> "管理员"
     "teacher" -> "教师"
-    else      -> "学生"
+    else -> "学生"
 }

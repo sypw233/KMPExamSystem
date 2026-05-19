@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
@@ -36,6 +35,7 @@ import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.storage.LocalStorage
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.presentation.components.GlobalDialog
 import ovo.sypw.kmp.examsystem.presentation.navigation.ActiveExamSession
 import ovo.sypw.kmp.examsystem.presentation.navigation.BottomNavigationBar
@@ -346,7 +346,7 @@ private fun MainContent(
     val route = navigationManager.currentScreen.value
 
     // 返回键处理：导航回上一页
-    BackHandler(enabled = navigationManager.navigationHistory.isNotEmpty()) {
+    AppBackHandler(enabled = navigationManager.navigationHistory.isNotEmpty()) {
         navigationManager.popBack()
     }
 

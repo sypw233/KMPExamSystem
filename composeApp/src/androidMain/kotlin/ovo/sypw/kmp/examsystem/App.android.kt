@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.KoinApplication
+import org.koin.dsl.koinConfiguration
 import org.koin.dsl.module
 import ovo.sypw.kmp.examsystem.di.appModule
 import ovo.sypw.kmp.examsystem.utils.file.FileUtils
@@ -21,7 +22,7 @@ actual fun PlatformKoinApplication(content: @Composable () -> Unit) {
     Log.d("MAIN", "PlatformKoinApplication: START")
 
     KoinApplication(
-        application = {
+        configuration = koinConfiguration {
             androidContext(context)
             modules(appModule)
             modules(module {

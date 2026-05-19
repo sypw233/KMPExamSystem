@@ -14,7 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -205,7 +205,7 @@ private fun AboutContent(
                     }
                     latestReleaseUrl?.let { url ->
                         OutlinedButton(onClick = { onOpenUrl(url) }) {
-                            Icon(Icons.Default.OpenInNew, contentDescription = null)
+                            Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("下载更新")
                         }
@@ -246,6 +246,6 @@ private fun RepoButton(text: String, url: String, onClick: () -> Unit) {
         Icon(Icons.Default.Code, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
         Text("$text GitHub", modifier = Modifier.weight(1f), maxLines = 1)
-        Icon(Icons.Default.OpenInNew, contentDescription = url)
+        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = url)
     }
 }

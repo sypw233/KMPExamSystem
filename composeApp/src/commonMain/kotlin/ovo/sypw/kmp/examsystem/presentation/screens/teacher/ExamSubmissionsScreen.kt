@@ -49,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.JsonArray
@@ -64,6 +63,7 @@ import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.dto.ProctoringDataResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.SubmissionStatus
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
@@ -87,7 +87,7 @@ fun ExamSubmissionsScreen(
     var selectedSubmissionId by remember { mutableStateOf<Long?>(null) }
     var proctoringSubmission by remember { mutableStateOf<SubmissionResponse?>(null) }
 
-    BackHandler(enabled = selectedSubmissionId != null) {
+    AppBackHandler(enabled = selectedSubmissionId != null) {
         selectedSubmissionId = null
         viewModel.loadSubmissions(examId)
     }
@@ -158,8 +158,9 @@ fun ExamSubmissionsScreen(
                             verticalArrangement = Arrangement.spacedBy(config.verticalSpacing),
                             horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing),
                             modifier = Modifier
-                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.STANDARD) else Modifier)
-                                .fillMaxWidth()
+                                .then(if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) Modifier.widthIn(max = ResponsiveUtils.MaxWidths.FULL) else Modifier)
+                                .fillMaxWidth(),
+                            minItemWidth = if (config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED) 360.dp else 320.dp
                         ) { submission ->
                             SubmissionCard(
                                 submission = submission,

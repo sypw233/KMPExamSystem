@@ -76,7 +76,7 @@ import ovo.sypw.kmp.examsystem.data.dto.SubmissionResponse
 import ovo.sypw.kmp.examsystem.data.dto.questionType
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
-import ovo.sypw.kmp.examsystem.presentation.screens.QuestionJumpPanel
+import ovo.sypw.kmp.examsystem.presentation.screens.QuestionJumpFab
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeActionState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.GradeSubmissionViewModel
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
@@ -158,6 +158,47 @@ fun GradeSubmissionScreen(
         onSuccess = { onBack() }
     )
 
+    val handleBatchAiGrade: () -> Unit = {
+        if (subjectiveQuestions.isEmpty()) {
+            scope.launch { snackbarHostState.showSnackbar("当前试卷没有可 AI 评分的主观题") }
+        } else {
+            batchAiLoading = true
+            scope.launch {
+                viewModel.requestBatchAiGrade(submissionId)
+                    .onSuccess { response ->
+                        applyBatchAiResult(response, scoreMap, aiCommentMap, aiCommentVisibleMap)
+                        snackbarHostState.showSnackbar("AI 已完成 ${response.gradedCount} 道题评分")
+                    }
+                    .onFailure {
+                        snackbarHostState.showSnackbar(it.message ?: "AI 批量评分失败")
+                    }
+                batchAiLoading = false
+            }
+        }
+    }
+
+    val handleSave: () -> Unit = save@{
+        val missingItems = gradeableQuestions.filter { scoreMap[it.questionId].isNullOrBlank() }
+        if (missingItems.isNotEmpty()) {
+            scope.launch { snackbarHostState.showSnackbar("请补全所有题目的得分后再保存") }
+            return@save
+        }
+
+        val invalidItems = gradeableQuestions.filter { examQuestion ->
+            val score = scoreMap[examQuestion.questionId]?.toIntOrNull()
+            score == null || score !in 0..examQuestion.score
+        }
+        if (invalidItems.isNotEmpty()) {
+            scope.launch { snackbarHostState.showSnackbar("存在超出分数范围的题目，请检查") }
+            return@save
+        }
+
+        val scoreMapData = gradeableQuestions.associate { examQuestion ->
+            examQuestion.questionId to (scoreMap[examQuestion.questionId]?.toIntOrNull() ?: 0)
+        }
+        viewModel.submitGrades(submissionId, scoreMapData)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -171,6 +212,17 @@ fun GradeSubmissionScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            QuestionJumpFab(
+                questions = gradeableQuestions,
+                selectedIndex = null,
+                onQuestionSelected = { questionIndex ->
+                    scope.launch {
+                        listState.animateScrollToItem(questionIndex + 1)
+                    }
+                }
+            )
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         val currentSubmission = submission
@@ -179,121 +231,145 @@ fun GradeSubmissionScreen(
             return@Scaffold
         }
 
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = config.screenPadding,
-                end = config.screenPadding,
-                top = 12.dp,
-                bottom = 24.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            item {
-                GradeSubmissionHeader(
-                    submission = currentSubmission,
-                    questionCount = gradeableQuestions.size,
-                    subjectiveCount = subjectiveQuestions.size,
-                    objectiveScore = objectiveScore,
-                    batchAiLoading = batchAiLoading,
-                    isSaving = actionState is GradeActionState.Loading,
-                    onBatchAiGrade = {
-                        if (subjectiveQuestions.isEmpty()) {
-                            scope.launch { snackbarHostState.showSnackbar("当前试卷没有可 AI 评分的主观题") }
-                            return@GradeSubmissionHeader
-                        }
-                        batchAiLoading = true
-                        scope.launch {
-                            viewModel.requestBatchAiGrade(submissionId)
-                                .onSuccess { response ->
-                                    applyBatchAiResult(response, scoreMap, aiCommentMap, aiCommentVisibleMap)
-                                    snackbarHostState.showSnackbar("AI 已完成 ${response.gradedCount} 道题评分")
-                                }
-                                .onFailure {
-                                    snackbarHostState.showSnackbar(it.message ?: "AI 批量评分失败")
-                                }
-                            batchAiLoading = false
-                        }
-                    },
-                    onSave = {
-                        val missingItems = gradeableQuestions.filter { scoreMap[it.questionId].isNullOrBlank() }
-                        if (missingItems.isNotEmpty()) {
-                            scope.launch { snackbarHostState.showSnackbar("请补全所有题目的得分后再保存") }
-                            return@GradeSubmissionHeader
-                        }
-
-                        val invalidItems = gradeableQuestions.filter { examQuestion ->
-                            val score = scoreMap[examQuestion.questionId]?.toIntOrNull()
-                            score == null || score !in 0..examQuestion.score
-                        }
-                        if (invalidItems.isNotEmpty()) {
-                            scope.launch { snackbarHostState.showSnackbar("存在超出分数范围的题目，请检查") }
-                            return@GradeSubmissionHeader
-                        }
-
-                        val scoreMapData = gradeableQuestions.associate { examQuestion ->
-                            examQuestion.questionId to (scoreMap[examQuestion.questionId]?.toIntOrNull() ?: 0)
-                        }
-                        viewModel.submitGrades(submissionId, scoreMapData)
-                    }
+            GradeSubmissionActionBar(
+                batchAiLoading = batchAiLoading,
+                isSaving = actionState is GradeActionState.Loading,
+                onBatchAiGrade = handleBatchAiGrade,
+                onSave = handleSave,
+                modifier = Modifier.padding(
+                    start = config.screenPadding,
+                    end = config.screenPadding,
+                    top = 12.dp
                 )
-            }
+            )
 
-            item {
-                QuestionJumpPanel(
-                    questions = gradeableQuestions,
-                    selectedIndex = null,
-                    onQuestionSelected = { questionIndex ->
-                        scope.launch {
-                            listState.animateScrollToItem(questionIndex + 1)
-                        }
-                    }
-                )
-            }
-
-            if (gradeableQuestions.isEmpty()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    start = config.screenPadding,
+                    end = config.screenPadding,
+                    top = 12.dp,
+                    bottom = 24.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("当前试卷暂无题目", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            } else {
-                items(gradeableQuestions, key = { it.questionId }) { examQuestion ->
-                    GradeQuestionItem(
-                        examQuestion = examQuestion,
-                        studentAnswer = userAnswers[examQuestion.questionId.toString()].orEmpty(),
-                        currentScore = scoreMap[examQuestion.questionId].orEmpty(),
-                        currentAiComment = aiCommentMap[examQuestion.questionId].orEmpty(),
-                        showAiComment = aiCommentVisibleMap[examQuestion.questionId] == true,
-                        onScoreChange = { scoreMap[examQuestion.questionId] = it },
-                        onRequestAiGrade = { callback ->
-                            scope.launch {
-                                val studentAnswer = userAnswers[examQuestion.questionId.toString()].orEmpty()
-                                viewModel.requestAiGrade(examQuestion.questionId, studentAnswer, examQuestion.score)
-                                    .onSuccess { aiRes ->
-                                        scoreMap[examQuestion.questionId] = aiRes.suggestedScore.toString()
-                                        aiCommentMap[examQuestion.questionId] =
-                                            aiRes.explanation ?: "AI 已给出评分建议，请结合参考答案复核。"
-                                        aiCommentVisibleMap[examQuestion.questionId] = true
-                                    }
-                                    .onFailure {
-                                        snackbarHostState.showSnackbar(it.message ?: "AI 判分失败")
-                                    }
-                                callback()
-                            }
-                        }
+                    GradeSubmissionHeader(
+                        submission = currentSubmission,
+                        questionCount = gradeableQuestions.size,
+                        subjectiveCount = subjectiveQuestions.size,
+                        objectiveScore = objectiveScore
                     )
                 }
+
+                if (gradeableQuestions.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("当前试卷暂无题目", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                } else {
+                    items(gradeableQuestions, key = { it.questionId }) { examQuestion ->
+                        GradeQuestionItem(
+                            examQuestion = examQuestion,
+                            studentAnswer = userAnswers[examQuestion.questionId.toString()].orEmpty(),
+                            currentScore = scoreMap[examQuestion.questionId].orEmpty(),
+                            currentAiComment = aiCommentMap[examQuestion.questionId].orEmpty(),
+                            showAiComment = aiCommentVisibleMap[examQuestion.questionId] == true,
+                            onScoreChange = { scoreMap[examQuestion.questionId] = it },
+                            onRequestAiGrade = { callback ->
+                                scope.launch {
+                                    val studentAnswer = userAnswers[examQuestion.questionId.toString()].orEmpty()
+                                    viewModel.requestAiGrade(examQuestion.questionId, studentAnswer, examQuestion.score)
+                                        .onSuccess { aiRes ->
+                                            scoreMap[examQuestion.questionId] = aiRes.suggestedScore.toString()
+                                            aiCommentMap[examQuestion.questionId] =
+                                                aiRes.explanation ?: "AI 已给出评分建议，请结合参考答案复核。"
+                                            aiCommentVisibleMap[examQuestion.questionId] = true
+                                        }
+                                        .onFailure {
+                                            snackbarHostState.showSnackbar(it.message ?: "AI 判分失败")
+                                        }
+                                    callback()
+                                }
+                            }
+                        )
+                    }
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun GradeSubmissionActionBar(
+    batchAiLoading: Boolean,
+    isSaving: Boolean,
+    onBatchAiGrade: () -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = ResponsiveUtils.MaxWidths.STANDARD),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shadowElevation = 1.dp,
+        shape = MaterialTheme.shapes.large
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ExtendedFloatingActionButton(
+                text = { Text("AI 批量评分") },
+                icon = {
+                    if (batchAiLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                },
+                onClick = {
+                    if (!batchAiLoading && !isSaving) {
+                        onBatchAiGrade()
+                    }
+                }
+            )
+            ExtendedFloatingActionButton(
+                text = { Text("保存批改") },
+                icon = {
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                },
+                onClick = {
+                    if (!isSaving && !batchAiLoading) {
+                        onSave()
+                    }
+                }
+            )
         }
     }
 }
@@ -303,11 +379,7 @@ private fun GradeSubmissionHeader(
     submission: SubmissionResponse,
     questionCount: Int,
     subjectiveCount: Int,
-    objectiveScore: Int,
-    batchAiLoading: Boolean,
-    isSaving: Boolean,
-    onBatchAiGrade: () -> Unit,
-    onSave: () -> Unit
+    objectiveScore: Int
 ) {
     Surface(
         modifier = Modifier
@@ -365,47 +437,6 @@ private fun GradeSubmissionHeader(
                     onClick = {},
                     label = { Text("主观题 $subjectiveCount 题") },
                     leadingIcon = { Icon(Icons.Default.EditNote, null, modifier = Modifier.size(16.dp)) }
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ExtendedFloatingActionButton(
-                    text = { Text("AI 批量评分") },
-                    icon = {
-                        if (batchAiLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                        }
-                    },
-                    onClick = {
-                        if (!batchAiLoading && !isSaving) {
-                            onBatchAiGrade()
-                        }
-                    }
-                )
-                ExtendedFloatingActionButton(
-                    text = { Text("保存批改") },
-                    icon = {
-                        if (isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                        }
-                    },
-                    onClick = {
-                        if (!isSaving && !batchAiLoading) {
-                            onSave()
-                        }
-                    }
                 )
             }
         }

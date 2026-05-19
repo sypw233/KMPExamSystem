@@ -223,13 +223,25 @@ private fun ColorScheme.withAccent(
             onPrimaryContainer = Color(0xFF410002)
         )
     }
+    val secondary = palette.primary.mixWith(if (dark) Color.White else Color.Black, if (dark) 0.18f else 0.12f)
+    val secondaryContainer = palette.primaryContainer.mixWith(palette.primary, 0.14f)
+    val tertiarySeed = if (dark) Color(0xFFFFB4AB) else Color(0xFF006C4C)
+    val tertiary = palette.primary.mixWith(tertiarySeed, 0.28f)
+    val tertiaryContainer = palette.primaryContainer.mixWith(tertiary, 0.16f)
+
     return copy(
         primary = palette.primary,
         onPrimary = palette.onPrimary,
         primaryContainer = palette.primaryContainer,
         onPrimaryContainer = palette.onPrimaryContainer,
-        secondary = palette.primary,
-        secondaryContainer = palette.primaryContainer,
+        secondary = secondary,
+        onSecondary = secondary.bestForeground(),
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = secondaryContainer.bestForeground(),
+        tertiary = tertiary,
+        onTertiary = tertiary.bestForeground(),
+        tertiaryContainer = tertiaryContainer,
+        onTertiaryContainer = tertiaryContainer.bestForeground(),
         surfaceTint = palette.primary,
         inversePrimary = palette.primary
     )

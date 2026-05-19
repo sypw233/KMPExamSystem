@@ -39,12 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.data.dto.QuestionBankResponse
 import ovo.sypw.kmp.examsystem.data.dto.QuestionResponse
 import ovo.sypw.kmp.examsystem.presentation.components.management.ManagementPageHeader
@@ -80,7 +80,7 @@ fun QuestionBankScreen() {
 
     var mobileShowQuestions by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = !isDesktop && mobileShowQuestions) {
+    AppBackHandler(enabled = !isDesktop && mobileShowQuestions) {
         mobileShowQuestions = false
     }
 

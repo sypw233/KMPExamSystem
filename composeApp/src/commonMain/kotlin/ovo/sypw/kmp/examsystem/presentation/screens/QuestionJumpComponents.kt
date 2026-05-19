@@ -8,17 +8,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Numbers
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Numbers
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.data.dto.ExamQuestionResponse
 import ovo.sypw.kmp.examsystem.data.dto.questionType
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
+import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.utils.QuestionUtils
 
 internal data class QuestionJumpEntry(
@@ -65,6 +71,74 @@ internal fun buildQuestionJumpGroups(
         grouped[typeKey]?.let { QuestionJumpGroup(it.first().typeLabel, it) }
     } + grouped.filterKeys { it !in orderedTypes }.values.map { entries ->
         QuestionJumpGroup(entries.first().typeLabel, entries)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun QuestionJumpFab(
+    questions: List<ExamQuestionResponse>,
+    selectedIndex: Int?,
+    onQuestionSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+    title: String = "题号跳转"
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val groups = remember(questions) { buildQuestionJumpGroups(questions) }
+
+    if (groups.isEmpty()) return
+
+    FloatingActionButton(
+        onClick = { expanded = true },
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    ) {
+        Icon(Icons.Default.Numbers, contentDescription = title)
+    }
+
+    if (expanded) {
+        AlertDialog(
+            onDismissRequest = { expanded = false },
+            modifier = adaptiveDialogModifier(maxWidth = 460.dp),
+            properties = adaptiveDialogProperties(),
+            title = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Numbers, contentDescription = null)
+                    Text(title)
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 520.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "共 ${questions.size} 题，按题型快速定位",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    groups.forEach { group ->
+                        QuestionJumpGroupRow(
+                            group = group,
+                            selectedIndex = selectedIndex,
+                            onQuestionSelected = { index ->
+                                expanded = false
+                                onQuestionSelected(index)
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { expanded = false }) {
+                    Text("关闭")
+                }
+            }
+        )
     }
 }
 
@@ -124,30 +198,44 @@ internal fun QuestionJumpPanel(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     groups.forEach { group ->
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = group.typeLabel,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                group.entries.forEach { entry ->
-                                    FilterChip(
-                                        selected = selectedIndex == entry.index,
-                                        onClick = { onQuestionSelected(entry.index) },
-                                        label = { Text(entry.number.toString()) }
-                                    )
-                                }
-                            }
-                        }
+                        QuestionJumpGroupRow(
+                            group = group,
+                            selectedIndex = selectedIndex,
+                            onQuestionSelected = onQuestionSelected
+                        )
                     }
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuestionJumpGroupRow(
+    group: QuestionJumpGroup,
+    selectedIndex: Int?,
+    onQuestionSelected: (Int) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = group.typeLabel,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            group.entries.forEach { entry ->
+                FilterChip(
+                    selected = selectedIndex == entry.index,
+                    onClick = { onQuestionSelected(entry.index) },
+                    label = { Text(entry.number.toString()) }
+                )
             }
         }
     }

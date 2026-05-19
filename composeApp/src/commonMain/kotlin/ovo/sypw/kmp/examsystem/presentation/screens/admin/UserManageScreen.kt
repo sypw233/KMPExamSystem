@@ -61,7 +61,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,6 +68,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.data.dto.UserResponse
 import ovo.sypw.kmp.examsystem.data.dto.UserEnabledStatus
 import ovo.sypw.kmp.examsystem.data.dto.enabledStatus
@@ -109,7 +109,7 @@ fun UserManageScreen() {
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = isBatchMode) {
+    AppBackHandler(enabled = isBatchMode) {
         isBatchMode = false
         selectedIds = emptySet()
     }

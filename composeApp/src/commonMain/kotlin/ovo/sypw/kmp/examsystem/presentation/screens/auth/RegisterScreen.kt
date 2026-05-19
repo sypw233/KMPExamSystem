@@ -22,11 +22,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
 import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterUiState
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.RegisterViewModel
 import ovo.sypw.kmp.examsystem.utils.DialogManager
@@ -60,7 +60,7 @@ fun RegisterScreen(
     val config = LocalResponsiveConfig.current
 
     // 处理返回键 - 返回登录页面
-    BackHandler {
+    AppBackHandler {
         onNavigateToLogin()
     }
 

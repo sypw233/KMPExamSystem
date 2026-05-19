@@ -14,13 +14,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.data.repository.FileRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.presentation.viewmodel.NotificationViewModel
 import ovo.sypw.kmp.examsystem.utils.file.rememberFileUtils
 
@@ -48,7 +48,7 @@ fun ProfileScreen() {
         notificationViewModel.loadUnreadCount(force = false)
     }
 
-    BackHandler(enabled = currentSubScreen != null) {
+    AppBackHandler(enabled = currentSubScreen != null) {
         currentSubScreen = null
     }
 

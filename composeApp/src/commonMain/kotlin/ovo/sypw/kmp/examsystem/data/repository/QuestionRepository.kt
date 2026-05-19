@@ -87,13 +87,13 @@ class QuestionRepository(
     /** 下载题目导入模板 */
     suspend fun downloadTemplate(): Result<ByteArray> = runWithToken { token ->
         val r = questionApi.downloadTemplate(token)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message ?: "下载失败")
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
     /** 导入题目（Excel） */
     suspend fun importQuestions(bankId: Long, fileBytes: ByteArray, fileName: String): Result<ImportResultResponse> = runWithToken { token ->
         val r = questionApi.importQuestions(token, bankId, fileBytes, fileName)
-        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message ?: "导入失败")
+        if (r.code == 200 && r.data != null) r.data else throw Exception(r.message)
     }
 
     /** 批量删除题目 */

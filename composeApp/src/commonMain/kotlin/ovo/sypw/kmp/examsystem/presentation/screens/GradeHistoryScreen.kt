@@ -28,9 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.data.repository.AuthRepository
 import ovo.sypw.kmp.examsystem.domain.AuthState
 import ovo.sypw.kmp.examsystem.presentation.components.common.ErrorContent
@@ -53,7 +53,7 @@ fun GradeHistoryScreen(onBack: () -> Unit) {
     val uiState by viewModel.uiState.collectAsState()
     var detailSubmissionId by remember { mutableStateOf<Long?>(null) }
 
-    BackHandler(enabled = detailSubmissionId != null) {
+    AppBackHandler(enabled = detailSubmissionId != null) {
         detailSubmissionId = null
     }
 

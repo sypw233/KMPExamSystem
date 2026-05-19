@@ -47,10 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 import ovo.sypw.kmp.examsystem.presentation.components.common.ActionEffect
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamStatus
@@ -110,15 +110,15 @@ fun TeacherExamManageScreen(
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var showBatchDeleteConfirm by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = composeExam != null) {
+    AppBackHandler(enabled = composeExam != null) {
         composeExam = null
     }
 
-    BackHandler(enabled = viewSubmissionsExam != null) {
+    AppBackHandler(enabled = viewSubmissionsExam != null) {
         viewSubmissionsExam = null
     }
 
-    BackHandler(enabled = isBatchMode) {
+    AppBackHandler(enabled = isBatchMode) {
         isBatchMode = false
         selectedIds = emptySet()
     }

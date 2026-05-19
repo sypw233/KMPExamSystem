@@ -37,12 +37,12 @@ object ResponsiveUtils {
 
     /**
      * Material Design 3 推荐的断点
-     * 桌面端需要更大宽度（1200dp）才能切换，确保在大屏设备上获得更好的体验
+     * 桌面端需要更大宽度才能切换，避免平板和窄桌面窗口进入双栏后挤压内容
      */
     object Breakpoints {
         val COMPACT_MAX = 600.dp
-        val MEDIUM_MAX = 1200.dp   // 增加到1200dp，让桌面端需要更大宽度才切换
-        val EXPANDED_LARGE = 1600.dp  // 大屏桌面断点，同步增加
+        val MEDIUM_MAX = 1360.dp
+        val EXPANDED_LARGE = 1760.dp
     }
 
     /**
@@ -154,7 +154,7 @@ object ResponsiveUtils {
             return when (screenSize) {
                 ScreenSize.COMPACT -> 1
                 ScreenSize.MEDIUM -> 2
-                ScreenSize.EXPANDED -> 4
+                ScreenSize.EXPANDED -> 1
             }
         }
 

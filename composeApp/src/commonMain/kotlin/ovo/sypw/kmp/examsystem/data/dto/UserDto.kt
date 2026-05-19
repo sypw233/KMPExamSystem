@@ -40,6 +40,7 @@ data class UserCreateRequest(
  */
 @Serializable
 data class UserUpdateRequest(
+    val username: String? = null,
     val realName: String? = null,
     val email: String? = null,
     val role: String? = null,

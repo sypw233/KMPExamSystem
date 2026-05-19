@@ -48,10 +48,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ovo.sypw.kmp.examsystem.presentation.components.common.AppBackHandler
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
 import ovo.sypw.kmp.examsystem.presentation.components.common.LoadingContent
@@ -201,7 +201,7 @@ private fun ExamContent(
     val scope = rememberCoroutineScope()
 
     // 返回键处理：弹出交卷确认对话框
-    BackHandler {
+    AppBackHandler {
         showExitDialog = true
     }
 
@@ -303,6 +303,21 @@ private fun ExamContent(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             )
+        },
+        floatingActionButton = {
+            QuestionJumpFab(
+                questions = exam.questions,
+                selectedIndex = if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) currentQuestionIndex else null,
+                onQuestionSelected = { questionIndex ->
+                    if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) {
+                        currentQuestionIndex = questionIndex
+                    } else {
+                        scope.launch {
+                            listState.animateScrollToItem(questionIndex)
+                        }
+                    }
+                }
+            )
         }
     ) { paddingValues ->
         Box(
@@ -317,22 +332,6 @@ private fun ExamContent(
                 contentPadding = PaddingValues(horizontal = config.screenPadding, vertical = config.contentPadding),
                 verticalArrangement = Arrangement.spacedBy(config.verticalSpacing)
             ) {
-                item {
-                    QuestionJumpPanel(
-                        questions = exam.questions,
-                        selectedIndex = if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) currentQuestionIndex else null,
-                        onQuestionSelected = { questionIndex ->
-                            if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION) {
-                                currentQuestionIndex = questionIndex
-                            } else {
-                                scope.launch {
-                                    listState.animateScrollToItem(questionIndex + 1)
-                                }
-                            }
-                        }
-                    )
-                }
-
                 if (appSettings.examDisplayMode == ExamDisplayMode.SINGLE_QUESTION && exam.questions.isNotEmpty()) {
                     item {
                         val index = currentQuestionIndex.coerceIn(0, exam.questions.lastIndex)

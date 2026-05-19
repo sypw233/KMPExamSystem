@@ -141,6 +141,9 @@ class SystemSettingsViewModel(
             requests += AiConfigRequest("model_name", form.customModelName.trim())
             requests += AiConfigRequest("api_base_url", form.effectiveCustomBaseUrl)
             requests += AiConfigRequest("api_key", form.customApiKey.trim())
+            requests += AiConfigRequest("custom_model_name", form.customModelName.trim())
+            requests += AiConfigRequest("custom_api_base_url", form.effectiveCustomBaseUrl)
+            requests += AiConfigRequest("custom_api_key", form.customApiKey.trim())
         }
         return requests
     }
@@ -151,6 +154,9 @@ private fun List<AiConfigResponse>.toForm(): AiSettingsForm {
     val presetId = configMap["provider_preset"]
     val modelName = configMap["model_name"].orEmpty()
     val baseUrl = configMap["api_base_url"].orEmpty()
+    val customModelName = configMap["custom_model_name"].orEmpty()
+    val customBaseUrl = configMap["custom_api_base_url"].orEmpty()
+    val customApiKey = configMap["custom_api_key"].orEmpty()
     val mode = if (configMap["provider_mode"] == "custom") AiModelMode.CUSTOM else AiModelMode.DEFAULT
     val provider = when {
         presetId == AiCustomProvider.DEEPSEEK.name.lowercase() || baseUrl.contains("deepseek") -> AiCustomProvider.DEEPSEEK
@@ -162,9 +168,9 @@ private fun List<AiConfigResponse>.toForm(): AiSettingsForm {
     return AiSettingsForm(
         mode = mode,
         customProvider = provider,
-        customBaseUrl = if (provider == AiCustomProvider.CUSTOM_URL) baseUrl else "",
-        customModelName = modelName.ifBlank { provider.placeholderModel },
-        customApiKey = configMap["api_key"].orEmpty(),
+        customBaseUrl = customBaseUrl.ifBlank { if (provider == AiCustomProvider.CUSTOM_URL) baseUrl else "" },
+        customModelName = customModelName.ifBlank { modelName.ifBlank { provider.placeholderModel } },
+        customApiKey = customApiKey.ifBlank { configMap["api_key"].orEmpty() },
         systemPrompt = configMap["system_prompt"].orEmpty().ifBlank { DEFAULT_AI_GRADING_PROMPT },
         temperature = configMap["temperature"].orEmpty().ifBlank { "0.3" },
         maxTokens = configMap["max_tokens"].orEmpty().ifBlank { "500" },

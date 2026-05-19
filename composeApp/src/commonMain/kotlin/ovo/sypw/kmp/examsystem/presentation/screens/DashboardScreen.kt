@@ -110,6 +110,17 @@ fun DashboardScreen(
                         )
                     }
 
+                    if (showExamSection) {
+                        item {
+                            DashboardExamsSection(
+                                upcomingExamsState = upcomingExamsState,
+                                config = config,
+                                onNavigateToExams = onNavigateToExams,
+                                onRetry = { examViewModel.loadPublishedExams() }
+                            )
+                        }
+                    }
+
                     item {
                         DashboardNotificationSection(
                             notificationState = notificationState,
@@ -127,17 +138,6 @@ fun DashboardScreen(
                                 onNavigateToCourses = onNavigateToCourses,
                                 onNavigateToExams = onNavigateToExams,
                                 onNavigateToQuestionBanks = onNavigateToQuestionBanks
-                            )
-                        }
-                    }
-
-                    if (showExamSection) {
-                        item {
-                            DashboardExamsSection(
-                                upcomingExamsState = upcomingExamsState,
-                                config = config,
-                                onNavigateToExams = onNavigateToExams,
-                                onRetry = { examViewModel.loadPublishedExams() }
                             )
                         }
                     }

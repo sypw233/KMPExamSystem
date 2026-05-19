@@ -20,7 +20,7 @@ class FileRepository(
         return runWithToken { token ->
             val r = fileApi.uploadImage(token, imageBytes, fileName, category)
             if (r.code == 200 && r.data != null) r.data
-            else throw Exception(r.message ?: "涓婁紶澶辫触")
+            else throw Exception(r.message)
         }
     }
 
@@ -28,7 +28,7 @@ class FileRepository(
         return runWithToken { token ->
             val r = fileApi.uploadDocument(token, docBytes, fileName)
             if (r.code == 200 && r.data != null) r.data
-            else throw Exception(r.message ?: "涓婁紶澶辫触")
+            else throw Exception(r.message)
         }
     }
 

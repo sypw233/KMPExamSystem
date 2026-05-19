@@ -66,7 +66,19 @@ fun BottomNavigationBar(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp
     ) {
-        navigationItems.primaryItems.forEach { item ->
+        val primaryItems = navigationItems.primaryItems
+        val leadingItems = if (navigationItems.overflowItems.isNotEmpty() && primaryItems.size >= 4) {
+            primaryItems.take(2)
+        } else {
+            primaryItems
+        }
+        val trailingItems = if (navigationItems.overflowItems.isNotEmpty() && primaryItems.size >= 4) {
+            primaryItems.drop(2)
+        } else {
+            emptyList()
+        }
+
+        leadingItems.forEach { item ->
             NavigationBarItem(
                 icon = {
                     Icon(
@@ -94,6 +106,21 @@ fun BottomNavigationBar(
                 label = { Text("更多") },
                 selected = overflowSelected,
                 onClick = { overflowExpanded = true }
+            )
+        }
+
+        trailingItems.forEach { item ->
+            NavigationBarItem(
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.title,
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                label = { Text(item.title) },
+                selected = currentScreen == item.route,
+                onClick = { navigationManager.navigateTo(item.route) }
             )
         }
     }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,6 +40,8 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
+import ovo.sypw.kmp.examsystem.utils.LocalResponsiveConfig
+import ovo.sypw.kmp.examsystem.utils.ResponsiveUtils
 import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 internal fun formatDateTimeForDisplay(isoDateTime: String): String {
@@ -100,10 +103,15 @@ internal fun DateTimePickerDialog(
         is24Hour = true
     )
     var showClockFace by remember { mutableStateOf(true) }
+    val config = LocalResponsiveConfig.current
+    val isDesktop = config.screenSize == ResponsiveUtils.ScreenSize.EXPANDED
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        modifier = adaptiveDialogModifier(),
+        modifier = adaptiveDialogModifier(
+            maxWidth = if (isDesktop) 560.dp else null,
+            maxHeight = if (isDesktop) 840.dp else null
+        ),
         properties = adaptiveDialogProperties(),
         title = { Text("选择日期时间") },
         text = {
@@ -116,7 +124,9 @@ internal fun DateTimePickerDialog(
             ) {
                 DatePicker(
                     state = datePickerState,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -129,12 +139,12 @@ internal fun DateTimePickerDialog(
                     if (showClockFace) {
                         TimePicker(
                             state = timePickerState,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.widthIn(max = 360.dp)
                         )
                     } else {
                         TimeInput(
                             state = timePickerState,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.widthIn(max = 280.dp)
                         )
                     }
                 }

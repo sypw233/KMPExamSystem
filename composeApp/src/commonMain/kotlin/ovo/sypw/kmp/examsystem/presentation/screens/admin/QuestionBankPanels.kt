@@ -273,6 +273,7 @@ internal fun QuestionListPanel(
                 var filterType by remember { mutableStateOf<String?>(null) }
                 var filterDifficulty by remember { mutableStateOf<String?>(null) }
                 var filtersExpanded by remember { mutableStateOf(false) }
+                var selectedQuestionIds by remember(selectedBank.id) { mutableStateOf<Set<Long>>(emptySet()) }
 
                 val typeChips = QuestionUtils.questionTypeOptions
                 val diffChips = QuestionUtils.difficultyOptions
@@ -286,6 +287,9 @@ internal fun QuestionListPanel(
                         val matchDiff = filterDifficulty == null || q.difficulty == filterDifficulty
                         matchType && matchDiff
                     }
+                val filteredQuestionIds = filteredQuestions.map { it.id }.toSet()
+                val allFilteredSelected = filteredQuestionIds.isNotEmpty() &&
+                    filteredQuestionIds.all { it in selectedQuestionIds }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -373,10 +377,15 @@ internal fun QuestionListPanel(
                             modifier = Modifier.padding(vertical = 4.dp),
                             *arrayOf(
                                 0.3f to @Composable {
-                                    Text(
-                                        "",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold
+                                    Checkbox(
+                                        checked = allFilteredSelected,
+                                        onCheckedChange = { checked ->
+                                            selectedQuestionIds = if (checked) {
+                                                selectedQuestionIds + filteredQuestionIds
+                                            } else {
+                                                selectedQuestionIds - filteredQuestionIds
+                                            }
+                                        }
                                     )
                                 },
                                 0.4f to @Composable {
@@ -424,9 +433,16 @@ internal fun QuestionListPanel(
                                 DesktopDataTableRow(
                                     modifier = Modifier,
                                     0.3f to @Composable {
+                                        val isSelected = question.id in selectedQuestionIds
                                         Checkbox(
-                                            checked = false,
-                                            onCheckedChange = null
+                                            checked = isSelected,
+                                            onCheckedChange = {
+                                                selectedQuestionIds = if (isSelected) {
+                                                    selectedQuestionIds - question.id
+                                                } else {
+                                                    selectedQuestionIds + question.id
+                                                }
+                                            }
                                         )
                                     },
                                     0.4f to @Composable {
