@@ -22,7 +22,7 @@ coil = "3.3.0"
 mediationSdk = "7.6.1.1"
 richeditor-compose = "1.0.0-rc13"
 markdown-renderer = "0.38.1"
-uiBackhandler = "1.11.0"
+uiBackhandler = "1.10.2"
 
 [libraries]
 compose-chart = { module = "io.github.sypw233:compose-charts", version.ref = "chart" }
