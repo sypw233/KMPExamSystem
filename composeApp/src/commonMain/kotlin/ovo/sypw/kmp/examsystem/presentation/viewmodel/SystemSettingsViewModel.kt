@@ -60,12 +60,12 @@ data class AiFixedPreset(
     val description: String
 )
 
-val DEFAULT_KIMI_PRESET = AiFixedPreset(
-    id = "kimi_default",
-    label = "Kimi",
-    provider = "Moonshot AI",
-    modelName = "kimi-k2.6",
-    baseUrl = "https://api.moonshot.ai/v1",
+val DEFAULT_MIMO_PRESET = AiFixedPreset(
+    id = "mimo_default",
+    label = "Mimo",
+    provider = "Xiaomi Mimo",
+    modelName = "mimo-v2.5",
+    baseUrl = "https://token-plan-cn.xiaomimimo.com/v1",
     description = "固定默认模型，不在页面中开放切换。"
 )
 
@@ -133,9 +133,9 @@ class SystemSettingsViewModel(
             AiConfigRequest("ai_batch_concurrency", form.batchConcurrency.trim())
         )
         if (form.mode == AiModelMode.DEFAULT) {
-            requests += AiConfigRequest("provider_preset", DEFAULT_KIMI_PRESET.id)
-            requests += AiConfigRequest("model_name", DEFAULT_KIMI_PRESET.modelName)
-            requests += AiConfigRequest("api_base_url", DEFAULT_KIMI_PRESET.baseUrl)
+            requests += AiConfigRequest("provider_preset", DEFAULT_MIMO_PRESET.id)
+            requests += AiConfigRequest("model_name", DEFAULT_MIMO_PRESET.modelName)
+            requests += AiConfigRequest("api_base_url", DEFAULT_MIMO_PRESET.baseUrl)
         } else {
             requests += AiConfigRequest("provider_preset", form.customProvider.name.lowercase())
             requests += AiConfigRequest("model_name", form.customModelName.trim())
