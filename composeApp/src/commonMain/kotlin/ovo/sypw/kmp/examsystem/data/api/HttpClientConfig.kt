@@ -28,7 +28,7 @@ object HttpClientConfig {
      * true: 打印详细的请求和响应信息
      * false: 只打印基本信息
      */
-    const val DEBUG = false
+    private const val ENABLE_DEBUG_LOGGING = false
 
     /**
      * API基础URL
@@ -81,7 +81,7 @@ object HttpClientConfig {
                 json(Json {
                     ignoreUnknownKeys = true
                     allowStructuredMapKeys = true
-                    prettyPrint = DEBUG
+                    prettyPrint = ENABLE_DEBUG_LOGGING
                     useAlternativeNames = true
                     // 确保含默认值的字段也被序列化, 避免后端收到 null
                     encodeDefaults = true
@@ -92,18 +92,18 @@ object HttpClientConfig {
             install(Logging) {
                 logger = object : Logger {
                     override fun log(message: String) {
-                        if (DEBUG) {
+                        if (ENABLE_DEBUG_LOGGING) {
                             AppLogger.d("HTTP", message)
                         }
                     }
                 }
 
                 // Debug 模式下打印所有信息，否则只打印基本信息
-                level = if (DEBUG) LogLevel.ALL else LogLevel.INFO
+                level = if (ENABLE_DEBUG_LOGGING) LogLevel.ALL else LogLevel.INFO
                 sanitizeHeader { header -> header == HttpHeaders.Authorization }
 
                 // 非 Debug 模式下过滤所有请求，只记录错误级别
-                if (!DEBUG) {
+                if (!ENABLE_DEBUG_LOGGING) {
                     filter { false }
                 }
             }

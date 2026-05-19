@@ -26,23 +26,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import ovo.sypw.kmp.examsystem.data.dto.CourseResponse
 import ovo.sypw.kmp.examsystem.data.dto.ExamRequest
 import ovo.sypw.kmp.examsystem.data.dto.ExamResponse
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogModifier
 import ovo.sypw.kmp.examsystem.presentation.components.common.adaptiveDialogProperties
+import ovo.sypw.kmp.examsystem.utils.StringUtils.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
